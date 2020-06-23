@@ -1,9 +1,9 @@
 from .preprocessing import PreprocessingConfig
 
 
-def get_preprocessing_config_code2seq_params(data_path: str):
+def get_preprocessing_config_code2seq_params(dataset_name: str):
     return PreprocessingConfig(
-        data_path=data_path,
+        dataset_name=dataset_name,
         max_path_length=8,
         max_name_parts=5,
         max_target_parts=6,

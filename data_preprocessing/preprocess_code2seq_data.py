@@ -61,13 +61,11 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
             from_tokens_ids, path_types_ids, to_tokens_ids = list(
                 zip(*[_convert_path_context_to_ids(pc, vocab) for pc in path_contexts])
             )
-            buffered_path_context.store_path_context(
-                i % config.buffer_size, label_ids, from_tokens_ids, path_types_ids, to_tokens_ids
-            )
+            buffered_path_context.store_path_context(label_ids, from_tokens_ids, path_types_ids, to_tokens_ids)
 
-            if i != 0 and i % config.buffer_size == 0:
+            if len(buffered_path_context.labels_array) == config.buffer_size:
                 buffered_path_context.dump(
-                    path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size - 1}.pkl")
+                    path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
                 )
                 buffered_path_context = BufferedPathContext(config, vocab)
     buffered_path_context.dump(path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl"))

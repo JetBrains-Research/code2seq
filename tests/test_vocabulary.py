@@ -14,12 +14,8 @@ class TestVocabulary(TestCase):
     def test_add_from_counter_all_values_with_default(self):
         vocab = Vocabulary()
         new_token_to_id = Counter({"a": 3, "b": 1, "c": 4, "d": 1})
-        vocab.add_from_counter(
-            "token_to_id", new_token_to_id, add_values=["<SOS>", "<EOS>"]
-        )
-        self.assertDictEqual(
-            vocab.token_to_id, {"<SOS>": 0, "<EOS>": 1, "c": 2, "a": 3, "b": 4, "d": 5}
-        )
+        vocab.add_from_counter("token_to_id", new_token_to_id, add_values=["<SOS>", "<EOS>"])
+        self.assertDictEqual(vocab.token_to_id, {"<SOS>": 0, "<EOS>": 1, "c": 2, "a": 3, "b": 4, "d": 5})
 
     def test_add_from_counter_n_most_values(self):
         vocab = Vocabulary()
@@ -31,14 +27,9 @@ class TestVocabulary(TestCase):
         vocab = Vocabulary()
         new_token_to_id = Counter({"a": 3, "b": 1, "c": 4, "d": 1})
         vocab.add_from_counter(
-            "token_to_id",
-            new_token_to_id,
-            n_most_values=4,
-            add_values=["<SOS>", "<EOS>"],
+            "token_to_id", new_token_to_id, n_most_values=4, add_values=["<SOS>", "<EOS>"],
         )
-        self.assertDictEqual(
-            vocab.token_to_id, {"<SOS>": 0, "<EOS>": 1, "c": 2, "a": 3}
-        )
+        self.assertDictEqual(vocab.token_to_id, {"<SOS>": 0, "<EOS>": 1, "c": 2, "a": 3})
 
     def test_add_from_counter_raise_error(self):
         vocab = Vocabulary()

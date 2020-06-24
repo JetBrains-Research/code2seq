@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import numpy
 
+from configs import PreprocessingConfig
 from data_loaders import BufferedPathContext, Vocabulary
 from utils.common import SOS, EOS, PAD, UNK
 
@@ -13,7 +14,8 @@ class TestBufferedPathContext(TestCase):
             type_to_id={SOS: 1, EOS: 2, PAD: 0, UNK: 3, "a": 4, "b": 5, "c": 6},
             label_to_id={SOS: 2, EOS: 0, PAD: 1, UNK: 3, "a": 4, "b": 5, "c": 6},
         )
-        buffered_path_context = BufferedPathContext(3, 3, 3, 3, 2, vocab)
+        config = PreprocessingConfig("", 3, 3, 3, -1, -1, 3, 2)
+        buffered_path_context = BufferedPathContext(config, vocab)
 
         buffered_path_context.store_path_context(0, [4], [[4], [5, 6]], [[4, 5], [6]], [[6], [4, 5]])
         buffered_path_context.store_path_context(1, [], [[], []], [[], []], [[], []])
@@ -48,6 +50,7 @@ class TestBufferedPathContext(TestCase):
 
     def test_store_path_context_raise_error(self):
         vocab = Vocabulary(token_to_id={SOS: 0, PAD: 1}, type_to_id={SOS: 1, PAD: 2}, label_to_id={SOS: 2, PAD: 0})
-        buffered_path_context = BufferedPathContext(1, 1, 1, 1, 3, vocab)
+        config = PreprocessingConfig("", 3, 3, 3, -1, -1, 3, 2)
+        buffered_path_context = BufferedPathContext(config, vocab)
         with self.assertRaises(ValueError):
             buffered_path_context.store_path_context(0, [], [[], []], [[]], [[], [], []])

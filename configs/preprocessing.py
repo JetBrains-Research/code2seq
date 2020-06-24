@@ -13,6 +13,8 @@ class PreprocessingConfig:
     max_target_parts: int
     subtoken_vocab_max_size: int = -1
     target_vocab_max_size: int = -1
+    buffer_size: int = 10_000
+    max_paths_per_label: int = 1000
     data_root: str = "data"
     data_path: str = None
 

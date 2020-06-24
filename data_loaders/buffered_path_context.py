@@ -1,7 +1,9 @@
+import pickle
 from typing import List
 
 import numpy
 
+from configs import PreprocessingConfig
 from data_loaders import Vocabulary
 from utils.common import PAD, SOS, EOS
 
@@ -16,29 +18,24 @@ class BufferedPathContext:
     """
 
     def __init__(
-        self,
-        buffer_size: int,
-        max_target_parts: int,
-        max_name_parts: int,
-        max_path_length: int,
-        paths_per_label: int,
-        vocab: Vocabulary,
+        self, config: PreprocessingConfig, vocab: Vocabulary,
     ):
         self.vocab = vocab
-        self.max_target_parts = max_target_parts
-        self.max_name_parts = max_name_parts
-        self.max_path_length = max_path_length
-        self.paths_per_label = paths_per_label
+        self.buffer_size = config.buffer_size
+        self.max_target_parts = config.max_target_parts
+        self.max_name_parts = config.max_name_parts
+        self.max_path_length = config.max_path_length
+        self.max_paths_per_label = config.max_paths_per_label
 
-        self.labels_array = numpy.full((max_target_parts + 1, buffer_size), self.vocab.label_to_id[PAD])
+        self.labels_array = numpy.full((self.max_target_parts + 1, self.buffer_size), self.vocab.label_to_id[PAD])
         self.from_tokens_array = numpy.full(
-            (max_name_parts + 1, buffer_size, paths_per_label), self.vocab.token_to_id[PAD]
+            (self.max_name_parts + 1, self.buffer_size, self.max_paths_per_label), self.vocab.token_to_id[PAD]
         )
         self.path_types_array = numpy.full(
-            (max_path_length + 1, buffer_size, paths_per_label), self.vocab.type_to_id[PAD]
+            (self.max_path_length + 1, self.buffer_size, self.max_paths_per_label), self.vocab.type_to_id[PAD]
         )
         self.to_tokens_array = numpy.full(
-            (max_name_parts + 1, buffer_size, paths_per_label), self.vocab.token_to_id[PAD]
+            (self.max_name_parts + 1, self.buffer_size, self.max_paths_per_label), self.vocab.token_to_id[PAD]
         )
 
         self.labels_array[0, :] = self.vocab.label_to_id[SOS]
@@ -62,14 +59,14 @@ class BufferedPathContext:
         path_types: List[List[int]],
         to_tokens: List[List[int]],
     ):
-        if not (len(from_tokens) == len(path_types) == len(to_tokens) == self.paths_per_label):
-            raise ValueError(f"Wrong number of path contexts, should be {self.paths_per_label}")
+        if not (len(from_tokens) == len(path_types) == len(to_tokens) <= self.max_paths_per_label):
+            raise ValueError(f"Wrong number of path contexts: should be less {self.max_paths_per_label}")
 
         # store labels
         store_labels = self._prepare_to_store(label, self.max_target_parts, self.vocab.label_to_id[EOS])
         self.labels_array[1 : len(store_labels) + 1, pos] = store_labels
 
-        for i in range(self.paths_per_label):
+        for i in range(len(from_tokens)):
             # store from token
             store_from_tokens = self._prepare_to_store(from_tokens[i], self.max_name_parts, self.vocab.token_to_id[EOS])
             self.from_tokens_array[1 : len(store_from_tokens) + 1, pos, i] = store_from_tokens
@@ -79,3 +76,7 @@ class BufferedPathContext:
             # store to token
             store_to_token = self._prepare_to_store(to_tokens[i], self.max_name_parts, self.vocab.token_to_id[EOS])
             self.to_tokens_array[1 : len(store_to_token) + 1, pos, i] = store_to_token
+
+    def dump(self, path: str):
+        with open(path, "wb") as pickle_file:
+            pickle.dump(self, pickle_file)

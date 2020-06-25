@@ -52,23 +52,29 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
     holdout_data_path = path.join(config.data_path, f"{config.dataset_name}.{holdout_name}.c2s")
     holdout_output_folder = path.join(config.data_path, holdout_name)
     create_folder(holdout_output_folder)
-    buffered_path_context = BufferedPathContext(config, vocab)
     label_unk = vocab.label_to_id[UNK]
     with open(holdout_data_path, "r") as holdout_file:
+        labels, from_tokens, path_types, to_tokens = [], [], [], []
         for i, line in tqdm(enumerate(holdout_file), total=count_lines_in_file(holdout_data_path)):
             label, *path_contexts = line.split()
-            label_ids = [vocab.label_to_id.get(_l, label_unk) for _l in label.split("|")]
+            labels.append([vocab.label_to_id.get(_l, label_unk) for _l in label.split("|")])
             from_tokens_ids, path_types_ids, to_tokens_ids = list(
                 zip(*[_convert_path_context_to_ids(pc, vocab) for pc in path_contexts])
             )
-            buffered_path_context.store_path_context(label_ids, from_tokens_ids, path_types_ids, to_tokens_ids)
+            from_tokens.append(from_tokens_ids)
+            path_types.append(path_types_ids)
+            to_tokens.append(to_tokens_ids)
 
-            if len(buffered_path_context.labels_array) == config.buffer_size:
+            if len(labels) == config.buffer_size:
+                buffered_path_context = BufferedPathContext(config, vocab, labels, from_tokens, path_types, to_tokens)
                 buffered_path_context.dump(
                     path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
                 )
-                buffered_path_context = BufferedPathContext(config, vocab)
-    buffered_path_context.dump(path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl"))
+                labels, from_tokens, path_types, to_tokens = [], [], [], []
+        if len(labels) > 0:
+            buffered_path_context.dump(
+                path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
+            )
 
 
 def preprocess(config: PreprocessingConfig):

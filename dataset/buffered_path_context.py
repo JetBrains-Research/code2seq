@@ -1,6 +1,8 @@
 import pickle
 from typing import List, Dict
 
+import numpy
+
 from configs import PreprocessingConfig
 from dataset import Vocabulary
 from utils.common import PAD, SOS, EOS
@@ -62,4 +64,4 @@ class BufferedPathContext:
             pickle.dump(self, pickle_file)
 
     def __len__(self):
-        return len(self.labels_array)
+        return len(self.labels)

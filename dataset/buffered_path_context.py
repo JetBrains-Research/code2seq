@@ -75,4 +75,5 @@ class BufferedPathContext:
             "from_token": self.from_tokens[:, path_slice],
             "path_types": self.path_types[:, path_slice],
             "to_token": self.to_tokens[:, path_slice],
+            "paths_for_label": self.paths_for_label[idx],
         }

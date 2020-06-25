@@ -7,7 +7,7 @@ from typing import Tuple, List
 from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
-from data_loaders import Vocabulary, BufferedPathContext
+from dataset import Vocabulary, BufferedPathContext
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
 

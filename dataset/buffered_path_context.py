@@ -4,7 +4,7 @@ from typing import List, Dict
 import numpy
 
 from configs import PreprocessingConfig
-from data_loaders import Vocabulary
+from dataset import Vocabulary
 from utils.common import PAD, SOS, EOS
 
 

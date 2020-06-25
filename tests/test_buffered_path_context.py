@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy
 
 from configs import PreprocessingConfig
-from data_loaders import BufferedPathContext, Vocabulary
+from dataset import BufferedPathContext, Vocabulary
 from utils.common import SOS, EOS, PAD, UNK
 
 

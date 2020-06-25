@@ -8,26 +8,44 @@ from utils.common import PAD, SOS, EOS
 
 class BufferedPathContext:
     """Class for storing buffered path contexts
-    labels_array: list of shape [buffer_size; max_target_parts + 1]
-    from\to_tokens_array: list of shape [buffer_size; paths_for_labels (unique per sample); max_name_parts + 1]
-    path_types_array: list of shape [buffer_size; paths_for_labels (unique per sample); max_path_length + 1]
+    labels: numpy array [max_target_parts + 1; buffer size]
+    from\to_tokens: numpy array [max_name_parts + 1; buffer_size * paths_for_labels (unique per sample)]
+    path_types: numpy array [max_path_length + 1; buffer_size * paths_for_labels (unique per sample)]
+    paths_for_labels: list [buffer size] -- number of paths for each label
 
     +1 for SOS token, put EOS if enough space
     """
 
     def __init__(
-        self, config: PreprocessingConfig, vocab: Vocabulary,
+        self,
+        config: PreprocessingConfig,
+        vocab: Vocabulary,
+        labels: List[List[int]],
+        from_tokens: List[List[List[int]]],
+        path_types: List[List[List[int]]],
+        to_tokens: List[List[List[int]]],
     ):
-        self.vocab = vocab
-        self.buffer_size = config.buffer_size
-        self.max_target_parts = config.max_target_parts
-        self.max_name_parts = config.max_name_parts
-        self.max_path_length = config.max_path_length
+        if not (len(from_tokens) == len(path_types) == len(to_tokens)):
+            raise ValueError(f"Unequal sizes of array with path parts")
+        if len(labels) != len(from_tokens):
+            raise ValueError(f"Number of labels is different to number of paths")
 
-        self.labels_array = []
-        self.from_tokens_array = []
-        self.path_types_array = []
-        self.to_tokens_array = []
+        self.paths_for_label = [len(pc) for pc in from_tokens]
+        total_number_of_paths = sum(self.paths_for_label)
+        buffer_size = len(labels)
+        self.labels = numpy.empty((config.max_target_parts + 1, buffer_size))
+        self.from_tokens = numpy.empty((config.max_name_parts + 1, total_number_of_paths))
+        self.path_types = numpy.empty((config.max_path_length + 1, total_number_of_paths))
+        self.to_tokens = numpy.empty((config.max_name_parts + 1, total_number_of_paths))
+
+        cur_path_idx = 0
+        for sample in range(buffer_size):
+            self.labels[:, sample] = self._prepare_to_store(labels[sample], config.max_target_parts, vocab.label_to_id)
+            for ft, pt, tt in zip(from_tokens[sample], path_types[sample], to_tokens[sample]):
+                self.from_tokens[:, cur_path_idx] = self._prepare_to_store(ft, config.max_name_parts, vocab.token_to_id)
+                self.path_types[:, cur_path_idx] = self._prepare_to_store(pt, config.max_path_length, vocab.type_to_id)
+                self.to_tokens[:, cur_path_idx] = self._prepare_to_store(tt, config.max_name_parts, vocab.token_to_id)
+                cur_path_idx += 1
 
     @staticmethod
     def _prepare_to_store(values: List[int], max_len: int, to_id: Dict) -> List[int]:
@@ -38,34 +56,6 @@ class BufferedPathContext:
             used_len += 1
         result += [to_id[PAD]] * (max_len - used_len)
         return result
-
-    def store_path_context(
-        self, label: List[int], from_tokens: List[List[int]], path_types: List[List[int]], to_tokens: List[List[int]],
-    ):
-        if len(self.labels_array) == self.buffer_size:
-            raise RuntimeError(f"Too many path contexts, create another buffered storage")
-        if not (len(from_tokens) == len(path_types) == len(to_tokens)):
-            raise ValueError(f"Unequal sizes of array with path parts")
-
-        # store labels
-        self.labels_array.append(self._prepare_to_store(label, self.max_target_parts, self.vocab.label_to_id))
-
-        self.from_tokens_array.append([])
-        self.path_types_array.append([])
-        self.to_tokens_array.append([])
-        for i in range(len(from_tokens)):
-            # store from token
-            self.from_tokens_array[-1].append(
-                self._prepare_to_store(from_tokens[i], self.max_name_parts, self.vocab.token_to_id)
-            )
-            # store path types
-            self.path_types_array[-1].append(
-                self._prepare_to_store(path_types[i], self.max_path_length, self.vocab.type_to_id)
-            )
-            # store to token
-            self.to_tokens_array[-1].append(
-                self._prepare_to_store(to_tokens[i], self.max_name_parts, self.vocab.token_to_id)
-            )
 
     def dump(self, path: str):
         with open(path, "wb") as pickle_file:

@@ -1,5 +1,5 @@
 import pickle
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy
 
@@ -33,12 +33,14 @@ class BufferedPathContext:
             raise ValueError(f"Number of labels is different to number of paths")
 
         self.paths_for_label = [len(pc) for pc in from_tokens]
-        total_number_of_paths = sum(self.paths_for_label)
+        self._end_idx = numpy.cumsum(self.paths_for_label).tolist()
+        self._start_idx = [0] + self._end_idx[:-1]
+
         buffer_size = len(labels)
         self.labels = numpy.empty((config.max_target_parts + 1, buffer_size))
-        self.from_tokens = numpy.empty((config.max_name_parts + 1, total_number_of_paths))
-        self.path_types = numpy.empty((config.max_path_length + 1, total_number_of_paths))
-        self.to_tokens = numpy.empty((config.max_name_parts + 1, total_number_of_paths))
+        self.from_tokens = numpy.empty((config.max_name_parts + 1, self._end_idx[-1]))
+        self.path_types = numpy.empty((config.max_path_length + 1, self._end_idx[-1]))
+        self.to_tokens = numpy.empty((config.max_name_parts + 1, self._end_idx[-1]))
 
         cur_path_idx = 0
         for sample in range(buffer_size):
@@ -65,3 +67,12 @@ class BufferedPathContext:
 
     def __len__(self):
         return len(self.labels)
+
+    def __item__(self, idx: int) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray]:
+        path_slice = slice(self._start_idx[idx], self._end_idx[idx])
+        return (
+            self.labels[:, idx],
+            self.from_tokens[:, path_slice],
+            self.path_types[:, path_slice],
+            self.to_tokens[:, path_slice],
+        )

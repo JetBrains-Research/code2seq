@@ -32,7 +32,8 @@ class BufferedPathContext:
         if len(labels) != len(from_tokens):
             raise ValueError(f"Number of labels is different to number of paths")
 
-        total_number_of_paths = sum([len(pc) for pc in from_tokens])
+        self.paths_for_label = [len(pc) for pc in from_tokens]
+        total_number_of_paths = sum(self.paths_for_label)
         buffer_size = len(labels)
         self.labels = numpy.empty((config.max_target_parts + 1, buffer_size))
         self.from_tokens = numpy.empty((config.max_name_parts + 1, total_number_of_paths))

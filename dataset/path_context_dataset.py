@@ -35,18 +35,12 @@ class PathContextDataset(IterableDataset):
     def __iter__(self):
         return self
 
-    def __next__(self) -> Dict:
+    def __next__(self) -> Dict[str, numpy.ndarray]:
         if self._cur_sample_idx == len(self._order):
             self._cur_file_idx += 1
             if self._cur_file_idx == len(self._buffered_files_paths):
                 raise StopIteration()
             self._prepare_buffer(self._cur_file_idx)
         sample_pos = self._order[self._cur_sample_idx]
-        sample = {
-            "label": self._cur_buffered_path_context.labels_array[sample_pos],
-            "from_tokens": self._cur_buffered_path_context.from_tokens_array[sample_pos],
-            "path_types": self._cur_buffered_path_context.path_types_array[sample_pos],
-            "to_tokens": self._cur_buffered_path_context.to_tokens_array[sample_pos],
-        }
-        self._cur_sample_idx += 1
+        sample = self._cur_buffered_path_context[sample_pos]
         return sample

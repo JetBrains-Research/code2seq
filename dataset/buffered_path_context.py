@@ -1,5 +1,5 @@
 import pickle
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 import numpy
 
@@ -68,11 +68,11 @@ class BufferedPathContext:
     def __len__(self):
         return len(self.labels)
 
-    def __item__(self, idx: int) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray]:
+    def __getitem__(self, idx: int) -> Dict[str, numpy.ndarray]:
         path_slice = slice(self._start_idx[idx], self._end_idx[idx])
-        return (
-            self.labels[:, idx],
-            self.from_tokens[:, path_slice],
-            self.path_types[:, path_slice],
-            self.to_tokens[:, path_slice],
-        )
+        return {
+            "label": self.labels[:, idx],
+            "from_token": self.from_tokens[:, path_slice],
+            "path_types": self.path_types[:, path_slice],
+            "to_token": self.to_tokens[:, path_slice],
+        }

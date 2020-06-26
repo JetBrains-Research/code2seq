@@ -1,4 +1,5 @@
-from .preprocessing import PreprocessingConfig
+from .preprocessing_config import PreprocessingConfig
+from .code2seq_config import Code2SeqConfig
 
 
 def get_preprocessing_config_code2seq_params(dataset_name: str):

@@ -1,7 +1,7 @@
 import pickle
 from os import listdir
 from os.path import exists, join
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy
 from torch.utils.data import IterableDataset
@@ -35,12 +35,12 @@ class PathContextDataset(IterableDataset):
     def __iter__(self):
         return self
 
-    def __next__(self) -> Dict[str, numpy.ndarray]:
+    def __next__(self) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray]:
         if self._cur_sample_idx == len(self._order):
             self._cur_file_idx += 1
             if self._cur_file_idx == len(self._buffered_files_paths):
                 raise StopIteration()
             self._prepare_buffer(self._cur_file_idx)
-        sample_pos = self._order[self._cur_sample_idx]
-        sample = self._cur_buffered_path_context[sample_pos]
+        sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
+        self._cur_sample_idx += 1
         return sample

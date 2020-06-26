@@ -1,9 +1,10 @@
 import pickle
 from os import listdir
 from os.path import exists, join
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import numpy
+import torch
 from torch.utils.data import IterableDataset
 
 from dataset import BufferedPathContext
@@ -44,3 +45,22 @@ class PathContextDataset(IterableDataset):
         sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
         self._cur_sample_idx += 1
         return sample
+
+
+def collate_path_contexts(
+    samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray]]
+) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
+    from_tokens = [torch.tensor(sample[0]["from_token"]) for sample in samples]
+    path_types = [torch.tensor(sample[0]["path_types"]) for sample in samples]
+    to_tokens = [torch.tensor(sample[0]["to_token"]) for sample in samples]
+    paths_for_label = [sample[0]["paths_for_label"] for sample in samples]
+    labels = [torch.tensor(sample[1]) for sample in samples]
+    return (
+        {
+            "from_tokens": torch.cat(from_tokens, dim=-1),
+            "path_types": torch.cat(path_types, dim=-1),
+            "to_tokens": torch.cat(to_tokens, dim=-1),
+            "paths_for_label": torch.tensor(paths_for_label),
+        },
+        torch.cat(labels, dim=-1),
+    )

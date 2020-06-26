@@ -77,5 +77,5 @@ class BufferedPathContext:
                 "to_token": self.to_tokens[:, path_slice],
                 "paths_for_label": self.paths_for_label[idx],
             },
-            self.labels[:, idx],
+            self.labels[:, [idx]],
         )

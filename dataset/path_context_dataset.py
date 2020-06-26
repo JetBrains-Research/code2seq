@@ -29,7 +29,7 @@ class PathContextDataset(IterableDataset):
         assert file_idx < len(self._buffered_files_paths)
         with open(self._buffered_files_paths[file_idx], "rb") as pickle_file:
             self._cur_buffered_path_context: BufferedPathContext = pickle.load(pickle_file)
-        self._order = range(len(self._cur_buffered_path_context))
+        self._order = numpy.arange(len(self._cur_buffered_path_context))
         if self.shuffle:
             self._order = numpy.random.permutation(self._order)
         self._cur_sample_idx = 0
@@ -40,7 +40,7 @@ class PathContextDataset(IterableDataset):
     def __next__(self) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray]:
         if self._cur_sample_idx == len(self._order):
             self._cur_file_idx += 1
-            if self._cur_file_idx == len(self._buffered_files_paths):
+            if self._cur_file_idx >= len(self._buffered_files_paths):
                 raise StopIteration()
             self._prepare_buffer(self._cur_file_idx)
         sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]

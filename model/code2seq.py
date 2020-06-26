@@ -1,6 +1,7 @@
 from typing import Tuple, Dict
 
 from pytorch_lightning.core.lightning import LightningModule
+from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 
 from configs import Code2SeqConfig
@@ -18,8 +19,8 @@ class Code2Seq(LightningModule):
     def training_step(self, batch: Tuple, batch_idx: int) -> Dict:
         pass
 
-    def configure_optimizers(self):
-        pass
+    def configure_optimizers(self) -> Optimizer:
+        return Adam(self.parameters(), self.config.learning_rate)
 
     def train_dataloader(self) -> DataLoader:
         dataset = PathContextDataset(self.config.train_data_path, self.config.shuffle_data)

@@ -7,4 +7,5 @@ class Code2SeqConfig:
     val_data_path: str
     batch_size: int
     val_batch_size: int
+    learning_rate: float
     shuffle_data: bool = True

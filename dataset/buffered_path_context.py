@@ -5,7 +5,7 @@ import numpy
 
 from configs import PreprocessingConfig
 from dataset import Vocabulary
-from utils.common import PAD, SOS, EOS
+from utils.common import PAD, SOS, EOS, FROM_TOKEN, PATH_TYPES, TO_TOKEN, PATHS_FOR_LABEL
 
 
 class BufferedPathContext:
@@ -72,10 +72,10 @@ class BufferedPathContext:
         path_slice = slice(self._start_idx[idx], self._end_idx[idx])
         return (
             {
-                "from_token": self.from_tokens[:, path_slice],
-                "path_types": self.path_types[:, path_slice],
-                "to_token": self.to_tokens[:, path_slice],
-                "paths_for_label": self.paths_for_label[idx],
+                FROM_TOKEN: self.from_tokens[:, path_slice],
+                PATH_TYPES: self.path_types[:, path_slice],
+                TO_TOKEN: self.to_tokens[:, path_slice],
+                PATHS_FOR_LABEL: self.paths_for_label[idx],
             },
             self.labels[:, [idx]],
         )

@@ -3,10 +3,17 @@ from os import mkdir
 from os.path import exists
 from shutil import rmtree
 
+# sequence service tokens
 SOS = "<SOS>"
 EOS = "<EOS>"
 PAD = "<PAD>"
 UNK = "<UNK>"
+
+# buffered path context dict keys
+FROM_TOKEN = "from_token"
+PATH_TYPES = "path_types"
+TO_TOKEN = "to_token"
+PATHS_FOR_LABEL = "paths_for_label"
 
 
 def count_lines_in_file(file_path: str) -> int:

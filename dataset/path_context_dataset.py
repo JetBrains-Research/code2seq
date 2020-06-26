@@ -8,6 +8,7 @@ import torch
 from torch.utils.data import IterableDataset
 
 from dataset import BufferedPathContext
+from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN, PATHS_FOR_LABEL
 
 
 class PathContextDataset(IterableDataset):
@@ -50,17 +51,17 @@ class PathContextDataset(IterableDataset):
 def collate_path_contexts(
     samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray]]
 ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
-    from_tokens = [torch.tensor(sample[0]["from_token"]) for sample in samples]
-    path_types = [torch.tensor(sample[0]["path_types"]) for sample in samples]
-    to_tokens = [torch.tensor(sample[0]["to_token"]) for sample in samples]
-    paths_for_label = [sample[0]["paths_for_label"] for sample in samples]
+    from_tokens = [torch.tensor(sample[0][FROM_TOKEN]) for sample in samples]
+    path_types = [torch.tensor(sample[0][PATH_TYPES]) for sample in samples]
+    to_tokens = [torch.tensor(sample[0][TO_TOKEN]) for sample in samples]
+    paths_for_label = [sample[0][PATHS_FOR_LABEL] for sample in samples]
     labels = [torch.tensor(sample[1]) for sample in samples]
     return (
         {
-            "from_tokens": torch.cat(from_tokens, dim=-1),
-            "path_types": torch.cat(path_types, dim=-1),
-            "to_tokens": torch.cat(to_tokens, dim=-1),
-            "paths_for_label": torch.tensor(paths_for_label),
+            FROM_TOKEN: torch.cat(from_tokens, dim=-1),
+            PATH_TYPES: torch.cat(path_types, dim=-1),
+            TO_TOKEN: torch.cat(to_tokens, dim=-1),
+            PATHS_FOR_LABEL: torch.tensor(paths_for_label),
         },
         torch.cat(labels, dim=-1),
     )

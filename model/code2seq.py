@@ -34,11 +34,24 @@ class Code2Seq(LightningModule):
 
     def val_dataloader(self) -> DataLoader:
         dataset = PathContextDataset(self.config.val_data_path, False)
-        data_loader = DataLoader(dataset, batch_size=self.config_val_batch_size, collate_fn=collate_path_contexts)
+        data_loader = DataLoader(dataset, batch_size=self.config.val_batch_size, collate_fn=collate_path_contexts)
         return data_loader
 
     def validation_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor], batch_idx: int) -> Dict:
         pass
 
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:
+        pass
+
+    # ===== TEST BLOCK =====
+
+    def test_dataloader(self) -> DataLoader:
+        dataset = PathContextDataset(self.config.test_data_path, False)
+        data_loader = DataLoader(dataset, batch_size=self.config.val_batch_size, collate_fn=collate_path_contexts)
+        return data_loader
+
+    def test_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor], batch_idx: int) -> Dict:
+        pass
+
+    def test_epoch_end(self, outputs: List[Dict]) -> Dict:
         pass

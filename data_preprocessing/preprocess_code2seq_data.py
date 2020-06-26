@@ -7,7 +7,7 @@ from typing import Tuple, List
 from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
-from data_loaders import Vocabulary, BufferedPathContext
+from dataset import Vocabulary, BufferedPathContext
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
 
@@ -72,6 +72,7 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
                 )
                 labels, from_tokens, path_types, to_tokens = [], [], [], []
         if len(labels) > 0:
+            buffered_path_context = BufferedPathContext(config, vocab, labels, from_tokens, path_types, to_tokens)
             buffered_path_context.dump(
                 path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
             )

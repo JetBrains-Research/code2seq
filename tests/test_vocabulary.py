@@ -1,7 +1,7 @@
 from collections import Counter
 from unittest import TestCase
 
-from data_loaders import Vocabulary
+from dataset import Vocabulary
 
 
 class TestVocabulary(TestCase):

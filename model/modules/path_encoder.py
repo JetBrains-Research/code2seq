@@ -35,8 +35,8 @@ class PathEncoder(nn.Module):
         path_types = samples[PATH_TYPES]
 
         # [total paths; embedding size]
-        from_tokens_sum = self.subtoken_embedding(from_token).sum(0)
-        to_tokens_sum = self.subtoken_embedding(to_token).sum(0)
+        from_tokens_sum = self.embedding_dropout(self.subtoken_embedding(from_token)).sum(0)
+        to_tokens_sum = self.embedding_dropout(self.subtoken_embedding(to_token)).sum(0)
 
         # [max path length + 1; total paths; embedding size]
         path_types_embed = self.type_embedding(path_types)

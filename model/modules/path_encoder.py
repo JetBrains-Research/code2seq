@@ -42,8 +42,8 @@ class PathEncoder(nn.Module):
         path_types_embed = self.type_embedding(path_types)
         # [max path length + 1; total paths; rnn size (*2)]
         path_types_lstm, (_, _) = self.path_lstm(path_types_embed)
-        # [total_paths; rnn size]
-        last_path_state = path_types_embed[-1]
+        # [total_paths; rnn size (*2)]
+        last_path_state = path_types_lstm[-1]
         last_path_state = self.rnn_dropout(last_path_state)
 
         # [total_paths; 2 * embedding size + rnn size (*2)]

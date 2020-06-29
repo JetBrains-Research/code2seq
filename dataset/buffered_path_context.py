@@ -37,10 +37,10 @@ class BufferedPathContext:
         self._start_idx = [0] + self._end_idx[:-1]
 
         buffer_size = len(labels)
-        self.labels = numpy.empty((config.max_target_parts + 1, buffer_size))
-        self.from_tokens = numpy.empty((config.max_name_parts + 1, self._end_idx[-1]))
-        self.path_types = numpy.empty((config.max_path_length + 1, self._end_idx[-1]))
-        self.to_tokens = numpy.empty((config.max_name_parts + 1, self._end_idx[-1]))
+        self.labels = numpy.empty((config.max_target_parts + 1, buffer_size), dtype=numpy.int)
+        self.from_tokens = numpy.empty((config.max_name_parts + 1, self._end_idx[-1]), dtype=numpy.int)
+        self.path_types = numpy.empty((config.max_path_length + 1, self._end_idx[-1]), dtype=numpy.int)
+        self.to_tokens = numpy.empty((config.max_name_parts + 1, self._end_idx[-1]), dtype=numpy.int)
 
         cur_path_idx = 0
         for sample in range(buffer_size):

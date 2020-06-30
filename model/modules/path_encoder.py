@@ -9,15 +9,19 @@ from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES, PAD, PATHS_FOR_LABEL
 
 
 class PathEncoder(nn.Module):
-    def __init__(self, vocab: Vocabulary, config: EncoderConfig, out_size: int):
+    def __init__(
+        self,
+        config: EncoderConfig,
+        out_size: int,
+        n_subtokens: int,
+        subtoken_pad_id: int,
+        n_types: int,
+        type_pad_id: int,
+    ):
         super().__init__()
-        self.subtoken_embedding = nn.Embedding(
-            len(vocab.token_to_id), config.embedding_size, padding_idx=vocab.token_to_id[PAD]
-        )
+        self.subtoken_embedding = nn.Embedding(n_subtokens, config.embedding_size, padding_idx=subtoken_pad_id)
 
-        self.type_embedding = nn.Embedding(
-            len(vocab.type_to_id), config.embedding_size, padding_idx=vocab.type_to_id[PAD]
-        )
+        self.type_embedding = nn.Embedding(n_types, config.embedding_size, padding_idx=type_pad_id)
         self.path_lstm = nn.LSTM(config.embedding_size, config.rnn_size, bidirectional=config.use_bi_rnn)
 
         self.embedding_dropout = nn.Dropout(config.embedding_dropout)

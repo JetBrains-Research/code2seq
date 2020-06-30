@@ -1,4 +1,5 @@
 import pickle
+from os.path import join
 from unittest import TestCase
 
 import torch
@@ -6,13 +7,14 @@ import torch
 from configs import EncoderConfig
 from dataset.path_context_dataset import collate_path_contexts
 from model.modules import PathEncoder
+from tests.tools import get_path_to_test_data
 from utils.common import PATHS_FOR_LABEL
 
 
 class TestPathEncoder(TestCase):
 
-    _test_vocab_path = "resources/java-test/vocabulary.pkl"
-    _test_data_path = "resources/java-test/train/buffered_paths_0.pkl"
+    _test_vocab_path = join(get_path_to_test_data(), "vocabulary.pkl")
+    _test_data_path = join(get_path_to_test_data(), "train", "buffered_paths_0.pkl")
     _hidden_size = 64
 
     def test_forward(self):

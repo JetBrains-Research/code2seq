@@ -4,7 +4,6 @@ import torch
 from torch import nn
 
 from configs import DecoderConfig
-from dataset import Vocabulary
 from utils.common import segment_sizes_to_slices
 
 
@@ -12,29 +11,37 @@ class PathDecoder(nn.Module):
 
     _negative_value = -1e9
 
-    def __init__(self, config: DecoderConfig, vocab: Vocabulary, encoder_size: int, out_size: int):
+    def __init__(
+        self,
+        config: DecoderConfig,
+        encoder_size: int,
+        out_size: int,
+        output_length: int,
+        sos_token: int,
+        pad_token: int,
+    ):
         super().__init__()
+        self.sos_token = sos_token
+        self.output_length = output_length
         self.out_size = out_size
         self.config = config
 
-        self.target_embedding = nn.Embedding(len(vocab.label_to_id), config.decoder_size)
+        self.attention = nn.Linear(encoder_size, config.decoder_size)
+        self.target_embedding = nn.Embedding(self.out_size, config.decoder_size, padding_idx=pad_token)
         self.decoder_lstm = nn.LSTM(
             config.decoder_size + encoder_size, encoder_size, num_layers=config.num_decoder_layers
         )
-        self.attention = nn.Linear(encoder_size, config.decoder_size)
+        self.dropout = nn.Dropout(config.rnn_dropout)
         self.projection_layer = nn.Linear(config.decoder_size, self.out_size)
 
-    def forward(
-        self, encoded_paths: torch.Tensor, target_labels: torch.Tensor, paths_for_label: List[int]
-    ) -> torch.Tensor:
+    def forward(self, encoded_paths: torch.Tensor, paths_for_label: List[int]) -> torch.Tensor:
         """Decode given paths into sequence
 
         :param encoded_paths: [n paths; encoder size]
-        :param target_labels: [max output length; batch size]
         :param paths_for_label: [n1, n2, ..., nk] sum = n paths
         :return:
         """
-        max_output_length, batch_size = target_labels.shape
+        batch_size = len(paths_for_label)
 
         # [batch size; context size; encoder size]
         max_context_per_batch = max(paths_for_label)
@@ -47,19 +54,19 @@ class PathDecoder(nn.Module):
         attended_batched_context = self.attention(batched_context)
 
         # [batch size; encoder size]
-        initial_state = batched_context.sum(dim=1) / paths_for_label
+        initial_state = batched_context.sum(dim=1) / torch.tensor(paths_for_label).reshape(-1, 1)
         # [n layers; batch size; encoder size]
         h_prev = initial_state.unsqueeze(0).repeat(self.config.num_decoder_layers, 1, 1)
         c_prev = initial_state.unsqueeze(0).repeat(self.config.num_decoder_layers, 1, 1)
 
         # [target len; batch size; vocab size]
-        output = encoded_paths.new_zeros((max_output_length, batch_size, self.out_size))
-        # [batch size] (first row always consists of <SOS> tokens)
-        current_input = target_labels[0:]
-        for step in range(1, max_output_length):
+        output = encoded_paths.new_zeros((self.output_length, batch_size, self.out_size))
+        # [batch size]
+        current_input = torch.full((batch_size,), self.sos_token, dtype=torch.long)
+        for step in range(1, self.output_length):
             # 1. calculate attention weights.
             # [batch size; context size]
-            attn_weights = torch.bmm(attended_batched_context, h_prev[-1].unsqueeze(1))
+            attn_weights = torch.bmm(attended_batched_context, h_prev[-1].unsqueeze(1).transpose(1, 2))
             attn_weights[attention_mask] = self._negative_value
             scores = nn.functional.softmax(attn_weights, dim=-1)
 
@@ -68,9 +75,11 @@ class PathDecoder(nn.Module):
             attended_context = (batched_context * scores).sum(1)
 
             # 3. prepare lstm input.
+            # [batch size; decoder size]
             input_embedding = self.target_embedding(current_input)
             # [1; batch size; decoder size + encoder size]
-            lstm_input = torch.cat([input_embedding, attended_context]).unsqueeze(1)
+            lstm_input = torch.cat([input_embedding, attended_context], dim=1).unsqueeze(0)
+            lstm_input = self.dropout(lstm_input)
 
             # 4. do decoder step.
             # [1; batch size; encoder size]

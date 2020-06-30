@@ -8,6 +8,7 @@ class DecoderConfig:
     beam_width: int = 0
 
 
+@dataclass(frozen=True)
 class EncoderConfig:
     embedding_size: int
     rnn_size: int

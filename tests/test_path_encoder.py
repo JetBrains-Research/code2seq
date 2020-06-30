@@ -27,11 +27,10 @@ class TestPathEncoder(TestCase):
         with open(self._test_data_path, "rb") as pkl_file:
             buffered_path_contexts = pickle.load(pkl_file)
 
-        samples, true_labels = collate_path_contexts(
+        samples, true_labels, paths_for_label = collate_path_contexts(
             [buffered_path_contexts[i] for i in range(len(buffered_path_contexts))]
         )
 
         out = model(samples)
-        number_of_paths = sum(samples[PATHS_FOR_LABEL])
-        self.assertTupleEqual((number_of_paths, self._hidden_size), out[0].shape)
-        torch.testing.assert_allclose(samples[PATHS_FOR_LABEL], out[1])
+        number_of_paths = sum(paths_for_label)
+        self.assertTupleEqual((number_of_paths, self._hidden_size), out.shape)

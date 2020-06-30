@@ -26,12 +26,12 @@ class TestPathDecoder(TestCase):
         with open(self._test_data_path, "rb") as pkl_file:
             buffered_path_contexts = pickle.load(pkl_file)
 
-        samples, true_labels = collate_path_contexts(
+        samples, true_labels, paths_for_labels = collate_path_contexts(
             [buffered_path_contexts[i] for i in range(len(buffered_path_contexts))]
         )
-        number_of_paths = sum(samples[PATHS_FOR_LABEL])
+        number_of_paths = sum(paths_for_labels)
         fake_encoder_input = torch.rand(number_of_paths, self._hidden_size)
 
-        output = model(fake_encoder_input, samples[PATHS_FOR_LABEL].tolist())
+        output = model(fake_encoder_input, paths_for_labels)
 
-        self.assertTupleEqual((self._target_length, len(samples[PATHS_FOR_LABEL]), self._out_size), output.shape)
+        self.assertTupleEqual((self._target_length, len(paths_for_labels), self._out_size), output.shape)

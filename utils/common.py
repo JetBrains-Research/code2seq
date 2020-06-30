@@ -4,6 +4,10 @@ from os.path import exists
 from shutil import rmtree
 
 # sequence service tokens
+from typing import List
+
+import numpy
+
 SOS = "<SOS>"
 EOS = "<EOS>"
 PAD = "<PAD>"
@@ -28,3 +32,9 @@ def create_folder(path: str, is_clean: bool = True) -> None:
         rmtree(path)
     if not exists(path):
         mkdir(path)
+
+
+def segment_sizes_to_slices(sizes: List) -> List:
+    cum_sums = numpy.cumsum(sizes)
+    start_of_segments = numpy.append([0], cum_sums[:-1])
+    return [slice(start, end) for start, end in zip(start_of_segments, cum_sums)]

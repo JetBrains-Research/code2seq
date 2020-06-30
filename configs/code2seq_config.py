@@ -2,6 +2,14 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class DecoderConfig:
+    decoder_size: int
+    num_decoder_layers: int
+    rnn_dropout: float = 0.0
+    beam_width: int = 0
+
+
+@dataclass(frozen=True)
 class EncoderConfig:
     embedding_size: int
     rnn_size: int
@@ -17,6 +25,7 @@ class Code2SeqConfig:
     test_data_path: str
 
     encoder: EncoderConfig
+    decoder: DecoderConfig
 
     batch_size: int
     val_batch_size: int

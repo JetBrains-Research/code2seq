@@ -5,7 +5,7 @@ import numpy
 
 from configs import PreprocessingConfig
 from dataset import Vocabulary
-from utils.common import PAD, SOS, EOS, FROM_TOKEN, PATH_TYPES, TO_TOKEN, PATHS_FOR_LABEL
+from utils.common import PAD, SOS, EOS, FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
 class BufferedPathContext:
@@ -68,14 +68,14 @@ class BufferedPathContext:
     def __len__(self):
         return len(self.labels)
 
-    def __getitem__(self, idx: int) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray]:
+    def __getitem__(self, idx: int) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]:
         path_slice = slice(self._start_idx[idx], self._end_idx[idx])
         return (
             {
                 FROM_TOKEN: self.from_tokens[:, path_slice],
                 PATH_TYPES: self.path_types[:, path_slice],
                 TO_TOKEN: self.to_tokens[:, path_slice],
-                PATHS_FOR_LABEL: self.paths_for_label[idx],
             },
             self.labels[:, [idx]],
+            self.paths_for_label[idx],
         )

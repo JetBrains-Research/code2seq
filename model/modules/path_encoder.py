@@ -27,7 +27,7 @@ class PathEncoder(nn.Module):
         self.linear = nn.Linear(concat_size, out_size, bias=False)
         self.tanh = nn.Tanh()
 
-    def forward(self, samples: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, samples: Dict[str, torch.Tensor]) -> torch.Tensor:
         # [max name parts + 1; total paths]
         from_token = samples[FROM_TOKEN]
         to_token = samples[TO_TOKEN]
@@ -51,4 +51,4 @@ class PathEncoder(nn.Module):
 
         # [total_paths; output size]
         output = self.tanh(self.linear(concat))
-        return output, samples[PATHS_FOR_LABEL]
+        return output

@@ -19,9 +19,9 @@ class TestPathDecoder(TestCase):
     _out_size = 128
 
     def test_forward(self):
-        config = DecoderConfig(self._hidden_size, 1)
+        config = DecoderConfig(self._hidden_size, self._hidden_size, 1)
 
-        model = PathDecoder(config, self._hidden_size, self._out_size, self._target_length, 0, 0)
+        model = PathDecoder(config, self._out_size, 0, 0)
 
         with open(self._test_data_path, "rb") as pkl_file:
             buffered_path_contexts = pickle.load(pkl_file)
@@ -32,6 +32,6 @@ class TestPathDecoder(TestCase):
         number_of_paths = sum(paths_for_labels)
         fake_encoder_input = torch.rand(number_of_paths, self._hidden_size)
 
-        output = model(fake_encoder_input, paths_for_labels)
+        output = model(fake_encoder_input, paths_for_labels, self._target_length)
 
         self.assertTupleEqual((self._target_length, len(paths_for_labels), self._out_size), output.shape)

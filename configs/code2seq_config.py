@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class DecoderConfig:
     decoder_size: int
+    embedding_size: int
     num_decoder_layers: int
     rnn_dropout: float = 0.0
     beam_width: int = 0

@@ -22,6 +22,12 @@ class PathContextDataset(IterableDataset):
         buffered_files = sorted(buffered_files, key=lambda file: int(file.rsplit("_", 1)[1][:-4]))
         self._buffered_files_paths = [join(path, bf) for bf in buffered_files]
 
+        self._total_n_samples = 0
+        for filepath in self._buffered_files_paths:
+            with open(filepath, "rb") as pickle_file:
+                buf_path_context = pickle.load(pickle_file)
+            self._total_n_samples += len(buf_path_context)
+
         self._cur_file_idx = 0
         self._prepare_buffer(self._cur_file_idx)
 
@@ -46,6 +52,9 @@ class PathContextDataset(IterableDataset):
         sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
         self._cur_sample_idx += 1
         return sample
+
+    def __len__(self):
+        return self._total_n_samples
 
 
 def collate_path_contexts(

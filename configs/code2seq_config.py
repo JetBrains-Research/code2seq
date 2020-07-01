@@ -33,6 +33,7 @@ class Code2SeqConfig:
     batch_size: int
     test_batch_size: int
     learning_rate: float
+    clip_norm: float
 
     max_context: int
     random_context: bool

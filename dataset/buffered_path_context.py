@@ -66,7 +66,7 @@ class BufferedPathContext:
             pickle.dump(self, pickle_file)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.paths_for_label)
 
     def __getitem__(self, idx: int) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]:
         path_slice = slice(self._start_idx[idx], self._end_idx[idx])

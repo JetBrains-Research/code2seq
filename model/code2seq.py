@@ -57,7 +57,9 @@ class Code2Seq(LightningModule):
 
     def train_dataloader(self) -> DataLoader:
         dataset = PathContextDataset(self.config.train_data_path, self.config.shuffle_data)
-        data_loader = DataLoader(dataset, batch_size=self.config.batch_size, collate_fn=collate_path_contexts)
+        data_loader = DataLoader(
+            dataset, batch_size=self.config.batch_size, collate_fn=collate_path_contexts, num_workers=4
+        )
         return data_loader
 
     def training_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
@@ -83,19 +85,17 @@ class Code2Seq(LightningModule):
 
     def validation_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
         paths, labels, paths_for_label = batch
-        print(len(paths_for_label))
 
         # [seq length; batch size; vocab size]
         logits = self(paths, paths_for_label, labels.shape[0])
         loss = self._calculate_loss(logits, labels)
 
-        log = {
-            "val_loss": loss,
-        }
-        return {"val_loss": loss, "log": log}
+        return {"val_loss": loss}
 
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:
-        pass
+        avg_loss = torch.stack([out["val_loss"] for out in outputs]).mean()
+        logs = {"val_loss": avg_loss}
+        return {"val_loss": avg_loss, "log": logs}
 
     # ===== TEST BLOCK =====
 

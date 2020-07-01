@@ -28,7 +28,13 @@ class Code2SeqConfig:
     encoder: EncoderConfig
     decoder: DecoderConfig
 
+    n_epochs: int
+    patience: int  # early stopping
     batch_size: int
-    val_batch_size: int
+    test_batch_size: int
     learning_rate: float
-    shuffle_data: bool = True
+    clip_norm: float
+
+    max_context: int
+    random_context: bool
+    shuffle_data: bool

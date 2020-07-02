@@ -1,4 +1,5 @@
 import pickle
+from math import ceil
 from os import listdir
 from os.path import exists, join
 from typing import Dict, Tuple, List
@@ -12,18 +13,28 @@ from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
 class PathContextDataset(IterableDataset):
-    def __init__(self, path: str, shuffle: bool):
+    def __init__(self, path: str, max_context: int, random_context: bool, shuffle: bool):
         super().__init__()
         if not exists(path):
             raise ValueError(f"Path does not exist")
+        self.max_context = max_context
+        self.random_context = random_context
         self.shuffle = shuffle
 
         buffered_files = listdir(path)
         buffered_files = sorted(buffered_files, key=lambda file: int(file.rsplit("_", 1)[1][:-4]))
         self._buffered_files_paths = [join(path, bf) for bf in buffered_files]
 
-        self._cur_file_idx = 0
-        self._prepare_buffer(self._cur_file_idx)
+        self._total_n_samples = 0
+        for filepath in self._buffered_files_paths:
+            with open(filepath, "rb") as pickle_file:
+                buf_path_context = pickle.load(pickle_file)
+            self._total_n_samples += len(buf_path_context)
+
+        # each worker use data from _cur_file_idx and until it reaches _end_file_idx
+        self._cur_file_idx = None
+        self._end_file_idx = None
+        self._cur_buffered_path_context = None
 
     def _prepare_buffer(self, file_idx: int) -> None:
         assert file_idx < len(self._buffered_files_paths)
@@ -35,17 +46,43 @@ class PathContextDataset(IterableDataset):
         self._cur_sample_idx = 0
 
     def __iter__(self):
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is None:
+            self._cur_file_idx = 0
+            self._end_file_idx = len(self._buffered_files_paths)
+        else:
+            worker_id = worker_info.id
+            per_worker = int(ceil(len(self._buffered_files_paths) / float(worker_info.num_workers)))
+            self._cur_file_idx = per_worker * worker_id
+            self._end_file_idx = min(self._cur_file_idx + per_worker, len(self._buffered_files_paths))
         return self
 
     def __next__(self) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]:
+        if self._cur_buffered_path_context is None:
+            if self._cur_file_idx >= self._end_file_idx:
+                raise StopIteration()
+            else:
+                self._prepare_buffer(self._cur_file_idx)
         if self._cur_sample_idx == len(self._order):
             self._cur_file_idx += 1
-            if self._cur_file_idx >= len(self._buffered_files_paths):
+            if self._cur_file_idx >= self._end_file_idx:
                 raise StopIteration()
             self._prepare_buffer(self._cur_file_idx)
         sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
+
+        # select max_context paths from sample
+        context_idx = numpy.arange(sample[2])
+        if self.random_context:
+            context_idx = numpy.random.permutation(context_idx)
+        context_idx = context_idx[: min(self.max_context, sample[2])]
+        for key in [FROM_TOKEN, PATH_TYPES, TO_TOKEN]:
+            sample[0][key] = sample[0][key][:, context_idx]
+
         self._cur_sample_idx += 1
         return sample
+
+    def __len__(self):
+        return self._total_n_samples
 
 
 def collate_path_contexts(

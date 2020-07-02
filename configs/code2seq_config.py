@@ -38,3 +38,5 @@ class Code2SeqConfig:
     max_context: int
     random_context: bool
     shuffle_data: bool
+
+    num_workers: int

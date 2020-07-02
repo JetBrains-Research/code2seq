@@ -57,7 +57,11 @@ class Code2Seq(LightningModule):
 
     def train_dataloader(self) -> DataLoader:
         dataset = PathContextDataset(
-            self.config.train_data_path, self.config.max_context, self.config.random_context, self.config.shuffle_data
+            self.config.train_data_path,
+            self.config.max_context,
+            self.config.random_context,
+            self.config.shuffle_data,
+            self.config.batch_size,
         )
         data_loader = DataLoader(
             dataset,
@@ -82,7 +86,9 @@ class Code2Seq(LightningModule):
     # ===== VALIDATION BLOCK =====
 
     def val_dataloader(self) -> DataLoader:
-        dataset = PathContextDataset(self.config.val_data_path, self.config.max_context, False, False)
+        dataset = PathContextDataset(
+            self.config.val_data_path, self.config.max_context, False, False, self.config.test_batch_size
+        )
         data_loader = DataLoader(
             dataset,
             batch_size=self.config.test_batch_size,
@@ -108,7 +114,9 @@ class Code2Seq(LightningModule):
     # ===== TEST BLOCK =====
 
     def test_dataloader(self) -> DataLoader:
-        dataset = PathContextDataset(self.config.test_data_path, self.config.max_context, False, False)
+        dataset = PathContextDataset(
+            self.config.test_data_path, self.config.max_context, False, False, self.config.test_batch_size
+        )
         data_loader = DataLoader(
             dataset,
             batch_size=self.config.test_batch_size,

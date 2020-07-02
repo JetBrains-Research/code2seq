@@ -10,14 +10,15 @@ from configs import Code2SeqConfig
 from dataset import Vocabulary
 from dataset.path_context_dataset import PathContextDataset, collate_path_contexts
 from model.modules import PathEncoder, PathDecoder
-from utils.common import PAD, SOS
+from utils.common import PAD, SOS, EOS, UNK
+from utils.metrics import SubtokenStatistic
 
 
 class Code2Seq(LightningModule):
     def __init__(self, config: Code2SeqConfig, vocab: Vocabulary):
         super().__init__()
         self.config = config
-        self.label_pad_id = vocab.label_to_id[PAD]
+        self.vocab = vocab
 
         encoder_config = self.config.encoder
         decoder_config = self.config.decoder
@@ -50,8 +51,24 @@ class Code2Seq(LightningModule):
         logits = logits[1:].view(-1, logits.shape[-1])
         # [(seq length - 1) * batch size]
         labels = labels[1:].view(-1)
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=self.label_pad_id)
+        loss = F.cross_entropy(
+            logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=self.vocab.label_to_id[PAD]
+        )
         return loss
+
+    def _general_forward_step(
+        self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]]
+    ) -> Tuple[torch.Tensor, SubtokenStatistic]:
+        paths, labels, paths_for_label = batch
+
+        # [seq length; batch size; vocab size]
+        logits = self(paths, paths_for_label, labels.shape[0])
+        loss = self._calculate_loss(logits, labels)
+
+        subtoken_statistic = SubtokenStatistic.calculate_statistic(
+            labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+        )
+        return loss, subtoken_statistic
 
     # ===== TRAIN BLOCK =====
 
@@ -72,15 +89,9 @@ class Code2Seq(LightningModule):
         return data_loader
 
     def training_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
-        paths, labels, paths_for_label = batch
-
-        # [seq length; batch size; vocab size]
-        logits = self(paths, paths_for_label, labels.shape[0])
-        loss = self._calculate_loss(logits, labels)
-
-        log = {
-            "loss": loss,
-        }
+        loss, subtoken_statistic = self._general_forward_step(batch)
+        log = {"train/loss": loss}
+        log.update(subtoken_statistic.calculate_metrics(group="train"))
         return {"loss": loss, "log": log}
 
     # ===== VALIDATION BLOCK =====
@@ -98,17 +109,16 @@ class Code2Seq(LightningModule):
         return data_loader
 
     def validation_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
-        paths, labels, paths_for_label = batch
-
-        # [seq length; batch size; vocab size]
-        logits = self(paths, paths_for_label, labels.shape[0])
-        loss = self._calculate_loss(logits, labels)
-
-        return {"val_loss": loss}
+        loss, subtoken_statistic = self._general_forward_step(batch)
+        return {"val_loss": loss, "subtoken_statistic": subtoken_statistic}
 
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:
         avg_loss = torch.stack([out["val_loss"] for out in outputs]).mean()
-        logs = {"val_loss": avg_loss}
+        logs = {"val/loss": avg_loss}
+        union_subtoken_statistic = SubtokenStatistic()
+        for out in outputs:
+            union_subtoken_statistic.update(out["subtoken_statistic"])
+        logs.update(union_subtoken_statistic.calculate_metrics(group="val"))
         return {"val_loss": avg_loss, "log": logs}
 
     # ===== TEST BLOCK =====

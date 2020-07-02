@@ -5,10 +5,10 @@ from unittest import TestCase
 import torch
 
 from configs import DecoderConfig
+from dataset import BufferedPathContext
 from dataset.path_context_dataset import collate_path_contexts
 from model.modules import PathDecoder
 from tests.tools import get_path_to_test_data
-from utils.common import PATHS_FOR_LABEL
 
 
 class TestPathDecoder(TestCase):
@@ -23,8 +23,7 @@ class TestPathDecoder(TestCase):
 
         model = PathDecoder(config, self._out_size, 0, 0)
 
-        with open(self._test_data_path, "rb") as pkl_file:
-            buffered_path_contexts = pickle.load(pkl_file)
+        buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
 
         samples, true_labels, paths_for_labels = collate_path_contexts(
             [buffered_path_contexts[i] for i in range(len(buffered_path_contexts))]

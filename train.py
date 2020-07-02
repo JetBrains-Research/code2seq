@@ -41,12 +41,14 @@ def train(dataset_name: str, is_test: bool):
     # define early stopping callback
     early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True)
     trainer = Trainer(
+        max_epochs=config.n_epochs,
         deterministic=True,
         check_val_every_n_epoch=config.val_every_epoch,
         logger=wandb_logger,
         checkpoint_callback=model_checkpoint_callback,
         early_stop_callback=early_stopping_callback,
     )
+
     trainer.fit(model)
 
 

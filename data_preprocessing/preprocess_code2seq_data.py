@@ -1,4 +1,3 @@
-import pickle
 from argparse import ArgumentParser
 from collections import Counter
 from os import path
@@ -82,12 +81,10 @@ def preprocess(config: PreprocessingConfig):
     # Collect vocabulary from train holdout if needed
     vocab_path = path.join(config.data_path, "vocabulary.pkl")
     if path.exists(vocab_path):
-        with open(vocab_path, "rb") as vocab_file:
-            vocab = pickle.load(vocab_file)
+        vocab = Vocabulary.load(vocab_path)
     else:
         vocab = collect_vocabulary(config)
-        with open(vocab_path, "wb") as vocab_file:
-            pickle.dump(vocab, vocab_file)
+        vocab.dump(vocab_path)
     convert_holdout("train", vocab, config)
     convert_holdout("val", vocab, config)
     convert_holdout("test", vocab, config)

@@ -1,4 +1,3 @@
-import pickle
 from argparse import ArgumentParser
 from os import mkdir
 from os.path import join
@@ -9,6 +8,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
 from configs import get_code2seq_default_config, get_code2seq_test_config
+from dataset import Vocabulary
 from model import Code2Seq
 
 DATA_FOLDER = "data"
@@ -18,8 +18,7 @@ SEED = 7
 def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
     seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
-    with open(join(dataset_main_folder, "vocabulary.pkl"), "rb") as pkl_file:
-        vocab = pickle.load(pkl_file)
+    vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))
 
     config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
     config = config_function(dataset_main_folder)

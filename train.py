@@ -39,7 +39,7 @@ def train(dataset_name: str, is_test: bool):
         save_top_k=-1,
     )
     # define early stopping callback
-    early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True)
+    early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True, mode="min")
     trainer = Trainer(
         max_epochs=config.n_epochs,
         gradient_clip_val=config.clip_norm,

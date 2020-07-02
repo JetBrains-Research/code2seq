@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from dataclasses import asdict
 from os import mkdir
 from os.path import join
 
@@ -28,6 +29,7 @@ def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
     # define logger
     wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test)
     wandb_logger.watch(model)
+    wandb_logger.log_hyperparams(asdict(config))
     # define model checkpoint callback
     checkpoint_path = join(wandb.run.dir, "checkpoints")
     mkdir(checkpoint_path)

@@ -68,18 +68,19 @@ class PathContextDataset(IterableDataset):
             if self._cur_file_idx >= self._end_file_idx:
                 raise StopIteration()
             self._prepare_buffer(self._cur_file_idx)
-        sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
+        context, label, paths_for_label = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
 
         # select max_context paths from sample
-        context_idx = numpy.arange(sample[2])
+        context_idx = numpy.arange(paths_for_label)
         if self.random_context:
             context_idx = numpy.random.permutation(context_idx)
-        context_idx = context_idx[: min(self.max_context, sample[2])]
+        paths_for_label = min(self.max_context, paths_for_label)
+        context_idx = context_idx[:paths_for_label]
         for key in [FROM_TOKEN, PATH_TYPES, TO_TOKEN]:
-            sample[0][key] = sample[0][key][:, context_idx]
+            context[key] = context[key][:, context_idx]
 
         self._cur_sample_idx += 1
-        return sample
+        return context, label, paths_for_label
 
     def __len__(self):
         return self._total_n_samples

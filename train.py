@@ -42,6 +42,7 @@ def train(dataset_name: str, is_test: bool):
     early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True)
     trainer = Trainer(
         max_epochs=config.n_epochs,
+        gradient_clip_val=config.clip_norm,
         deterministic=True,
         check_val_every_n_epoch=config.val_every_epoch,
         logger=wandb_logger,

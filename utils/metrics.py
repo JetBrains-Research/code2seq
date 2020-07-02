@@ -15,7 +15,7 @@ class SubtokenStatistic:
         self.false_positive += other_statistic.false_positive
         self.false_negative += other_statistic.false_negative
 
-    def calculate_metrics(self) -> Dict[str, int]:
+    def calculate_metrics(self, group: str = None) -> Dict[str, int]:
         precision, recall, f1 = 0, 0, 0
         if self.true_positive + self.false_positive > 0:
             precision = self.true_positive / (self.true_positive + self.false_positive)
@@ -23,7 +23,11 @@ class SubtokenStatistic:
             recall = self.true_positive / (self.true_positive + self.false_negative)
         if precision + recall > 0:
             f1 = 2 * precision * recall / (precision + recall)
-        return {"precision": precision, "recall": recall, "f1": f1}
+        metrics_dict = {"precision": precision, "recall": recall, "f1": f1}
+        if group is not None:
+            for key in list(metrics_dict.keys()):
+                metrics_dict[f"{group}/{key}"] = metrics_dict.pop(key)
+        return metrics_dict
 
     @staticmethod
     def calculate_statistic(

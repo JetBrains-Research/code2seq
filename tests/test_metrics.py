@@ -11,14 +11,28 @@ class TestSubtokenStatistic(TestCase):
         st_stat_other = SubtokenStatistic(4, 5, 6)
         st_stat.update(st_stat_other)
 
-        self.assertEquals(st_stat.true_positive, 5)
-        self.assertEquals(st_stat.false_positive, 7)
-        self.assertEquals(st_stat.false_negative, 9)
+        self.assertEqual(st_stat.true_positive, 5)
+        self.assertEqual(st_stat.false_positive, 7)
+        self.assertEqual(st_stat.false_negative, 9)
 
     def test_calculate_metrics(self):
         st_stat = SubtokenStatistic(3, 7, 2)
         metrics = st_stat.calculate_metrics()
         true_metrics = {"precision": 0.3, "recall": 0.6, "f1": 0.4}
+
+        self.assertDictEqual(metrics, true_metrics)
+
+    def test_calculate_metrics_with_group(self):
+        st_stat = SubtokenStatistic(3, 7, 2)
+        metrics = st_stat.calculate_metrics(group="train")
+        true_metrics = {"train/precision": 0.3, "train/recall": 0.6, "train/f1": 0.4}
+
+        self.assertDictEqual(metrics, true_metrics)
+
+    def test_calculate_zero_metrics(self):
+        st_stat = SubtokenStatistic(0, 0, 0)
+        metrics = st_stat.calculate_metrics()
+        true_metrics = {"precision": 0, "recall": 0, "f1": 0}
 
         self.assertDictEqual(metrics, true_metrics)
 
@@ -29,6 +43,6 @@ class TestSubtokenStatistic(TestCase):
 
         st_stat = SubtokenStatistic.calculate_statistic(gt_subtokens, pred_subtokens, skip)
 
-        self.assertEquals(st_stat.true_positive, 3)
-        self.assertEquals(st_stat.false_positive, 7)
-        self.assertEquals(st_stat.false_negative, 4)
+        self.assertEqual(st_stat.true_positive, 3)
+        self.assertEqual(st_stat.false_positive, 7)
+        self.assertEqual(st_stat.false_negative, 4)

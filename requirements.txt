@@ -3,3 +3,4 @@ torch==1.5.1
 tqdm==4.47.0
 numpy==1.19.0
 pytorch-lightning==0.8.3
+wandb==0.9.2

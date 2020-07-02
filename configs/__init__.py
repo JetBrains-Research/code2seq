@@ -50,7 +50,7 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
         test_data_path=join(dataset_main_folder, "test"),
         encoder=encoder,
         decoder=decoder,
-        n_epochs=10,
+        n_epochs=5,
         patience=3,
         batch_size=10,
         test_batch_size=10,

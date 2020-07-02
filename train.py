@@ -1,16 +1,22 @@
 import pickle
 from argparse import ArgumentParser
+from os import mkdir
 from os.path import join
 
-from pytorch_lightning import Trainer
+import wandb
+from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.loggers import WandbLogger
 
 from configs import get_code2seq_default_config, get_code2seq_test_config
 from model import Code2Seq
 
 DATA_FOLDER = "data"
+SEED = 7
 
 
-def train(dataset_name: str, is_test: bool):
+def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
+    seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     with open(join(dataset_main_folder, "vocabulary.pkl"), "rb") as pkl_file:
         vocab = pickle.load(pkl_file)
@@ -19,7 +25,30 @@ def train(dataset_name: str, is_test: bool):
     config = config_function(dataset_main_folder)
 
     model = Code2Seq(config, vocab)
-    trainer = Trainer()
+
+    # define logger
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test)
+    wandb_logger.watch(model)
+    # define model checkpoint callback
+    checkpoint_path = join(wandb.run.dir, "checkpoints")
+    mkdir(checkpoint_path)
+    model_checkpoint_callback = ModelCheckpoint(
+        filepath=join(checkpoint_path, "{epoch:02d}-{val_loss:.4f}"), period=config.save_every_epoch, save_top_k=-1,
+    )
+    # define early stopping callback
+    early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True, mode="min")
+    trainer = Trainer(
+        max_epochs=config.n_epochs,
+        gradient_clip_val=config.clip_norm,
+        deterministic=True,
+        check_val_every_n_epoch=config.val_every_epoch,
+        row_log_interval=config.log_every_epoch,
+        logger=wandb_logger,
+        checkpoint_callback=model_checkpoint_callback,
+        early_stop_callback=early_stopping_callback,
+        resume_from_checkpoint=resume_from_checkpoint,
+    )
+
     trainer.fit(model)
 
 
@@ -27,6 +56,7 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
     arg_parser.add_argument("--test", action="store_true")
+    arg_parser.add_argument("--resume", type=str, default=None)
     args = arg_parser.parse_args()
 
-    train(args.data, args.test)
+    train(args.data, args.test, args.resume)

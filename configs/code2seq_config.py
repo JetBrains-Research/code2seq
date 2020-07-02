@@ -40,3 +40,7 @@ class Code2SeqConfig:
     shuffle_data: bool
 
     num_workers: int
+
+    save_every_epoch: int = 1
+    val_every_epoch: int = 1
+    log_every_epoch: int = 10

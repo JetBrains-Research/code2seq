@@ -13,10 +13,12 @@ from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
 class PathContextDataset(IterableDataset):
-    def __init__(self, path: str, shuffle: bool):
+    def __init__(self, path: str, max_context: int, random_context: bool, shuffle: bool):
         super().__init__()
         if not exists(path):
             raise ValueError(f"Path does not exist")
+        self.max_context = max_context
+        self.random_context = random_context
         self.shuffle = shuffle
 
         buffered_files = listdir(path)
@@ -67,6 +69,15 @@ class PathContextDataset(IterableDataset):
                 raise StopIteration()
             self._prepare_buffer(self._cur_file_idx)
         sample = self._cur_buffered_path_context[self._order[self._cur_sample_idx]]
+
+        # select max_context paths from sample
+        context_idx = numpy.arange(sample[2])
+        if self.random_context:
+            context_idx = numpy.random.permutation(context_idx)
+        context_idx = context_idx[: min(self.max_context, sample[2])]
+        for key in [FROM_TOKEN, PATH_TYPES, TO_TOKEN]:
+            sample[0][key] = sample[0][key][:, context_idx]
+
         self._cur_sample_idx += 1
         return sample
 

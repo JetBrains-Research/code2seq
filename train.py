@@ -4,7 +4,7 @@ from os import mkdir
 from os.path import join
 
 import wandb
-from pytorch_lightning import Trainer
+from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 
@@ -12,9 +12,11 @@ from configs import get_code2seq_default_config, get_code2seq_test_config
 from model import Code2Seq
 
 DATA_FOLDER = "data"
+SEED = 7
 
 
 def train(dataset_name: str, is_test: bool):
+    seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     with open(join(dataset_main_folder, "vocabulary.pkl"), "rb") as pkl_file:
         vocab = pickle.load(pkl_file)
@@ -40,6 +42,7 @@ def train(dataset_name: str, is_test: bool):
         check_val_every_n_epoch=config.val_every_epoch,
         logger=wandb_logger,
         checkpoint_callback=model_checkpoint_callback,
+        deterministic=True,
     )
     trainer.fit(model)
 

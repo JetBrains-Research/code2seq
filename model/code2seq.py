@@ -60,7 +60,10 @@ class Code2Seq(LightningModule):
             self.config.train_data_path, self.config.max_context, self.config.random_context, self.config.shuffle_data
         )
         data_loader = DataLoader(
-            dataset, batch_size=self.config.batch_size, collate_fn=collate_path_contexts, num_workers=4
+            dataset,
+            batch_size=self.config.batch_size,
+            collate_fn=collate_path_contexts,
+            num_workers=self.config.num_workers,
         )
         return data_loader
 
@@ -81,7 +84,10 @@ class Code2Seq(LightningModule):
     def val_dataloader(self) -> DataLoader:
         dataset = PathContextDataset(self.config.val_data_path, self.config.max_context, False, False)
         data_loader = DataLoader(
-            dataset, batch_size=self.config.test_batch_size, collate_fn=collate_path_contexts, num_workers=4
+            dataset,
+            batch_size=self.config.test_batch_size,
+            collate_fn=collate_path_contexts,
+            num_workers=self.config.num_workers,
         )
         return data_loader
 
@@ -103,7 +109,12 @@ class Code2Seq(LightningModule):
 
     def test_dataloader(self) -> DataLoader:
         dataset = PathContextDataset(self.config.test_data_path, self.config.max_context, False, False)
-        data_loader = DataLoader(dataset, batch_size=self.config.test_batch_size, collate_fn=collate_path_contexts)
+        data_loader = DataLoader(
+            dataset,
+            batch_size=self.config.test_batch_size,
+            collate_fn=collate_path_contexts,
+            num_workers=self.config.num_workers,
+        )
         return data_loader
 
     def test_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor], batch_idx: int) -> Dict:

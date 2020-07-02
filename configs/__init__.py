@@ -1,3 +1,4 @@
+from os import cpu_count
 from os.path import join
 
 from .preprocessing_config import PreprocessingConfig
@@ -34,6 +35,7 @@ def get_code2seq_default_config(dataset_main_folder: str) -> Code2SeqConfig:
         max_context=200,
         random_context=True,
         shuffle_data=True,
+        num_workers=cpu_count(),
     )
     return code2seq
 
@@ -57,5 +59,6 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
         max_context=200,
         random_context=True,
         shuffle_data=True,
+        num_workers=6,
     )
     return code2seq

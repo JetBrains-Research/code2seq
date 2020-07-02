@@ -1,4 +1,3 @@
-import pickle
 from math import ceil
 from os import listdir
 from os.path import exists, join
@@ -28,8 +27,7 @@ class PathContextDataset(IterableDataset):
 
         self._total_n_samples = 0
         for filepath in self._buffered_files_paths:
-            with open(filepath, "rb") as pickle_file:
-                buf_path_context = pickle.load(pickle_file)
+            buf_path_context = BufferedPathContext.load(filepath)
             self._total_n_samples += len(buf_path_context)
 
         # each worker use data from _cur_file_idx and until it reaches _end_file_idx
@@ -39,8 +37,7 @@ class PathContextDataset(IterableDataset):
 
     def _prepare_buffer(self, file_idx: int) -> None:
         assert file_idx < len(self._buffered_files_paths)
-        with open(self._buffered_files_paths[file_idx], "rb") as pickle_file:
-            self._cur_buffered_path_context: BufferedPathContext = pickle.load(pickle_file)
+        self._cur_buffered_path_context = BufferedPathContext.load(self._buffered_files_paths[file_idx])
         self._order = numpy.arange(len(self._cur_buffered_path_context))
         if self.shuffle:
             self._order = numpy.random.permutation(self._order)

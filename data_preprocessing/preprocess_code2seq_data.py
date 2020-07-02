@@ -1,4 +1,3 @@
-import pickle
 from argparse import ArgumentParser
 from collections import Counter
 from os import path
@@ -7,7 +6,7 @@ from typing import Tuple, List
 from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
-from dataset import Vocabulary, BufferedPathContext
+from dataset import Vocabulary, create_standard_bpc
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
 
@@ -66,13 +65,13 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
             to_tokens.append(to_tokens_ids)
 
             if len(labels) == config.buffer_size:
-                buffered_path_context = BufferedPathContext(config, vocab, labels, from_tokens, path_types, to_tokens)
+                buffered_path_context = create_standard_bpc(config, vocab, labels, from_tokens, path_types, to_tokens)
                 buffered_path_context.dump(
                     path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
                 )
                 labels, from_tokens, path_types, to_tokens = [], [], [], []
         if len(labels) > 0:
-            buffered_path_context = BufferedPathContext(config, vocab, labels, from_tokens, path_types, to_tokens)
+            buffered_path_context = create_standard_bpc(config, vocab, labels, from_tokens, path_types, to_tokens)
             buffered_path_context.dump(
                 path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
             )
@@ -82,12 +81,10 @@ def preprocess(config: PreprocessingConfig):
     # Collect vocabulary from train holdout if needed
     vocab_path = path.join(config.data_path, "vocabulary.pkl")
     if path.exists(vocab_path):
-        with open(vocab_path, "rb") as vocab_file:
-            vocab = pickle.load(vocab_file)
+        vocab = Vocabulary.load(vocab_path)
     else:
         vocab = collect_vocabulary(config)
-        with open(vocab_path, "wb") as vocab_file:
-            pickle.dump(vocab, vocab_file)
+        vocab.dump(vocab_path)
     convert_holdout("train", vocab, config)
     convert_holdout("val", vocab, config)
     convert_holdout("test", vocab, config)

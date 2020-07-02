@@ -1,11 +1,10 @@
-from typing import Dict, Tuple
+from typing import Dict
 
 import torch
 from torch import nn
 
 from configs import EncoderConfig
-from dataset import Vocabulary
-from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES, PAD, PATHS_FOR_LABEL
+from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
 
 class PathEncoder(nn.Module):

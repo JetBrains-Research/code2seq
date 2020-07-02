@@ -20,8 +20,7 @@ class TestPathContextDataset(TestCase):
         for x, y, n_paths in dataset:
             self.assertCountEqual([FROM_TOKEN, PATH_TYPES, TO_TOKEN], x.keys())
             for key, value in x.items():
-                print(value)
-                self.assertEquals(self._max_context, value.shape[1])
+                self.assertLessEqual(value.shape[1], self._max_context)
             total_samples += 1
 
         self.assertEqual(len(dataset), total_samples)

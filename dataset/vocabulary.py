@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass, field
 from typing import Dict, Counter, List
 
@@ -21,3 +22,18 @@ class Vocabulary:
             add_values += list(zip(*counter.most_common(n_most_values - len(add_values))))[0]
         attr = {value: i for i, value in enumerate(add_values)}
         setattr(self, target_field, attr)
+
+    def dump(self, path: str):
+        with open(path, "wb") as pickle_file:
+            pickle.dump(
+                {"token_to_id": self.token_to_id, "type_to_id": self.type_to_id, "label_to_id": self.label_to_id},
+                pickle_file,
+            )
+
+    @staticmethod
+    def load(path: str):
+        with open(path, "rb") as pickle_file:
+            data = pickle.load(pickle_file)
+        if not isinstance(data, dict) and not all([k in data for k in ["token_to_id", "type_to_id", "label_to_id"]]):
+            raise RuntimeError("Incorrect data inside pickled file")
+        return Vocabulary(**data)

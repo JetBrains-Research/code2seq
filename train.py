@@ -5,8 +5,8 @@ from os.path import join
 
 import wandb
 from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
 
 from configs import get_code2seq_default_config, get_code2seq_test_config
 from model import Code2Seq
@@ -38,11 +38,14 @@ def train(dataset_name: str, is_test: bool):
         period=config.save_every_epoch,
         save_top_k=-1,
     )
+    # define early stopping callback
+    early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True)
     trainer = Trainer(
+        deterministic=True,
         check_val_every_n_epoch=config.val_every_epoch,
         logger=wandb_logger,
         checkpoint_callback=model_checkpoint_callback,
-        deterministic=True,
+        early_stop_callback=early_stopping_callback,
     )
     trainer.fit(model)
 

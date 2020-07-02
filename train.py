@@ -1,8 +1,12 @@
 import pickle
 from argparse import ArgumentParser
+from os import mkdir
 from os.path import join
 
+import wandb
 from pytorch_lightning import Trainer
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from configs import get_code2seq_default_config, get_code2seq_test_config
 from model import Code2Seq
@@ -19,7 +23,24 @@ def train(dataset_name: str, is_test: bool):
     config = config_function(dataset_main_folder)
 
     model = Code2Seq(config, vocab)
-    trainer = Trainer()
+
+    # define logger
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test)
+    wandb_logger.watch(model, log="all", log_freq=config.log_every_epoch)
+    # define model checkpoint callback
+    checkpoint_path = join(wandb.run.dir, "checkpoints")
+    mkdir(checkpoint_path)
+    model_checkpoint_callback = ModelCheckpoint(
+        filepath=join(checkpoint_path, "{epoch:02d}-{val_loss:.4f}"),
+        verbose=True,
+        period=config.save_every_epoch,
+        save_top_k=-1,
+    )
+    trainer = Trainer(
+        check_val_every_n_epoch=config.val_every_epoch,
+        logger=wandb_logger,
+        checkpoint_callback=model_checkpoint_callback,
+    )
     trainer.fit(model)
 
 

@@ -15,7 +15,7 @@ DATA_FOLDER = "data"
 SEED = 7
 
 
-def train(dataset_name: str, is_test: bool):
+def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
     seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     with open(join(dataset_main_folder, "vocabulary.pkl"), "rb") as pkl_file:
@@ -27,7 +27,7 @@ def train(dataset_name: str, is_test: bool):
     model = Code2Seq(config, vocab)
 
     # define logger
-    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}")
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test)
     wandb_logger.watch(model)
     # define model checkpoint callback
     checkpoint_path = join(wandb.run.dir, "checkpoints")
@@ -46,6 +46,7 @@ def train(dataset_name: str, is_test: bool):
         logger=wandb_logger,
         checkpoint_callback=model_checkpoint_callback,
         early_stop_callback=early_stopping_callback,
+        resume_from_checkpoint=resume_from_checkpoint,
     )
 
     trainer.fit(model)
@@ -55,6 +56,7 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
     arg_parser.add_argument("--test", action="store_true")
+    arg_parser.add_argument("--resume", type=str, default=None)
     args = arg_parser.parse_args()
 
-    train(args.data, args.test)
+    train(args.data, args.test, args.resume)

@@ -83,28 +83,33 @@ class PathContextDataset(IterableDataset):
         return self._total_n_samples
 
 
-def collate_path_contexts(
-    samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]
-) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]]:
-    from_tokens = [torch.tensor(sample[0][FROM_TOKEN]) for sample in samples]
-    path_types = [torch.tensor(sample[0][PATH_TYPES]) for sample in samples]
-    to_tokens = [torch.tensor(sample[0][TO_TOKEN]) for sample in samples]
-    paths_for_label = [sample[2] for sample in samples]
-    labels = [torch.tensor(sample[1]) for sample in samples]
-    return (
-        {
-            FROM_TOKEN: torch.cat(from_tokens, dim=-1),
-            PATH_TYPES: torch.cat(path_types, dim=-1),
-            TO_TOKEN: torch.cat(to_tokens, dim=-1),
-        },
-        torch.cat(labels, dim=-1),
-        paths_for_label,
-    )
+class PathContextBatch:
+    def __init__(self, samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]):
+        self.context = {
+            FROM_TOKEN: torch.cat([torch.tensor(sample[0][FROM_TOKEN]) for sample in samples], dim=-1),
+            PATH_TYPES: torch.cat([torch.tensor(sample[0][PATH_TYPES]) for sample in samples], dim=-1),
+            TO_TOKEN: torch.cat([torch.tensor(sample[0][TO_TOKEN]) for sample in samples], dim=-1),
+        }
+
+        self.labels = torch.cat([torch.tensor(sample[1]) for sample in samples], dim=-1)
+        self.contexts_per_label = [sample[2] for sample in samples]
+
+    def pin_memory(self):
+        for k, v in self.context.items():
+            v.pin_memory()
+        self.labels.pin_memory()
+        return self
+
+    @staticmethod
+    def collate_wrapper(batch: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]) -> "PathContextBatch":
+        return PathContextBatch(batch)
 
 
 def create_dataloader(
-    path: str, max_context: int, batch_size: int, random_context: bool = True, shuffle: bool = True, n_workers: int = 0
+    path: str, max_context: int, batch_size: int, random_context: bool = True, shuffle: bool = True, n_workers: int = 0,
 ) -> Tuple[DataLoader, int]:
     dataset = PathContextDataset(path, max_context, random_context, shuffle)
-    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_path_contexts, num_workers=n_workers)
+    dataloader = DataLoader(
+        dataset, batch_size=batch_size, collate_fn=PathContextBatch.collate_wrapper, num_workers=n_workers
+    )
     return dataloader, dataset.get_n_samples()

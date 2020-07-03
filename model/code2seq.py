@@ -8,7 +8,7 @@ from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 
 from configs import Code2SeqConfig
-from dataset import Vocabulary, create_dataloader
+from dataset import Vocabulary, create_dataloader, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS, EOS, UNK
 from utils.metrics import SubtokenStatistic
@@ -56,13 +56,14 @@ class Code2Seq(LightningModule):
         )
         return loss
 
-    def _general_forward_step(
-        self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]]
-    ) -> Tuple[torch.Tensor, SubtokenStatistic]:
-        paths, labels, paths_for_label = batch
+    def _general_forward_step(self, batch: PathContextBatch) -> Tuple[torch.Tensor, SubtokenStatistic]:
+        # Dict str -> torch.Tensor [seq length; batch size * n_context]
+        context = batch.context
+        # [seq length; batch size]
+        labels = batch.labels
 
         # [seq length; batch size; vocab size]
-        logits = self(paths, paths_for_label, labels.shape[0])
+        logits = self(context, batch.contexts_per_label, labels.shape[0])
         loss = self._calculate_loss(logits, labels)
 
         subtoken_statistic = SubtokenStatistic.calculate_statistic(

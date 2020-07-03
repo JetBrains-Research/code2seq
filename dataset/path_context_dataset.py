@@ -84,14 +84,14 @@ class PathContextDataset(IterableDataset):
 
 
 class PathContextBatch:
-    def __init__(self, samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]], device: torch.device):
+    def __init__(self, samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]):
         self.context = {
-            FROM_TOKEN: torch.cat([torch.tensor(sample[0][FROM_TOKEN], device=device) for sample in samples], dim=-1),
-            PATH_TYPES: torch.cat([torch.tensor(sample[0][PATH_TYPES], device=device) for sample in samples], dim=-1),
-            TO_TOKEN: torch.cat([torch.tensor(sample[0][TO_TOKEN], device=device) for sample in samples], dim=-1),
+            FROM_TOKEN: torch.cat([torch.tensor(sample[0][FROM_TOKEN]) for sample in samples], dim=-1),
+            PATH_TYPES: torch.cat([torch.tensor(sample[0][PATH_TYPES]) for sample in samples], dim=-1),
+            TO_TOKEN: torch.cat([torch.tensor(sample[0][TO_TOKEN]) for sample in samples], dim=-1),
         }
 
-        self.labels = torch.cat([torch.tensor(sample[1], device=device) for sample in samples], dim=-1)
+        self.labels = torch.cat([torch.tensor(sample[1]) for sample in samples], dim=-1)
         self.contexts_per_label = [sample[2] for sample in samples]
 
     def pin_memory(self):
@@ -101,27 +101,18 @@ class PathContextBatch:
         return self
 
     @staticmethod
-    def collate_wrapper(device: torch.device):
-        def collate_batch(batch: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]) -> "PathContextBatch":
-            return PathContextBatch(batch, device)
-
-        return collate_batch
+    def collate_wrapper(batch: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]) -> "PathContextBatch":
+        return PathContextBatch(batch)
 
 
 def create_dataloader(
-    path: str,
-    max_context: int,
-    random_context: bool,
-    shuffle: bool,
-    batch_size: int,
-    n_workers: int,
-    device: torch.device,
+    path: str, max_context: int, random_context: bool, shuffle: bool, batch_size: int, n_workers: int,
 ) -> Tuple[DataLoader, int]:
     dataset = PathContextDataset(path, max_context, random_context, shuffle)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
-        collate_fn=PathContextBatch.collate_wrapper(device),
+        collate_fn=PathContextBatch.collate_wrapper,
         num_workers=n_workers,
         pin_memory=True,
     )

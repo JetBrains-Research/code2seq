@@ -1,4 +1,3 @@
-import pickle
 from os.path import join
 from unittest import TestCase
 
@@ -25,9 +24,7 @@ class TestPathDecoder(TestCase):
 
         buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
 
-        batch = PathContextBatch(
-            [buffered_path_contexts[i] for i in range(len(buffered_path_contexts))], torch.device("cpu")
-        )
+        batch = PathContextBatch([buffered_path_contexts[i] for i in range(len(buffered_path_contexts))])
         number_of_paths = sum(batch.contexts_per_label)
         fake_encoder_input = torch.rand(number_of_paths, self._hidden_size)
 

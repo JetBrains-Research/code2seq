@@ -59,8 +59,10 @@ class Code2Seq(LightningModule):
     def _general_forward_step(self, batch: PathContextBatch) -> Tuple[torch.Tensor, SubtokenStatistic]:
         # Dict str -> torch.Tensor [seq length; batch size * n_context]
         context = batch.context
+        for k in context:
+            context[k] = context[k].to(self.device)
         # [seq length; batch size]
-        labels = batch.labels
+        labels = batch.labels.to(self.device)
 
         # [seq length; batch size; vocab size]
         logits = self(context, batch.contexts_per_label, labels.shape[0])
@@ -81,7 +83,6 @@ class Code2Seq(LightningModule):
             self.config.shuffle_data,
             self.config.batch_size,
             self.config.num_workers,
-            self.device,
         )
         print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
         return dataloader
@@ -102,7 +103,6 @@ class Code2Seq(LightningModule):
             False,
             self.config.test_batch_size,
             self.config.num_workers,
-            self.device,
         )
         print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader
@@ -130,7 +130,6 @@ class Code2Seq(LightningModule):
             False,
             self.config.test_batch_size,
             self.config.num_workers,
-            self.device,
         )
         print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader

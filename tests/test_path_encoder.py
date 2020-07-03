@@ -1,8 +1,6 @@
 from os.path import join
 from unittest import TestCase
 
-import torch
-
 from configs import EncoderConfig
 from dataset import BufferedPathContext
 from dataset.path_context_dataset import PathContextBatch
@@ -20,9 +18,7 @@ class TestPathEncoder(TestCase):
         config = EncoderConfig(self._hidden_size, self._hidden_size, True, 0.5, 0.5)
 
         buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
-        batch = PathContextBatch(
-            [buffered_path_contexts[i] for i in range(len(buffered_path_contexts))], torch.device("cpu")
-        )
+        batch = PathContextBatch([buffered_path_contexts[i] for i in range(len(buffered_path_contexts))])
         token_vocab_size = max(batch.context[FROM_TOKEN].max().item(), batch.context[TO_TOKEN].max().item())
         type_vocab_size = batch.context[PATH_TYPES].max().item()
 

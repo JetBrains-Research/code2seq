@@ -3,6 +3,7 @@ from dataclasses import asdict
 from os import mkdir
 from os.path import join
 
+import torch
 import wandb
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
@@ -38,6 +39,8 @@ def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
     )
     # define early stopping callback
     early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True, mode="min")
+    # use gpu if it exists
+    gpu = 1 if torch.cuda.is_available() else None
     trainer = Trainer(
         max_epochs=config.n_epochs,
         gradient_clip_val=config.clip_norm,
@@ -48,6 +51,7 @@ def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
         checkpoint_callback=model_checkpoint_callback,
         early_stop_callback=early_stopping_callback,
         resume_from_checkpoint=resume_from_checkpoint,
+        gpus=gpu,
     )
 
     trainer.fit(model)

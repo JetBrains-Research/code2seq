@@ -23,4 +23,4 @@ class TestPathContextDataset(TestCase):
                 self.assertLessEqual(value.shape[1], self._max_context)
             total_samples += 1
 
-        self.assertEqual(len(dataset), total_samples)
+        self.assertEqual(dataset.get_n_samples(), total_samples)

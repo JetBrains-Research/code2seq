@@ -1,3 +1,4 @@
+from math import ceil
 from typing import Tuple, Dict, List
 
 import torch
@@ -7,8 +8,7 @@ from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 
 from configs import Code2SeqConfig
-from dataset import Vocabulary
-from dataset.path_context_dataset import PathContextDataset, collate_path_contexts
+from dataset import Vocabulary, create_dataloader
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS, EOS, UNK
 from utils.metrics import SubtokenStatistic
@@ -73,20 +73,16 @@ class Code2Seq(LightningModule):
     # ===== TRAIN BLOCK =====
 
     def train_dataloader(self) -> DataLoader:
-        dataset = PathContextDataset(
+        dataloader, n_samples = create_dataloader(
             self.config.train_data_path,
             self.config.max_context,
+            self.config.batch_size,
             self.config.random_context,
             self.config.shuffle_data,
-            self.config.batch_size,
+            self.config.num_workers,
         )
-        data_loader = DataLoader(
-            dataset,
-            batch_size=self.config.batch_size,
-            collate_fn=collate_path_contexts,
-            num_workers=self.config.num_workers,
-        )
-        return data_loader
+        print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
+        return dataloader
 
     def training_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
         loss, subtoken_statistic = self._general_forward_step(batch)
@@ -97,16 +93,16 @@ class Code2Seq(LightningModule):
     # ===== VALIDATION BLOCK =====
 
     def val_dataloader(self) -> DataLoader:
-        dataset = PathContextDataset(
-            self.config.val_data_path, self.config.max_context, False, False, self.config.test_batch_size
+        dataloader, n_samples = create_dataloader(
+            self.config.val_data_path,
+            self.config.max_context,
+            self.config.batch_size,
+            False,
+            False,
+            self.config.num_workers,
         )
-        data_loader = DataLoader(
-            dataset,
-            batch_size=self.config.test_batch_size,
-            collate_fn=collate_path_contexts,
-            num_workers=self.config.num_workers,
-        )
-        return data_loader
+        print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
+        return dataloader
 
     def validation_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
         loss, subtoken_statistic = self._general_forward_step(batch)
@@ -124,16 +120,16 @@ class Code2Seq(LightningModule):
     # ===== TEST BLOCK =====
 
     def test_dataloader(self) -> DataLoader:
-        dataset = PathContextDataset(
-            self.config.test_data_path, self.config.max_context, False, False, self.config.test_batch_size
+        dataloader, n_samples = create_dataloader(
+            self.config.test_data_path,
+            self.config.max_context,
+            self.config.batch_size,
+            False,
+            False,
+            self.config.num_workers,
         )
-        data_loader = DataLoader(
-            dataset,
-            batch_size=self.config.test_batch_size,
-            collate_fn=collate_path_contexts,
-            num_workers=self.config.num_workers,
-        )
-        return data_loader
+        print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")
+        return dataloader
 
     def test_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor], batch_idx: int) -> Dict:
         pass

@@ -5,21 +5,20 @@ from typing import Dict, Tuple, List
 
 import numpy
 import torch
-from torch.utils.data import IterableDataset
+from torch.utils.data import IterableDataset, DataLoader
 
 from dataset import BufferedPathContext
 from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
 class PathContextDataset(IterableDataset):
-    def __init__(self, path: str, max_context: int, random_context: bool, shuffle: bool, batch_size: int = 1):
+    def __init__(self, path: str, max_context: int, random_context: bool, shuffle: bool):
         super().__init__()
         if not exists(path):
             raise ValueError(f"Path does not exist")
         self.max_context = max_context
         self.random_context = random_context
         self.shuffle = shuffle
-        self.batch_size = batch_size
 
         buffered_files = listdir(path)
         buffered_files = sorted(buffered_files, key=lambda file: int(file.rsplit("_", 1)[1][:-4]))
@@ -80,11 +79,8 @@ class PathContextDataset(IterableDataset):
         self._cur_sample_idx += 1
         return context, label, paths_for_label
 
-    def __len__(self):
-        # Since dataloader for IterableDataset doesn't compute length with respect to batch size
-        # we do it here manually
-        # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-        return ceil(self._total_n_samples / self.batch_size)
+    def get_n_samples(self):
+        return self._total_n_samples
 
 
 def collate_path_contexts(
@@ -104,3 +100,11 @@ def collate_path_contexts(
         torch.cat(labels, dim=-1),
         paths_for_label,
     )
+
+
+def create_dataloader(
+    path: str, max_context: int, batch_size: int, random_context: bool = True, shuffle: bool = True, n_workers: int = 0
+) -> Tuple[DataLoader, int]:
+    dataset = PathContextDataset(path, max_context, random_context, shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_path_contexts, num_workers=n_workers)
+    return dataloader, dataset.get_n_samples()

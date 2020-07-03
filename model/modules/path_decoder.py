@@ -27,28 +27,29 @@ class PathDecoder(nn.Module):
         self.dropout = nn.Dropout(config.rnn_dropout)
         self.projection_layer = nn.Linear(config.decoder_size, self.out_size)
 
-    def forward(self, encoded_paths: torch.Tensor, paths_for_label: List[int], output_length: int) -> torch.Tensor:
+    def forward(self, encoded_paths: torch.Tensor, contexts_per_label: List[int], output_length: int) -> torch.Tensor:
         """Decode given paths into sequence
 
         :param encoded_paths: [n paths; decoder size]
-        :param paths_for_label: [n1, n2, ..., nk] sum = n paths
+        :param contexts_per_label: [n1, n2, ..., nk] sum = n paths
         :param output_length: length of output sequence
         :return:
         """
-        batch_size = len(paths_for_label)
+        batch_size = len(contexts_per_label)
 
         # [batch size; context size; encoder size]
-        max_context_per_batch = max(paths_for_label)
+        max_context_per_batch = max(contexts_per_label)
         batched_context = encoded_paths.new_zeros(batch_size, max_context_per_batch, encoded_paths.shape[1])
         attention_mask = encoded_paths.new_zeros((batch_size, max_context_per_batch), dtype=torch.bool)
-        for i, (cur_slice, cur_size) in enumerate(zip(segment_sizes_to_slices(paths_for_label), paths_for_label)):
+        for i, (cur_slice, cur_size) in enumerate(zip(segment_sizes_to_slices(contexts_per_label), contexts_per_label)):
             batched_context[i, :cur_size] = encoded_paths[cur_slice]
             attention_mask[i, cur_size:] = True
         # [batch size; context size; decoder size]
         attended_batched_context = self.attention(batched_context)
 
         # [batch size; encoder size]
-        initial_state = batched_context.sum(dim=1) / torch.tensor(paths_for_label).reshape(-1, 1)
+        contexts_per_label_tensor = torch.tensor(contexts_per_label, device=encoded_paths.device).reshape(-1, 1)
+        initial_state = batched_context.sum(dim=1) / contexts_per_label_tensor
         # [n layers; batch size; encoder size]
         h_prev = initial_state.unsqueeze(0).repeat(self.config.num_decoder_layers, 1, 1)
         c_prev = initial_state.unsqueeze(0).repeat(self.config.num_decoder_layers, 1, 1)
@@ -56,7 +57,7 @@ class PathDecoder(nn.Module):
         # [target len; batch size; vocab size]
         output = encoded_paths.new_zeros((output_length, batch_size, self.out_size))
         # [batch size]
-        current_input = torch.full((batch_size,), self.sos_token, dtype=torch.long)
+        current_input = torch.full((batch_size,), self.sos_token, dtype=torch.long, device=encoded_paths.device)
         for step in range(1, output_length):
             # 1. calculate attention weights.
             # [batch size; context size]

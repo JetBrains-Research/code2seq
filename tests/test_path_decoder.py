@@ -1,4 +1,3 @@
-import pickle
 from os.path import join
 from unittest import TestCase
 
@@ -6,7 +5,7 @@ import torch
 
 from configs import DecoderConfig
 from dataset import BufferedPathContext
-from dataset.path_context_dataset import collate_path_contexts
+from dataset.path_context_dataset import PathContextBatch
 from model.modules import PathDecoder
 from tests.tools import get_path_to_test_data
 
@@ -25,12 +24,10 @@ class TestPathDecoder(TestCase):
 
         buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
 
-        samples, true_labels, paths_for_labels = collate_path_contexts(
-            [buffered_path_contexts[i] for i in range(len(buffered_path_contexts))]
-        )
-        number_of_paths = sum(paths_for_labels)
+        batch = PathContextBatch([buffered_path_contexts[i] for i in range(len(buffered_path_contexts))])
+        number_of_paths = sum(batch.contexts_per_label)
         fake_encoder_input = torch.rand(number_of_paths, self._hidden_size)
 
-        output = model(fake_encoder_input, paths_for_labels, self._target_length)
+        output = model(fake_encoder_input, batch.contexts_per_label, self._target_length)
 
-        self.assertTupleEqual((self._target_length, len(paths_for_labels), self._out_size), output.shape)
+        self.assertTupleEqual((self._target_length, len(batch.contexts_per_label), self._out_size), output.shape)

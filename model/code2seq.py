@@ -8,7 +8,7 @@ from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 
 from configs import Code2SeqConfig
-from dataset import Vocabulary, create_dataloader
+from dataset import Vocabulary, create_dataloader, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS, EOS, UNK
 from utils.metrics import SubtokenStatistic
@@ -56,13 +56,16 @@ class Code2Seq(LightningModule):
         )
         return loss
 
-    def _general_forward_step(
-        self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]]
-    ) -> Tuple[torch.Tensor, SubtokenStatistic]:
-        paths, labels, paths_for_label = batch
+    def _general_forward_step(self, batch: PathContextBatch) -> Tuple[torch.Tensor, SubtokenStatistic]:
+        # Dict str -> torch.Tensor [seq length; batch size * n_context]
+        context = batch.context
+        for k in context:
+            context[k] = context[k].to(self.device)
+        # [seq length; batch size]
+        labels = batch.labels.to(self.device)
 
         # [seq length; batch size; vocab size]
-        logits = self(paths, paths_for_label, labels.shape[0])
+        logits = self(context, batch.contexts_per_label, labels.shape[0])
         loss = self._calculate_loss(logits, labels)
 
         subtoken_statistic = SubtokenStatistic.calculate_statistic(
@@ -76,9 +79,9 @@ class Code2Seq(LightningModule):
         dataloader, n_samples = create_dataloader(
             self.config.train_data_path,
             self.config.max_context,
-            self.config.batch_size,
             self.config.random_context,
             self.config.shuffle_data,
+            self.config.batch_size,
             self.config.num_workers,
         )
         print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
@@ -96,9 +99,9 @@ class Code2Seq(LightningModule):
         dataloader, n_samples = create_dataloader(
             self.config.val_data_path,
             self.config.max_context,
-            self.config.batch_size,
             False,
             False,
+            self.config.test_batch_size,
             self.config.num_workers,
         )
         print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
@@ -123,9 +126,9 @@ class Code2Seq(LightningModule):
         dataloader, n_samples = create_dataloader(
             self.config.test_data_path,
             self.config.max_context,
-            self.config.batch_size,
             False,
             False,
+            self.config.test_batch_size,
             self.config.num_workers,
         )
         print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")

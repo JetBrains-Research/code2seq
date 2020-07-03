@@ -119,6 +119,10 @@ def create_dataloader(
 ) -> Tuple[DataLoader, int]:
     dataset = PathContextDataset(path, max_context, random_context, shuffle)
     dataloader = DataLoader(
-        dataset, batch_size=batch_size, collate_fn=PathContextBatch.collate_wrapper(device), num_workers=n_workers
+        dataset,
+        batch_size=batch_size,
+        collate_fn=PathContextBatch.collate_wrapper(device),
+        num_workers=n_workers,
+        pin_memory=True,
     )
     return dataloader, dataset.get_n_samples()

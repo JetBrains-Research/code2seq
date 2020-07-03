@@ -57,7 +57,7 @@ class PathDecoder(nn.Module):
         # [target len; batch size; vocab size]
         output = encoded_paths.new_zeros((output_length, batch_size, self.out_size))
         # [batch size]
-        current_input = torch.full((batch_size,), self.sos_token, dtype=torch.long)
+        current_input = torch.full((batch_size,), self.sos_token, dtype=torch.long, device=encoded_paths.device)
         for step in range(1, output_length):
             # 1. calculate attention weights.
             # [batch size; context size]

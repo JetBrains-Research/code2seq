@@ -17,7 +17,7 @@ DATA_FOLDER = "data"
 SEED = 7
 
 
-def train(dataset_name: str, is_test: bool, resume_from_checkpoint: str = None):
+def train(dataset_name: str, is_test: bool = False, resume_from_checkpoint: str = None):
     seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))

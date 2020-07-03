@@ -1,14 +1,13 @@
 from typing import List
 
 import torch
-from pytorch_lightning import LightningModule
 from torch import nn
 
 from configs import DecoderConfig
 from utils.common import segment_sizes_to_slices
 
 
-class PathDecoder(LightningModule):
+class PathDecoder(nn.Module):
 
     _negative_value = -1e9
 

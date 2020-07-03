@@ -1,13 +1,14 @@
 from typing import Dict
 
 import torch
+from pytorch_lightning import LightningModule
 from torch import nn
 
 from configs import EncoderConfig
 from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
 
-class PathEncoder(nn.Module):
+class PathEncoder(LightningModule):
     def __init__(
         self,
         config: EncoderConfig,

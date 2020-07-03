@@ -77,10 +77,11 @@ class Code2Seq(LightningModule):
         dataloader, n_samples = create_dataloader(
             self.config.train_data_path,
             self.config.max_context,
-            self.config.batch_size,
             self.config.random_context,
             self.config.shuffle_data,
+            self.config.batch_size,
             self.config.num_workers,
+            self.device,
         )
         print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
         return dataloader
@@ -97,10 +98,11 @@ class Code2Seq(LightningModule):
         dataloader, n_samples = create_dataloader(
             self.config.val_data_path,
             self.config.max_context,
-            self.config.batch_size,
             False,
             False,
+            self.config.test_batch_size,
             self.config.num_workers,
+            self.device,
         )
         print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader
@@ -124,10 +126,11 @@ class Code2Seq(LightningModule):
         dataloader, n_samples = create_dataloader(
             self.config.test_data_path,
             self.config.max_context,
-            self.config.batch_size,
             False,
             False,
+            self.config.test_batch_size,
             self.config.num_workers,
+            self.device,
         )
         print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader

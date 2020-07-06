@@ -35,7 +35,7 @@ def train(dataset_name: str, is_test: bool = False, resume_from_checkpoint: str 
     checkpoint_path = join(wandb.run.dir, "checkpoints")
     mkdir(checkpoint_path)
     model_checkpoint_callback = ModelCheckpoint(
-        filepath=join(checkpoint_path, "{epoch:02d}-{val_loss:.4f}"), period=config.save_every_epoch, save_top_k=-1,
+        filepath=join(checkpoint_path, "{epoch:02d}-{val_loss:.4f}"), period=config.save_every_epoch, save_top_k=3,
     )
     # define early stopping callback
     early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True, mode="min")

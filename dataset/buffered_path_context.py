@@ -69,10 +69,10 @@ def create_standard_bpc(
     total_num_contexts = sum(contexts_per_label)
 
     buffer_size = len(input_labels)
-    labels = numpy.empty((config.max_target_parts + 1, buffer_size), dtype=numpy.uint32)
-    from_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.uint32)
-    path_types = numpy.empty((config.max_path_length + 1, total_num_contexts), dtype=numpy.uint32)
-    to_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.uint32)
+    labels = numpy.empty((config.max_target_parts + 1, buffer_size), dtype=numpy.int32)
+    from_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.int32)
+    path_types = numpy.empty((config.max_path_length + 1, total_num_contexts), dtype=numpy.int32)
+    to_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.int32)
 
     cur_path_idx = 0
     for sample in range(buffer_size):

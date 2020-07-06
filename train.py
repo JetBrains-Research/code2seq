@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from dataclasses import asdict
-from os import mkdir
+from multiprocessing import cpu_count
 from os.path import join
 
 import torch
@@ -23,19 +23,17 @@ def train(dataset_name: str, is_test: bool = False, resume_from_checkpoint: str 
     vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))
 
     config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-    config = config_function(dataset_main_folder)
+    config = config_function(dataset_main_folder, cpu_count())
 
     model = Code2Seq(config, vocab)
 
     # define logger
-    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test)
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test, log_model=True)
     wandb_logger.watch(model)
     wandb_logger.log_hyperparams(asdict(config))
     # define model checkpoint callback
-    checkpoint_path = join(wandb.run.dir, "checkpoints")
-    mkdir(checkpoint_path)
     model_checkpoint_callback = ModelCheckpoint(
-        filepath=join(checkpoint_path, "{epoch:02d}-{val_loss:.4f}"), period=config.save_every_epoch, save_top_k=-1,
+        filepath=join(wandb.run.dir, "{epoch:02d}-{val_loss:.4f}"), period=config.save_every_epoch, save_top_k=3,
     )
     # define early stopping callback
     early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True, mode="min")

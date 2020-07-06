@@ -6,6 +6,7 @@ from typing import Dict, Tuple, List
 import numpy
 import torch
 from torch.utils.data import IterableDataset, DataLoader
+from tqdm.auto import tqdm
 
 from dataset import BufferedPathContext
 from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
@@ -16,6 +17,7 @@ class PathContextDataset(IterableDataset):
         super().__init__()
         if not exists(path):
             raise ValueError(f"Path does not exist")
+        print(f"prepare {path} dataset...")
         self.max_context = max_context
         self.random_context = random_context
         self.shuffle = shuffle
@@ -25,7 +27,7 @@ class PathContextDataset(IterableDataset):
         self._buffered_files_paths = [join(path, bf) for bf in buffered_files]
 
         self._total_n_samples = 0
-        for filepath in self._buffered_files_paths:
+        for filepath in tqdm(self._buffered_files_paths):
             buf_path_context = BufferedPathContext.load(filepath)
             self._total_n_samples += len(buf_path_context)
 

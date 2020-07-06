@@ -61,3 +61,10 @@ class SubtokenStatistic:
                 if gt_subtoken not in pred_seq:
                     subtoken_statistic.false_negative += 1
         return subtoken_statistic
+
+    @staticmethod
+    def union_statistics(stats: List["SubtokenStatistic"]) -> "SubtokenStatistic":
+        union_subtoken_statistic = SubtokenStatistic()
+        for stat in stats:
+            union_subtoken_statistic.update(stat)
+        return union_subtoken_statistic

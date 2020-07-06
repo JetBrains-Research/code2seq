@@ -17,13 +17,13 @@ DATA_FOLDER = "data"
 SEED = 7
 
 
-def train(dataset_name: str, is_test: bool = False, resume_from_checkpoint: str = None):
+def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume_from_checkpoint: str = None):
     seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))
 
     config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-    config = config_function(dataset_main_folder, cpu_count())
+    config = config_function(dataset_main_folder, num_workers)
 
     model = Code2Seq(config, vocab)
 
@@ -58,8 +58,9 @@ def train(dataset_name: str, is_test: bool = False, resume_from_checkpoint: str 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
+    arg_parser.add_argument("--n_workers", type=int, default=cpu_count())
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--resume", type=str, default=None)
     args = arg_parser.parse_args()
 
-    train(args.data, args.test, args.resume)
+    train(args.data, args.n_workers, args.test, args.resume)

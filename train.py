@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from dataclasses import asdict
-from os import mkdir
+from multiprocessing import cpu_count
 from os.path import join
 
 import torch
@@ -23,7 +23,7 @@ def train(dataset_name: str, is_test: bool = False, resume_from_checkpoint: str 
     vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))
 
     config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-    config = config_function(dataset_main_folder)
+    config = config_function(dataset_main_folder, cpu_count())
 
     model = Code2Seq(config, vocab)
 

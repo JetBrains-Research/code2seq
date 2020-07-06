@@ -69,7 +69,7 @@ class Code2Seq(LightningModule):
         loss = self._calculate_loss(logits, labels)
 
         subtoken_statistic = SubtokenStatistic.calculate_statistic(
-            labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+            labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
         )
         return loss, subtoken_statistic
 

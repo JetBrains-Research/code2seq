@@ -87,7 +87,7 @@ class Code2Seq(LightningModule):
         print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
         return dataloader
 
-    def training_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         loss, subtoken_statistic = self._general_forward_step(batch)
         log = {"train/loss": loss}
         log.update(subtoken_statistic.calculate_metrics(group="train"))
@@ -107,7 +107,7 @@ class Code2Seq(LightningModule):
         print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader
 
-    def validation_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor, List[int]], batch_idx: int) -> Dict:
+    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         loss, subtoken_statistic = self._general_forward_step(batch)
         return {"val_loss": loss, "subtoken_statistic": subtoken_statistic}
 

@@ -73,6 +73,14 @@ class Code2Seq(LightningModule):
         )
         return loss, subtoken_statistic
 
+    def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
+        logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
+        logs.update(
+            SubtokenStatistic.union_statistics([out["subtoken_statistic"] for out in outputs]).calculate_metrics(group)
+        )
+        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
+        return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
+
     # ===== TRAIN BLOCK =====
 
     def train_dataloader(self) -> DataLoader:
@@ -91,7 +99,11 @@ class Code2Seq(LightningModule):
         loss, subtoken_statistic = self._general_forward_step(batch)
         log = {"train/loss": loss}
         log.update(subtoken_statistic.calculate_metrics(group="train"))
-        return {"loss": loss, "log": log}
+        progress_bar = {"train/f1": log["train/f1"]}
+        return {"loss": loss, "log": log, "progress_bar": progress_bar, "subtoken_statistic": subtoken_statistic}
+
+    def training_epoch_end(self, outputs: List[Dict]) -> Dict:
+        return self._general_epoch_end(outputs, "loss", "train")
 
     # ===== VALIDATION BLOCK =====
 
@@ -112,13 +124,7 @@ class Code2Seq(LightningModule):
         return {"val_loss": loss, "subtoken_statistic": subtoken_statistic}
 
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:
-        avg_loss = torch.stack([out["val_loss"] for out in outputs]).mean()
-        logs = {"val/loss": avg_loss}
-        union_subtoken_statistic = SubtokenStatistic()
-        for out in outputs:
-            union_subtoken_statistic.update(out["subtoken_statistic"])
-        logs.update(union_subtoken_statistic.calculate_metrics(group="val"))
-        return {"val_loss": avg_loss, "log": logs}
+        return self._general_epoch_end(outputs, "val_loss", "val")
 
     # ===== TEST BLOCK =====
 
@@ -138,4 +144,4 @@ class Code2Seq(LightningModule):
         pass
 
     def test_epoch_end(self, outputs: List[Dict]) -> Dict:
-        pass
+        return self._general_epoch_end(outputs, "test_loss", "test")

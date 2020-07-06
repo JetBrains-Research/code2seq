@@ -88,12 +88,16 @@ class PathContextDataset(IterableDataset):
 class PathContextBatch:
     def __init__(self, samples: List[Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]]):
         self.context = {
-            FROM_TOKEN: torch.cat([torch.tensor(sample[0][FROM_TOKEN]) for sample in samples], dim=-1),
-            PATH_TYPES: torch.cat([torch.tensor(sample[0][PATH_TYPES]) for sample in samples], dim=-1),
-            TO_TOKEN: torch.cat([torch.tensor(sample[0][TO_TOKEN]) for sample in samples], dim=-1),
+            FROM_TOKEN: torch.cat(
+                [torch.tensor(sample[0][FROM_TOKEN], dtype=torch.long) for sample in samples], dim=-1
+            ),
+            PATH_TYPES: torch.cat(
+                [torch.tensor(sample[0][PATH_TYPES], dtype=torch.long) for sample in samples], dim=-1
+            ),
+            TO_TOKEN: torch.cat([torch.tensor(sample[0][TO_TOKEN], dtype=torch.long) for sample in samples], dim=-1),
         }
 
-        self.labels = torch.cat([torch.tensor(sample[1]) for sample in samples], dim=-1)
+        self.labels = torch.cat([torch.tensor(sample[1], dtype=torch.long) for sample in samples], dim=-1)
         self.contexts_per_label = [sample[2] for sample in samples]
 
     def pin_memory(self):

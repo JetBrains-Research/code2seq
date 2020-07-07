@@ -54,6 +54,8 @@ def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume
 
     trainer.fit(model)
 
+    trainer.test()
+
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()

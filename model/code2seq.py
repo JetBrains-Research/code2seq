@@ -140,8 +140,9 @@ class Code2Seq(LightningModule):
         print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader
 
-    def test_step(self, batch: Tuple[Dict[str, torch.Tensor], torch.Tensor], batch_idx: int) -> Dict:
-        pass
+    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+        loss, subtoken_statistic = self._general_forward_step(batch)
+        return {"test_loss": loss, "subtoken_statistic": subtoken_statistic}
 
     def test_epoch_end(self, outputs: List[Dict]) -> Dict:
         return self._general_epoch_end(outputs, "test_loss", "test")

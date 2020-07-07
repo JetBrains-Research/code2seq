@@ -17,6 +17,7 @@ from utils.metrics import SubtokenStatistic
 class Code2Seq(LightningModule):
     def __init__(self, config: Code2SeqConfig, vocab: Vocabulary):
         super().__init__()
+        self.save_hyperparameters()
         self.config = config
         self.vocab = vocab
 

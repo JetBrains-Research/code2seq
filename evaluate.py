@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from math import ceil
 from multiprocessing import cpu_count
 
+import torch
 from pytorch_lightning import Trainer
 
 from dataset import create_dataloader
@@ -10,7 +11,8 @@ from model import Code2Seq
 
 def evaluate(checkpoint: str, data: str = None):
     model = Code2Seq.load_from_checkpoint(checkpoint_path=checkpoint)
-    trainer = Trainer()
+    gpu = 1 if torch.cuda.is_available() else None
+    trainer = Trainer(gpus=gpu)
     if data is not None:
         data_loader, n_samples = create_dataloader(
             data, model.config.max_context, False, False, model.config.test_batch_size, cpu_count()

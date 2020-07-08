@@ -6,7 +6,7 @@ from os.path import join
 import torch
 import wandb
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateLogger
 from pytorch_lightning.loggers import WandbLogger
 
 from configs import get_code2seq_default_config, get_code2seq_test_config
@@ -28,7 +28,7 @@ def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume
     model = Code2Seq(config, vocab)
 
     # define logger
-    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test, log_model=True)
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}")  # , offline=is_test, log_model=True)
     wandb_logger.watch(model)
     wandb_logger.log_hyperparams(asdict(config))
     # define model checkpoint callback
@@ -39,6 +39,8 @@ def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume
     early_stopping_callback = EarlyStopping(patience=config.patience, verbose=True, mode="min")
     # use gpu if it exists
     gpu = 1 if torch.cuda.is_available() else None
+    # define learning rate logger
+    lr_logger = LearningRateLogger()
     trainer = Trainer(
         max_epochs=config.n_epochs,
         gradient_clip_val=config.clip_norm,
@@ -50,6 +52,7 @@ def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume
         early_stop_callback=early_stopping_callback,
         resume_from_checkpoint=resume_from_checkpoint,
         gpus=gpu,
+        callbacks=[lr_logger],
     )
 
     trainer.fit(model)

@@ -4,7 +4,8 @@ from typing import Tuple, Dict, List
 import torch
 import torch.nn.functional as F
 from pytorch_lightning.core.lightning import LightningModule
-from torch.optim import Adam, Optimizer
+from torch.optim import Adam, Optimizer, SGD
+from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
 from torch.utils.data import DataLoader
 
 from configs import Code2SeqConfig
@@ -38,8 +39,16 @@ class Code2Seq(LightningModule):
     def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int], output_length: int) -> torch.Tensor:
         return self.decoder(self.encoder(samples), paths_for_label, output_length)
 
-    def configure_optimizers(self) -> Optimizer:
-        return Adam(self.parameters(), self.config.learning_rate)
+    def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
+        if self.config.optimizer == "Momentum":
+            # using the same momentum value as in original realization by Alon
+            optimizer = SGD(self.parameters(), self.config.learning_rate, momentum=0.95)
+        elif self.config.optimizer == "Adam":
+            optimizer = Adam(self.parameters(), self.config.learning_rate)
+        else:
+            raise ValueError(f"Unknown optimizer name: {self.config.optimizer}, try one of: Adam, Momentum")
+        scheduler = ExponentialLR(optimizer, self.config.decay_gamma)
+        return [optimizer], [scheduler]
 
     def _calculate_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """ Calculate cross entropy loss.

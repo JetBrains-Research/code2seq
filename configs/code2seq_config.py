@@ -33,6 +33,7 @@ class Code2SeqConfig:
     batch_size: int
     test_batch_size: int
     learning_rate: float
+    decay_gamma: float
     clip_norm: float
 
     max_context: int
@@ -44,3 +45,5 @@ class Code2SeqConfig:
     save_every_epoch: int = 1
     val_every_epoch: int = 1
     log_every_epoch: int = 10
+
+    optimizer: str = "Momentum"

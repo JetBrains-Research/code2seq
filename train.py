@@ -28,7 +28,7 @@ def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume
     model = Code2Seq(config, vocab)
 
     # define logger
-    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}")  # , offline=is_test, log_model=True)
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test, log_model=True)
     wandb_logger.watch(model)
     wandb_logger.log_hyperparams(asdict(config))
     # define model checkpoint callback

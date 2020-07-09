@@ -29,7 +29,7 @@ def get_code2seq_default_config(dataset_main_folder: str) -> Code2SeqConfig:
         patience=10,
         batch_size=512,
         test_batch_size=512,
-        learning_rate=0.001,
+        learning_rate=0.01,
         decay_gamma=0.95,
         clip_norm=5,
         max_context=200,

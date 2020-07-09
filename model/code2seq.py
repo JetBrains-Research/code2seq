@@ -18,11 +18,12 @@ from utils.metrics import SubtokenStatistic
 
 
 class Code2Seq(LightningModule):
-    def __init__(self, config: Code2SeqConfig, vocab: Vocabulary):
+    def __init__(self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int = 0):
         super().__init__()
         self.save_hyperparameters()
         self.config = config
         self.vocab = vocab
+        self.num_workers = num_workers
 
         encoder_config = self.config.encoder
         decoder_config = self.config.decoder
@@ -109,7 +110,7 @@ class Code2Seq(LightningModule):
             self.config.random_context,
             self.config.shuffle_data,
             self.config.batch_size,
-            self.config.num_workers,
+            self.num_workers,
         )
         print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
         return dataloader
@@ -133,7 +134,7 @@ class Code2Seq(LightningModule):
             False,
             False,
             self.config.test_batch_size,
-            self.config.num_workers,
+            self.num_workers,
         )
         print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader
@@ -154,7 +155,7 @@ class Code2Seq(LightningModule):
             False,
             False,
             self.config.test_batch_size,
-            self.config.num_workers,
+            self.num_workers,
         )
         print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")
         return dataloader

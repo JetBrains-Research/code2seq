@@ -1,8 +1,10 @@
 from math import ceil
+from os import listdir
 from typing import Tuple, Dict, List
 
 import torch
 import torch.nn.functional as F
+import wandb
 from pytorch_lightning.core.lightning import LightningModule
 from torch.optim import Adam, Optimizer, SGD
 from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
@@ -90,6 +92,13 @@ class Code2Seq(LightningModule):
         )
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
         return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
+
+    def on_epoch_end(self):
+        template = "epoch={:02d}".format(self.current_epoch)
+        ckpt = [name for name in listdir(self.logger.experiment.dir) if template in name]
+        if len(ckpt) == 0:
+            return
+        wandb.save(ckpt[0])
 
     # ===== TRAIN BLOCK =====
 

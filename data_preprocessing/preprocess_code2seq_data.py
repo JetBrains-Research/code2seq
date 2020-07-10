@@ -9,12 +9,14 @@ from configs import get_preprocessing_config_code2seq_params, PreprocessingConfi
 from dataset import Vocabulary, create_standard_bpc
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
+DATA_FOLDER = "data"
+
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     label_counter = Counter()
     token_counter = Counter()
     type_counter = Counter()
-    train_data_path = path.join(config.data_path, f"{config.dataset_name}.train.c2s")
+    train_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.train.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
@@ -48,8 +50,8 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
 
 
 def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig):
-    holdout_data_path = path.join(config.data_path, f"{config.dataset_name}.{holdout_name}.c2s")
-    holdout_output_folder = path.join(config.data_path, holdout_name)
+    holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
+    holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
     create_folder(holdout_output_folder)
     label_unk = vocab.label_to_id[UNK]
     with open(holdout_data_path, "r") as holdout_file:
@@ -79,7 +81,7 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
 
 def preprocess(config: PreprocessingConfig):
     # Collect vocabulary from train holdout if needed
-    vocab_path = path.join(config.data_path, "vocabulary.pkl")
+    vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")
     if path.exists(vocab_path):
         vocab = Vocabulary.load(vocab_path)
     else:

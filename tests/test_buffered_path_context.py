@@ -15,7 +15,7 @@ class TestBufferedPathContext(TestCase):
             type_to_id={SOS: 1, EOS: 2, PAD: 0},
             label_to_id={SOS: 2, EOS: 0, PAD: 1},
         )
-        config = PreprocessingConfig("", 3, 3, 3, -1, -1, 3)
+        config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
         labels = [[4], [], [4, 5, 6]]
         from_tokens = [
             [[4], [5, 6]],
@@ -47,12 +47,12 @@ class TestBufferedPathContext(TestCase):
         numpy.testing.assert_array_equal(true_to_tokens, buffered_path_context.contexts[TO_TOKEN])
 
     def test_creating_standard_path_context_check_path_shapes(self):
-        config = PreprocessingConfig("", 3, 3, 3, -1, -1, 3)
+        config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
         with self.assertRaises(ValueError):
             create_standard_bpc(config, Vocabulary(), [[]], [[], []], [[], [], []], [[]])
 
     def test_creating_standard_path_context_check_full_buffer(self):
-        config = PreprocessingConfig("", 3, 3, 3, -1, -1, 3)
+        config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
         with self.assertRaises(ValueError):
             create_standard_bpc(config, Vocabulary(), [[], [], []], [[], []], [[], [], []], [[]])
 
@@ -60,16 +60,22 @@ class TestBufferedPathContext(TestCase):
         values = [3, 4, 5]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
         true_result = [0, 3, 4, 5, 1, 2]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id))
+        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, True))
 
     def test__prepare_to_store_long(self):
         values = [3, 4, 5, 6, 7, 8, 9, 10]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
         true_result = [0, 3, 4, 5, 6, 7]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id))
+        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, True))
 
     def test__prepare_to_store_short(self):
         values = [3]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
         true_result = [0, 3, 1, 2, 2, 2]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id))
+        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, True))
+
+    def test__prepare_to_store_no_wrap(self):
+        values = [3, 4, 5]
+        to_id = {SOS: 0, EOS: 1, PAD: 2}
+        true_result = [3, 4, 5, 2, 2]
+        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, False))

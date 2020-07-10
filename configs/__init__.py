@@ -10,6 +10,9 @@ def get_preprocessing_config_code2seq_params(dataset_name: str) -> Preprocessing
         max_path_length=8,
         max_name_parts=5,
         max_target_parts=6,
+        wrap_name=False,
+        wrap_path=True,
+        wrap_target=True,
         subtoken_vocab_max_size=190000,
         target_vocab_max_size=27000,
     )

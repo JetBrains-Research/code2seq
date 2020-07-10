@@ -50,8 +50,8 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
 
 
 def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig):
-    holdout_data_path = path.join(config.data_path, f"{config.dataset_name}.{holdout_name}.c2s")
-    holdout_output_folder = path.join(config.data_path, holdout_name)
+    holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
+    holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
     create_folder(holdout_output_folder)
     label_unk = vocab.label_to_id[UNK]
     with open(holdout_data_path, "r") as holdout_file:

@@ -10,6 +10,9 @@ class PreprocessingConfig:
     max_path_length: int
     max_name_parts: int
     max_target_parts: int
+    wrap_path: bool
+    wrap_name: bool
+    wrap_target: bool
     subtoken_vocab_max_size: int = -1
     target_vocab_max_size: int = -1
     buffer_size: int = 10_000

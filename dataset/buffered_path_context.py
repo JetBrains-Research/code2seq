@@ -67,12 +67,15 @@ def create_standard_bpc(
 
     contexts_per_label = [len(pc) for pc in input_from_tokens]
     total_num_contexts = sum(contexts_per_label)
-
     buffer_size = len(input_labels)
-    labels = numpy.empty((config.max_target_parts + 1, buffer_size), dtype=numpy.int32)
-    from_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.int32)
-    path_types = numpy.empty((config.max_path_length + 1, total_num_contexts), dtype=numpy.int32)
-    to_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.int32)
+
+    def _reserve_array(max_seq_len: int, is_wrapped: bool, total_size) -> numpy.ndarray:
+        return numpy.empty((max_seq_len + int(is_wrapped), total_size), dtype=numpy.int32)
+
+    labels = _reserve_array(config.max_target_parts, config.wrap_target, buffer_size)
+    from_tokens = _reserve_array(config.max_name_parts, config.wrap_name, total_num_contexts)
+    path_types = _reserve_array(config.max_path_length, config.wrap_path, total_num_contexts)
+    to_tokens = _reserve_array(config.max_name_parts, config.wrap_name, total_num_contexts)
 
     cur_path_idx = 0
     for sample in range(buffer_size):

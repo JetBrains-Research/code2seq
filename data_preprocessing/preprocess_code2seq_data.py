@@ -1,13 +1,14 @@
 import pickle
 from argparse import ArgumentParser
 from collections import Counter
+from math import ceil
 from os import path
-from typing import Tuple, List
+from typing import Tuple, List, Generator
 
 from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
-from dataset import Vocabulary, create_standard_bpc
+from dataset import Vocabulary, BufferedPathContext
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
 DATA_FOLDER = "data"
@@ -64,34 +65,37 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
     )
 
 
+def _convert_raw_buffer(lines: List[str], config: PreprocessingConfig, vocab: Vocabulary) -> BufferedPathContext:
+    labels, from_tokens, path_types, to_tokens = [], [], [], []
+    for line in lines:
+        label, *path_contexts = line.split()
+        labels.append([vocab.label_to_id.get(_l, vocab.label_to_id[UNK]) for _l in label.split("|")])
+        converted_context = [_convert_path_context_to_ids(pc, vocab) for pc in path_contexts]
+        from_tokens.append([cc[0] for cc in converted_context])
+        path_types.append([cc[1] for cc in converted_context])
+        to_tokens.append([cc[2] for cc in converted_context])
+
+    return BufferedPathContext.create_from_lists(config, vocab, labels, from_tokens, path_types, to_tokens)
+
+
+def _read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], None, None]:
+    with open(filepath, "r") as file:
+        lines = []
+        for line in file:
+            lines.append(line.strip())
+            if len(lines) == batch_size:
+                yield lines
+                lines = []
+    yield lines
+
+
 def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig):
     holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
     holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
     create_folder(holdout_output_folder)
-    label_unk = vocab.label_to_id[UNK]
-    with open(holdout_data_path, "r") as holdout_file:
-        labels, from_tokens, path_types, to_tokens = [], [], [], []
-        for i, line in tqdm(enumerate(holdout_file), total=count_lines_in_file(holdout_data_path)):
-            label, *path_contexts = line.split()
-            labels.append([vocab.label_to_id.get(_l, label_unk) for _l in label.split("|")])
-            from_tokens_ids, path_types_ids, to_tokens_ids = list(
-                zip(*[_convert_path_context_to_ids(pc, vocab) for pc in path_contexts])
-            )
-            from_tokens.append(from_tokens_ids)
-            path_types.append(path_types_ids)
-            to_tokens.append(to_tokens_ids)
-
-            if len(labels) == config.buffer_size:
-                buffered_path_context = create_standard_bpc(config, vocab, labels, from_tokens, path_types, to_tokens)
-                buffered_path_context.dump(
-                    path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
-                )
-                labels, from_tokens, path_types, to_tokens = [], [], [], []
-        if len(labels) > 0:
-            buffered_path_context = create_standard_bpc(config, vocab, labels, from_tokens, path_types, to_tokens)
-            buffered_path_context.dump(
-                path.join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl")
-            )
+    n_buffers = ceil(count_lines_in_file(holdout_data_path) / config.buffer_size)
+    for i, lines in tqdm(enumerate(_read_file_by_batch(holdout_data_path, config.buffer_size)), total=n_buffers):
+        _convert_raw_buffer(lines, config, vocab).dump(path.join(holdout_output_folder, f"buffered_paths_{i}.pkl"))
 
 
 def preprocess(config: PreprocessingConfig, is_vocab_collected: bool):

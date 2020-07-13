@@ -3,8 +3,7 @@ from unittest import TestCase
 import numpy
 
 from configs import PreprocessingConfig
-from dataset import Vocabulary, create_standard_bpc
-from dataset.buffered_path_context import _prepare_to_store
+from dataset import Vocabulary, BufferedPathContext
 from utils.common import SOS, EOS, PAD, FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
@@ -33,7 +32,9 @@ class TestBufferedPathContext(TestCase):
             [[4, 6, 4]],
         ]
 
-        buffered_path_context = create_standard_bpc(config, vocab, labels, from_tokens, path_types, to_tokens)
+        buffered_path_context = BufferedPathContext.create_from_lists(
+            config, vocab, labels, from_tokens, path_types, to_tokens
+        )
 
         true_labels = numpy.array([[2, 2, 2], [4, 0, 4], [0, 1, 5], [1, 1, 6]])
         true_from_tokens = numpy.array([[0, 0, 0, 0, 0, 0], [4, 5, 1, 1, 1, 6], [1, 6, 2, 2, 2, 5], [2, 1, 2, 2, 2, 4]])
@@ -49,33 +50,41 @@ class TestBufferedPathContext(TestCase):
     def test_creating_standard_path_context_check_path_shapes(self):
         config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
         with self.assertRaises(ValueError):
-            create_standard_bpc(config, Vocabulary(), [[]], [[], []], [[], [], []], [[]])
+            BufferedPathContext.create_from_lists(config, Vocabulary(), [[]], [[], []], [[], [], []], [[]])
 
     def test_creating_standard_path_context_check_full_buffer(self):
         config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
         with self.assertRaises(ValueError):
-            create_standard_bpc(config, Vocabulary(), [[], [], []], [[], []], [[], [], []], [[]])
+            BufferedPathContext.create_from_lists(config, Vocabulary(), [[], [], []], [[], []], [[], [], []], [[]])
 
-    def test__prepare_to_store_simple(self):
-        values = [3, 4, 5]
+    def test__convert_list_to_numpy_array_simple(self):
+        values = [[3, 4, 5]]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
-        true_result = [0, 3, 4, 5, 1, 2]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, True))
+        true_result = numpy.array([[0], [3], [4], [5], [1], [2]])
+        numpy.testing.assert_equal(
+            true_result, BufferedPathContext._list_to_numpy_array(values, len(values), 5, True, to_id)
+        )
 
-    def test__prepare_to_store_long(self):
-        values = [3, 4, 5, 6, 7, 8, 9, 10]
+    def test__convert_list_to_numpy_array_long(self):
+        values = [[3, 4, 5, 6, 7, 8, 9, 10]]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
-        true_result = [0, 3, 4, 5, 6, 7]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, True))
+        true_result = numpy.array([[0], [3], [4], [5], [6], [7]])
+        numpy.testing.assert_equal(
+            true_result, BufferedPathContext._list_to_numpy_array(values, len(values), 5, True, to_id)
+        )
 
-    def test__prepare_to_store_short(self):
-        values = [3]
+    def test__convert_list_to_numpy_array_short(self):
+        values = [[3]]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
-        true_result = [0, 3, 1, 2, 2, 2]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, True))
+        true_result = numpy.array([[0], [3], [1], [2], [2], [2]])
+        numpy.testing.assert_equal(
+            true_result, BufferedPathContext._list_to_numpy_array(values, len(values), 5, True, to_id)
+        )
 
-    def test__prepare_to_store_no_wrap(self):
-        values = [3, 4, 5]
+    def test__convert_list_to_numpy_no_wrap(self):
+        values = [[3, 4, 5]]
         to_id = {SOS: 0, EOS: 1, PAD: 2}
-        true_result = [3, 4, 5, 2, 2]
-        self.assertListEqual(true_result, _prepare_to_store(values, 5, to_id, False))
+        true_result = numpy.array([[3], [4], [5], [2], [2]])
+        numpy.testing.assert_equal(
+            true_result, BufferedPathContext._list_to_numpy_array(values, len(values), 5, False, to_id)
+        )

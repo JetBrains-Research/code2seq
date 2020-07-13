@@ -96,7 +96,7 @@ def collect_vocabulary(
     with open(train_contexts_path, "r") as train_contexts_file:
         for line in tqdm(train_contexts_file, total=count_lines_in_file(train_contexts_path)):
             label, *path_contexts = line.split()
-            label_counter.update(label)
+            label_counter.update([label])
             cur_tokens = []
             cur_types = []
             for pc in path_contexts:

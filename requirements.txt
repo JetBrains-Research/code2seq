@@ -4,3 +4,4 @@ tqdm==4.47.0
 numpy==1.19.0
 pytorch-lightning==0.8.4
 wandb==0.9.2
+pandas~=1.0.5

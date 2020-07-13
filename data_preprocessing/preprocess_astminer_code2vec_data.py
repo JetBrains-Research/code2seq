@@ -38,8 +38,7 @@ def split_data(config: PreprocessingConfig) -> None:
             test = round(num_lines * args.test)
 
             for holdout_name, chunk in zip(
-                ("train", "test", "val"),
-                (lines[:train], lines[train : train + test], lines[train + test :]),
+                ("train", "test", "val"), (lines[:train], lines[train : train + test], lines[train + test :]),
             ):
                 file = join(DATA_FOLDER, config.dataset_name, f"{holdout_name}.csv")
 
@@ -63,9 +62,7 @@ def _load_dict(path: str) -> Any:
     return data
 
 
-def preprocess_csv(
-    config: PreprocessingConfig,
-) -> Tuple[Dict[int, List[int]], Dict[int, str], Dict[int, List[int]]]:
+def preprocess_csv(config: PreprocessingConfig,) -> Tuple[Dict[int, List[int]], Dict[int, str], Dict[int, List[int]]]:
     """
     Preprocessing for files tokens.csv, paths.csv, node_types.csv
     """
@@ -89,10 +86,7 @@ def preprocess_csv(
 
 
 def collect_vocabulary(
-    config: PreprocessingConfig,
-    paths: Dict[int, List[int]],
-    node_types: Dict[int, str],
-    tokens: Dict[int, List[int]],
+    config: PreprocessingConfig, paths: Dict[int, List[int]], node_types: Dict[int, str], tokens: Dict[int, List[int]],
 ) -> Vocabulary:
     train_contexts_path = join(DATA_FOLDER, config.dataset_name, "train.csv")
     label_counter = Counter()
@@ -100,9 +94,7 @@ def collect_vocabulary(
     type_counter = Counter()
 
     with open(train_contexts_path, "r") as train_contexts_file:
-        for line in tqdm(
-            train_contexts_file, total=count_lines_in_file(train_contexts_path)
-        ):
+        for line in tqdm(train_contexts_file, total=count_lines_in_file(train_contexts_path)):
             label, *path_contexts = line.split()
             label_counter.update(label)
             cur_tokens = []
@@ -121,24 +113,16 @@ def collect_vocabulary(
 
     vocab = Vocabulary()
     vocab.add_from_counter(
-        "token_to_id",
-        token_counter,
-        config.subtoken_vocab_max_size,
-        [SOS, EOS, PAD, UNK],
+        "token_to_id", token_counter, config.subtoken_vocab_max_size, [SOS, EOS, PAD, UNK],
     )
-    vocab.add_from_counter(
-        "label_to_id", label_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK]
-    )
+    vocab.add_from_counter("label_to_id", label_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK])
     vocab.add_from_counter("type_to_id", type_counter, -1, [SOS, EOS, PAD, UNK])
 
     return vocab
 
 
 def _convert_path_context_to_ids(
-    path_context: str,
-    vocab: Vocabulary,
-    paths: Dict[int, List[int]],
-    tokens: Dict[int, List[int]],
+    path_context: str, vocab: Vocabulary, paths: Dict[int, List[int]], tokens: Dict[int, List[int]],
 ) -> Tuple[List[int], List[int], List[int]]:
     from_token_id, path_types_id, to_token_id = list(map(int, path_context.split(",")))
 
@@ -156,10 +140,7 @@ def _convert_path_context_to_ids(
 
 
 def convert_holdout(
-    vocab: Vocabulary,
-    config: PreprocessingConfig,
-    paths: Dict[int, List[int]],
-    tokens: Dict[int, List[int]],
+    vocab: Vocabulary, config: PreprocessingConfig, paths: Dict[int, List[int]], tokens: Dict[int, List[int]],
 ) -> None:
     for holdout_name in "train", "test", "val":
         holdout_data_path = join(DATA_FOLDER, config.dataset_name, f"{holdout_name}.csv")
@@ -167,18 +148,11 @@ def convert_holdout(
         create_folder(holdout_output_folder)
         with open(holdout_data_path, "r") as holdout_file:
             labels, from_tokens, path_types, to_tokens = [], [], [], []
-            for i, line in tqdm(
-                enumerate(holdout_file), total=count_lines_in_file(holdout_data_path)
-            ):
+            for i, line in tqdm(enumerate(holdout_file), total=count_lines_in_file(holdout_data_path)):
                 label, *path_contexts = line.split()
                 labels.append([vocab.label_to_id[label]])
                 from_tokens_ids, path_types_ids, to_tokens_ids = list(
-                    zip(
-                        *[
-                            _convert_path_context_to_ids(pc, vocab, paths, tokens)
-                            for pc in path_contexts
-                        ]
-                    )
+                    zip(*[_convert_path_context_to_ids(pc, vocab, paths, tokens) for pc in path_contexts])
                 )
                 from_tokens.append(from_tokens_ids)
                 path_types.append(path_types_ids)
@@ -189,37 +163,23 @@ def convert_holdout(
                         config, vocab, labels, from_tokens, path_types, to_tokens
                     )
                     buffered_path_context.dump(
-                        join(
-                            holdout_output_folder,
-                            f"buffered_paths_{i // config.buffer_size}.pkl",
-                        )
+                        join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl",)
                     )
                     labels, from_tokens, path_types, to_tokens = [], [], [], []
             if len(labels) > 0:
-                buffered_path_context = create_standard_bpc(
-                    config, vocab, labels, from_tokens, path_types, to_tokens
-                )
+                buffered_path_context = create_standard_bpc(config, vocab, labels, from_tokens, path_types, to_tokens)
                 buffered_path_context.dump(
-                    join(
-                        holdout_output_folder,
-                        f"buffered_paths_{i // config.buffer_size}.pkl",
-                    )
+                    join(holdout_output_folder, f"buffered_paths_{i // config.buffer_size}.pkl",)
                 )
 
 
 def preprocess(config: PreprocessingConfig):
     # Collect vocabulary from train holdout if needed
     data_path = join(DATA_FOLDER, config.dataset_name)
-    if not all(
-        f"{holdout_name}.csv" in os.listdir(data_path)
-        for holdout_name in ("train", "test", "val")
-    ):
+    if not all(f"{holdout_name}.csv" in os.listdir(data_path) for holdout_name in ("train", "test", "val")):
         split_data(config)
 
-    if not all(
-        f"{csv_name}.pkl" in os.listdir(data_path)
-        for csv_name in ("tokens", "paths", "node_types")
-    ):
+    if not all(f"{csv_name}.pkl" in os.listdir(data_path) for csv_name in ("tokens", "paths", "node_types")):
         paths, node_types, tokens = preprocess_csv(config)
     else:
         tokens = _load_dict(join(data_path, "tokens.pkl"))
@@ -248,8 +208,4 @@ if __name__ == "__main__":
     if args.train + args.test + args.val != 1.0:
         raise ValueError("Incorrect train/test/val split")
 
-    preprocess(
-        get_preprocessing_config_astminer_code2vec_params(
-            args.data, args.train, args.test, args.val
-        )
-    )
+    preprocess(get_preprocessing_config_astminer_code2vec_params(args.data, args.train, args.test, args.val))

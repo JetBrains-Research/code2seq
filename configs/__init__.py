@@ -33,7 +33,7 @@ def get_preprocessing_config_astminer_code2vec_params(
         target_vocab_max_size=27000,
         train=train,
         test=test,
-        val=val
+        val=val,
     )
 
 

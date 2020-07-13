@@ -67,30 +67,41 @@ def create_standard_bpc(
 
     contexts_per_label = [len(pc) for pc in input_from_tokens]
     total_num_contexts = sum(contexts_per_label)
-
     buffer_size = len(input_labels)
-    labels = numpy.empty((config.max_target_parts + 1, buffer_size), dtype=numpy.int32)
-    from_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.int32)
-    path_types = numpy.empty((config.max_path_length + 1, total_num_contexts), dtype=numpy.int32)
-    to_tokens = numpy.empty((config.max_name_parts + 1, total_num_contexts), dtype=numpy.int32)
+
+    def _reserve_array(max_seq_len: int, is_wrapped: bool, total_size) -> numpy.ndarray:
+        return numpy.empty((max_seq_len + int(is_wrapped), total_size), dtype=numpy.int32)
+
+    labels = _reserve_array(config.max_target_parts, config.wrap_target, buffer_size)
+    from_tokens = _reserve_array(config.max_name_parts, config.wrap_name, total_num_contexts)
+    path_types = _reserve_array(config.max_path_length, config.wrap_path, total_num_contexts)
+    to_tokens = _reserve_array(config.max_name_parts, config.wrap_name, total_num_contexts)
 
     cur_path_idx = 0
     for sample in range(buffer_size):
-        labels[:, sample] = _prepare_to_store(input_labels[sample], config.max_target_parts, vocab.label_to_id)
+        labels[:, sample] = _prepare_to_store(
+            input_labels[sample], config.max_target_parts, vocab.label_to_id, config.wrap_target
+        )
         for ft, pt, tt in zip(input_from_tokens[sample], input_path_types[sample], input_to_tokens[sample]):
-            from_tokens[:, cur_path_idx] = _prepare_to_store(ft, config.max_name_parts, vocab.token_to_id)
-            path_types[:, cur_path_idx] = _prepare_to_store(pt, config.max_path_length, vocab.type_to_id)
-            to_tokens[:, cur_path_idx] = _prepare_to_store(tt, config.max_name_parts, vocab.token_to_id)
+            from_tokens[:, cur_path_idx] = _prepare_to_store(
+                ft, config.max_name_parts, vocab.token_to_id, config.wrap_name
+            )
+            path_types[:, cur_path_idx] = _prepare_to_store(
+                pt, config.max_path_length, vocab.type_to_id, config.wrap_path
+            )
+            to_tokens[:, cur_path_idx] = _prepare_to_store(
+                tt, config.max_name_parts, vocab.token_to_id, config.wrap_name
+            )
             cur_path_idx += 1
 
     contexts = {FROM_TOKEN: from_tokens, PATH_TYPES: path_types, TO_TOKEN: to_tokens}
     return BufferedPathContext(contexts, labels, contexts_per_label)
 
 
-def _prepare_to_store(values: List[int], max_len: int, to_id: Dict) -> List[int]:
+def _prepare_to_store(values: List[int], max_len: int, to_id: Dict, is_wrapped: bool) -> List[int]:
     used_len = min(len(values), max_len)
-    result = [to_id[SOS]] + values[:used_len]
-    if used_len < max_len:
+    result = [to_id[SOS]] + values[:used_len] if is_wrapped else values[:used_len]
+    if used_len < max_len and is_wrapped:
         result.append(to_id[EOS])
         used_len += 1
     result += [to_id[PAD]] * (max_len - used_len)

@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 from dataclasses import asdict
-from multiprocessing import cpu_count
 from os.path import join
 
 import torch
@@ -17,18 +16,18 @@ DATA_FOLDER = "data"
 SEED = 7
 
 
-def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume_from_checkpoint: str = None):
+def train(dataset_name: str, num_workers: int = 0, is_test: bool = False, resume_from_checkpoint: str = None):
     seed_everything(SEED)
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))
 
     config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-    config = config_function(dataset_main_folder, num_workers)
+    config = config_function(dataset_main_folder)
 
-    model = Code2Seq(config, vocab)
+    model = Code2Seq(config, vocab, num_workers)
 
     # define logger
-    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", offline=is_test, log_model=True)
+    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", log_model=True, offline=is_test)
     wandb_logger.watch(model)
     wandb_logger.log_hyperparams(asdict(config))
     # define model checkpoint callback
@@ -63,7 +62,7 @@ def train(dataset_name: str, num_workers: int = 1, is_test: bool = False, resume
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
-    arg_parser.add_argument("--n_workers", type=int, default=cpu_count())
+    arg_parser.add_argument("--n_workers", type=int, default=0)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--resume", type=str, default=None)
     args = arg_parser.parse_args()

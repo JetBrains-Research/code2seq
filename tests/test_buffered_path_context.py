@@ -3,18 +3,15 @@ from unittest import TestCase
 import numpy
 
 from configs import PreprocessingConfig
-from dataset import Vocabulary, BufferedPathContext
+from dataset import Vocabulary, BufferedPathContext, ConvertParameters
 from utils.common import SOS, EOS, PAD, FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
 class TestBufferedPathContext(TestCase):
     def test_creating_standard_path_context(self):
-        vocab = Vocabulary(
-            token_to_id={SOS: 0, EOS: 1, PAD: 2},
-            type_to_id={SOS: 1, EOS: 2, PAD: 0},
-            label_to_id={SOS: 2, EOS: 0, PAD: 1},
-        )
-        config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
+        token_to_id = {SOS: 0, EOS: 1, PAD: 2}
+        type_to_id = {SOS: 1, EOS: 2, PAD: 0}
+        label_to_id = {SOS: 2, EOS: 0, PAD: 1}
         labels = [[4], [], [4, 5, 6]]
         from_tokens = [
             [[4], [5, 6]],
@@ -33,13 +30,18 @@ class TestBufferedPathContext(TestCase):
         ]
 
         buffered_path_context = BufferedPathContext.create_from_lists(
-            config, vocab, labels, from_tokens, path_types, to_tokens
+            (labels, ConvertParameters(3, True, label_to_id)),
+            {
+                FROM_TOKEN: (from_tokens, ConvertParameters(3, False, token_to_id)),
+                PATH_TYPES: (path_types, ConvertParameters(3, True, type_to_id)),
+                TO_TOKEN: (to_tokens, ConvertParameters(3, False, token_to_id)),
+            },
         )
 
         true_labels = numpy.array([[2, 2, 2], [4, 0, 4], [0, 1, 5], [1, 1, 6]])
-        true_from_tokens = numpy.array([[0, 0, 0, 0, 0, 0], [4, 5, 1, 1, 1, 6], [1, 6, 2, 2, 2, 5], [2, 1, 2, 2, 2, 4]])
+        true_from_tokens = numpy.array([[4, 5, 2, 2, 2, 6], [2, 6, 2, 2, 2, 5], [2, 2, 2, 2, 2, 4]])
         true_path_types = numpy.array([[1, 1, 1, 1, 1, 1], [4, 6, 2, 2, 2, 6], [5, 2, 0, 0, 0, 5], [2, 0, 0, 0, 0, 4]])
-        true_to_tokens = numpy.array([[0, 0, 0, 0, 0, 0], [6, 4, 1, 1, 1, 4], [1, 5, 2, 2, 2, 6], [2, 1, 2, 2, 2, 4]])
+        true_to_tokens = numpy.array([[6, 4, 2, 2, 2, 4], [2, 5, 2, 2, 2, 6], [2, 2, 2, 2, 2, 4]])
 
         self.assertListEqual([2, 3, 1], buffered_path_context.contexts_per_label)
         numpy.testing.assert_array_equal(true_labels, buffered_path_context.labels)
@@ -47,15 +49,27 @@ class TestBufferedPathContext(TestCase):
         numpy.testing.assert_array_equal(true_path_types, buffered_path_context.contexts[PATH_TYPES])
         numpy.testing.assert_array_equal(true_to_tokens, buffered_path_context.contexts[TO_TOKEN])
 
-    def test_creating_standard_path_context_check_path_shapes(self):
-        config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
+    def test_creating_buffered_context_check_context_shapes(self):
         with self.assertRaises(ValueError):
-            BufferedPathContext.create_from_lists(config, Vocabulary(), [[]], [[], []], [[], [], []], [[]])
+            BufferedPathContext.create_from_lists(
+                ([[]], ConvertParameters(0, False, {})),
+                {
+                    FROM_TOKEN: ([[], []], ConvertParameters(0, False, {})),
+                    PATH_TYPES: ([[], [], []], ConvertParameters(0, False, {})),
+                    TO_TOKEN: ([[]], ConvertParameters(0, False, {})),
+                },
+            )
 
-    def test_creating_standard_path_context_check_full_buffer(self):
-        config = PreprocessingConfig("", 3, 3, 3, True, True, True, -1, -1, 3)
+    def test_creating_buffered_context_check_labels_shape(self):
         with self.assertRaises(ValueError):
-            BufferedPathContext.create_from_lists(config, Vocabulary(), [[], [], []], [[], []], [[], [], []], [[]])
+            BufferedPathContext.create_from_lists(
+                ([[], [], []], ConvertParameters(0, False, {})),
+                {
+                    FROM_TOKEN: ([[], []], ConvertParameters(0, False, {})),
+                    PATH_TYPES: ([[], []], ConvertParameters(0, False, {})),
+                    TO_TOKEN: ([[], []], ConvertParameters(0, False, {})),
+                },
+            )
 
     def test__convert_list_to_numpy_array_simple(self):
         values = [[3, 4, 5]]

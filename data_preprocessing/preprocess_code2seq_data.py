@@ -8,8 +8,8 @@ from typing import Tuple, List, Generator
 from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
-from dataset import Vocabulary, BufferedPathContext
-from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
+from dataset import Vocabulary, BufferedPathContext, ConvertParameters
+from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
 DATA_FOLDER = "data"
 
@@ -75,7 +75,14 @@ def _convert_raw_buffer(lines: List[str], config: PreprocessingConfig, vocab: Vo
         path_types.append([cc[1] for cc in converted_context])
         to_tokens.append([cc[2] for cc in converted_context])
 
-    return BufferedPathContext.create_from_lists(config, vocab, labels, from_tokens, path_types, to_tokens)
+    return BufferedPathContext.create_from_lists(
+        (labels, ConvertParameters(config.max_target_parts, config.wrap_target, vocab.label_to_id)),
+        {
+            FROM_TOKEN: (from_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id)),
+            PATH_TYPES: (path_types, ConvertParameters(config.max_path_length, config.wrap_path, vocab.type_to_id)),
+            TO_TOKEN: (to_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id)),
+        },
+    )
 
 
 def _read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], None, None]:

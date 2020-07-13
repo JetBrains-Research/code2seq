@@ -1,12 +1,18 @@
 import pickle
-from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from dataclasses import dataclass, asdict
+from itertools import chain
+from typing import List, Dict, Tuple, Iterable
 
 import numpy
 
-from configs import PreprocessingConfig
-from dataset import Vocabulary
-from utils.common import PAD, SOS, EOS, FROM_TOKEN, PATH_TYPES, TO_TOKEN
+from utils.common import PAD, SOS, EOS
+
+
+@dataclass(frozen=True)
+class ConvertParameters:
+    max_length: int
+    is_wrapped: bool
+    to_id: Dict[str, int]
 
 
 @dataclass
@@ -51,58 +57,44 @@ class BufferedPathContext:
             raise RuntimeError("Incorrect data inside pickled file")
         return BufferedPathContext(*data)
 
+    @staticmethod
+    def create_from_lists(
+        input_labels: Tuple[List[List[int]], ConvertParameters],
+        input_contexts: Dict[str, Tuple[List[List[List[int]]], ConvertParameters]],
+    ) -> "BufferedPathContext":
+        ctx_sizes = [len(ctx[0]) for ctx in input_contexts.values()]
+        if not all([ctx_sz == ctx_sizes[0] for ctx_sz in ctx_sizes]):
+            raise ValueError(f"Unequal sizes of array with path parts")
+        if len(input_labels[0]) != ctx_sizes[0]:
+            raise ValueError(f"Number of labels is different to number of paths")
 
-def create_standard_bpc(
-    config: PreprocessingConfig,
-    vocab: Vocabulary,
-    input_labels: List[List[int]],
-    input_from_tokens: List[List[List[int]]],
-    input_path_types: List[List[List[int]]],
-    input_to_tokens: List[List[List[int]]],
-) -> BufferedPathContext:
-    if not (len(input_from_tokens) == len(input_path_types) == len(input_to_tokens)):
-        raise ValueError(f"Unequal sizes of array with path parts")
-    if len(input_labels) != len(input_from_tokens):
-        raise ValueError(f"Number of labels is different to number of paths")
+        rnd_context = input_contexts[list(input_contexts.keys())[0]]
+        contexts_per_label = [len(ctx) for ctx in rnd_context[0]]
+        n_contexts = sum(contexts_per_label)
 
-    contexts_per_label = [len(pc) for pc in input_from_tokens]
-    total_num_contexts = sum(contexts_per_label)
-    buffer_size = len(input_labels)
-
-    def _reserve_array(max_seq_len: int, is_wrapped: bool, total_size) -> numpy.ndarray:
-        return numpy.empty((max_seq_len + int(is_wrapped), total_size), dtype=numpy.int32)
-
-    labels = _reserve_array(config.max_target_parts, config.wrap_target, buffer_size)
-    from_tokens = _reserve_array(config.max_name_parts, config.wrap_name, total_num_contexts)
-    path_types = _reserve_array(config.max_path_length, config.wrap_path, total_num_contexts)
-    to_tokens = _reserve_array(config.max_name_parts, config.wrap_name, total_num_contexts)
-
-    cur_path_idx = 0
-    for sample in range(buffer_size):
-        labels[:, sample] = _prepare_to_store(
-            input_labels[sample], config.max_target_parts, vocab.label_to_id, config.wrap_target
+        labels = BufferedPathContext._list_to_numpy_array(
+            input_labels[0], len(input_labels[0]), **asdict(input_labels[1])
         )
-        for ft, pt, tt in zip(input_from_tokens[sample], input_path_types[sample], input_to_tokens[sample]):
-            from_tokens[:, cur_path_idx] = _prepare_to_store(
-                ft, config.max_name_parts, vocab.token_to_id, config.wrap_name
+        contexts = {}
+        for ctx_name, ctx in input_contexts.items():
+            contexts[ctx_name] = BufferedPathContext._list_to_numpy_array(
+                chain.from_iterable(ctx[0]), n_contexts, **asdict(ctx[1])
             )
-            path_types[:, cur_path_idx] = _prepare_to_store(
-                pt, config.max_path_length, vocab.type_to_id, config.wrap_path
-            )
-            to_tokens[:, cur_path_idx] = _prepare_to_store(
-                tt, config.max_name_parts, vocab.token_to_id, config.wrap_name
-            )
-            cur_path_idx += 1
 
-    contexts = {FROM_TOKEN: from_tokens, PATH_TYPES: path_types, TO_TOKEN: to_tokens}
-    return BufferedPathContext(contexts, labels, contexts_per_label)
+        return BufferedPathContext(contexts, labels, contexts_per_label)
 
-
-def _prepare_to_store(values: List[int], max_len: int, to_id: Dict, is_wrapped: bool) -> List[int]:
-    used_len = min(len(values), max_len)
-    result = [to_id[SOS]] + values[:used_len] if is_wrapped else values[:used_len]
-    if used_len < max_len and is_wrapped:
-        result.append(to_id[EOS])
-        used_len += 1
-    result += [to_id[PAD]] * (max_len - used_len)
-    return result
+    @staticmethod
+    def _list_to_numpy_array(
+        values: Iterable[List[int]], total_size: int, max_length: int, is_wrapped: bool, to_id: Dict
+    ) -> numpy.ndarray:
+        result = numpy.full((max_length + int(is_wrapped), total_size), to_id[PAD], dtype=numpy.int32)
+        start_idx = 0
+        if is_wrapped:
+            result[0, :] = to_id[SOS]
+            start_idx = 1
+        for pos, sample in enumerate(values):
+            used_len = min(len(sample), max_length)
+            result[start_idx : used_len + start_idx, pos] = sample[:used_len]
+            if used_len < max_length and is_wrapped:
+                result[used_len + start_idx, pos] = to_id[EOS]
+        return result

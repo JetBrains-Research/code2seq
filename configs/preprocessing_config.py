@@ -16,12 +16,6 @@ class PreprocessingConfig:
     subtoken_vocab_max_size: int = -1
     target_vocab_max_size: int = -1
     buffer_size: int = 10_000
-    data_root: str = "data"
-    data_path: str = None
-    train_data_path: str = None
     train: float = None
     test: float = None
     val: float = None
-
-    def __post_init__(self):
-        self.data_path = join(self.data_root, self.dataset_name)

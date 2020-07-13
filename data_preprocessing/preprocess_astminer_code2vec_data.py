@@ -8,7 +8,6 @@ import pandas as pd
 import pickle
 from operator import itemgetter
 import os
-from random import shuffle
 
 from configs import (
     get_preprocessing_config_astminer_code2vec_params,
@@ -17,9 +16,11 @@ from configs import (
 from dataset import Vocabulary, create_standard_bpc
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
+DATA_FOLDER = "data"
+
 
 def split_data(config: PreprocessingConfig) -> None:
-    data_path = join(config.data_path, "c")
+    data_path = join(DATA_FOLDER, config.dataset_name, "c")
     paths_contexts_path = join(data_path, "path_contexts.csv")
 
     # split paths_contexts into train test and validation
@@ -40,7 +41,7 @@ def split_data(config: PreprocessingConfig) -> None:
                 ("train", "test", "val"),
                 (lines[:train], lines[train : train + test], lines[train + test :]),
             ):
-                file = join(config.data_path, f"{holdout_name}.csv")
+                file = join(DATA_FOLDER, config.dataset_name, f"{holdout_name}.csv")
 
                 with open(file, "a+") as holdout_file:
                     holdout_file.write("\n".join(chunk + [""]))
@@ -68,9 +69,10 @@ def preprocess_csv(
     """
     Preprocessing for files tokens.csv, paths.csv, node_types.csv
     """
-    token_data_path = join(config.data_path, "c", "tokens.csv")
-    type_data_path = join(config.data_path, "c", "node_types.csv")
-    paths_data_path = join(config.data_path, "c", "paths.csv")
+    data_path = join(DATA_FOLDER, config.dataset_name)
+    token_data_path = join(data_path, "c", "tokens.csv")
+    type_data_path = join(data_path, "c", "node_types.csv")
+    paths_data_path = join(data_path, "c", "paths.csv")
 
     paths = _get_id2value_from_csv(paths_data_path)["path"]
     paths = {index: list(map(int, nodes.split())) for index, nodes in paths.items()}
@@ -80,9 +82,9 @@ def preprocess_csv(
     tokens = _get_id2value_from_csv(token_data_path)["token"]
     tokens = {index: token_seq.split("|") for index, token_seq in tokens.items()}
 
-    _dump_dict(join(config.data_path, "tokens.pkl"), tokens)
-    _dump_dict(join(config.data_path, "node_types.pkl"), node_types)
-    _dump_dict(join(config.data_path, "paths.pkl"), paths)
+    _dump_dict(join(data_path, "tokens.pkl"), tokens)
+    _dump_dict(join(data_path, "node_types.pkl"), node_types)
+    _dump_dict(join(data_path, "paths.pkl"), paths)
     return paths, node_types, tokens
 
 
@@ -92,7 +94,7 @@ def collect_vocabulary(
     node_types: Dict[int, str],
     tokens: Dict[int, List[int]],
 ) -> Vocabulary:
-    train_contexts_path = join(config.data_path, "train.csv")
+    train_contexts_path = join(DATA_FOLDER, config.dataset_name, "train.csv")
     label_counter = Counter()
     token_counter = Counter()
     type_counter = Counter()
@@ -160,8 +162,8 @@ def convert_holdout(
     tokens: Dict[int, List[int]],
 ) -> None:
     for holdout_name in "train", "test", "val":
-        holdout_data_path = join(config.data_path, f"{holdout_name}.csv")
-        holdout_output_folder = join(config.data_path, holdout_name)
+        holdout_data_path = join(DATA_FOLDER, config.dataset_name, f"{holdout_name}.csv")
+        holdout_output_folder = join(DATA_FOLDER, config.dataset_name, holdout_name)
         create_folder(holdout_output_folder)
         with open(holdout_data_path, "r") as holdout_file:
             labels, from_tokens, path_types, to_tokens = [], [], [], []
@@ -207,23 +209,24 @@ def convert_holdout(
 
 def preprocess(config: PreprocessingConfig):
     # Collect vocabulary from train holdout if needed
+    data_path = join(DATA_FOLDER, config.dataset_name)
     if not all(
-        f"{holdout_name}.csv" in os.listdir(config.data_path)
+        f"{holdout_name}.csv" in os.listdir(data_path)
         for holdout_name in ("train", "test", "val")
     ):
         split_data(config)
 
     if not all(
-        f"{csv_name}.pkl" in os.listdir(config.data_path)
+        f"{csv_name}.pkl" in os.listdir(data_path)
         for csv_name in ("tokens", "paths", "node_types")
     ):
         paths, node_types, tokens = preprocess_csv(config)
     else:
-        tokens = _load_dict(join(config.data_path, "tokens.pkl"))
-        paths = _load_dict(join(config.data_path, "paths.pkl"))
-        node_types = _load_dict(join(config.data_path, "node_types.pkl"))
+        tokens = _load_dict(join(data_path, "tokens.pkl"))
+        paths = _load_dict(join(data_path, "paths.pkl"))
+        node_types = _load_dict(join(data_path, "node_types.pkl"))
 
-    vocab_path = join(config.data_path, "vocabulary.pkl")
+    vocab_path = join(data_path, "vocabulary.pkl")
 
     if exists(vocab_path):
         vocab = Vocabulary.load(vocab_path)

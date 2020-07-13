@@ -2,6 +2,7 @@ import pickle
 from argparse import ArgumentParser
 from collections import Counter
 from math import ceil
+from multiprocessing import Pool, cpu_count
 from os import path
 from typing import Tuple, List, Generator
 
@@ -65,7 +66,8 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
     )
 
 
-def _convert_raw_buffer(lines: List[str], config: PreprocessingConfig, vocab: Vocabulary) -> BufferedPathContext:
+def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str]):
+    lines, config, vocab, output_path = convert_args
     labels, from_tokens, path_types, to_tokens = [], [], [], []
     for line in lines:
         label, *path_contexts = line.split()
@@ -75,14 +77,14 @@ def _convert_raw_buffer(lines: List[str], config: PreprocessingConfig, vocab: Vo
         path_types.append([cc[1] for cc in converted_context])
         to_tokens.append([cc[2] for cc in converted_context])
 
-    return BufferedPathContext.create_from_lists(
+    BufferedPathContext.create_from_lists(
         (labels, ConvertParameters(config.max_target_parts, config.wrap_target, vocab.label_to_id)),
         {
-            FROM_TOKEN: (from_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id)),
+            FROM_TOKEN: (from_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id),),
             PATH_TYPES: (path_types, ConvertParameters(config.max_path_length, config.wrap_path, vocab.type_to_id)),
             TO_TOKEN: (to_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id)),
         },
-    )
+    ).dump(output_path)
 
 
 def _read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], None, None]:
@@ -96,16 +98,23 @@ def _read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], 
     yield lines
 
 
-def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig):
+def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig, n_jobs: int):
     holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
     holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
     create_folder(holdout_output_folder)
     n_buffers = ceil(count_lines_in_file(holdout_data_path) / config.buffer_size)
-    for i, lines in tqdm(enumerate(_read_file_by_batch(holdout_data_path, config.buffer_size)), total=n_buffers):
-        _convert_raw_buffer(lines, config, vocab).dump(path.join(holdout_output_folder, f"buffered_paths_{i}.pkl"))
+    with Pool(n_jobs) as pool:
+        results = pool.imap(
+            _convert_raw_buffer,
+            (
+                (lines, config, vocab, path.join(holdout_output_folder, f"buffered_paths_{pos}.pkl"))
+                for pos, lines in enumerate(_read_file_by_batch(holdout_data_path, config.buffer_size))
+            ),
+        )
+        _ = [_ for _ in tqdm(results, total=n_buffers)]
 
 
-def preprocess(config: PreprocessingConfig, is_vocab_collected: bool):
+def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: int):
     # Collect vocabulary from train holdout if needed
     vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")
     if path.exists(vocab_path):
@@ -113,15 +122,16 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool):
     else:
         vocab = collect_vocabulary(config) if is_vocab_collected else convert_vocabulary(config)
         vocab.dump(vocab_path)
-    convert_holdout("train", vocab, config)
-    convert_holdout("val", vocab, config)
-    convert_holdout("test", vocab, config)
+    convert_holdout("train", vocab, config, n_jobs)
+    convert_holdout("val", vocab, config, n_jobs)
+    convert_holdout("test", vocab, config, n_jobs)
 
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
     arg_parser.add_argument("--collect-vocabulary", action="store_true")
+    arg_parser.add_argument("--n-jobs", type=int, default=None)
     args = arg_parser.parse_args()
 
-    preprocess(get_preprocessing_config_code2seq_params(args.data), args.collect_vocabulary)
+    preprocess(get_preprocessing_config_code2seq_params(args.data), args.collect_vocabulary, args.n_jobs or cpu_count())

@@ -1,3 +1,4 @@
+import pickle
 from argparse import ArgumentParser
 from collections import Counter
 from os import path
@@ -9,16 +10,30 @@ from configs import get_preprocessing_config_code2seq_params, PreprocessingConfi
 from dataset import Vocabulary, create_standard_bpc
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder
 
+DATA_FOLDER = "data"
+
+
+def _vocab_from_counters(
+    config: PreprocessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
+) -> Vocabulary:
+    vocab = Vocabulary()
+    vocab.add_from_counter(
+        "token_to_id", token_counter, config.subtoken_vocab_max_size, [SOS, EOS, PAD, UNK],
+    )
+    vocab.add_from_counter("label_to_id", target_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK])
+    vocab.add_from_counter("type_to_id", type_counter, -1, [SOS, EOS, PAD, UNK])
+    return vocab
+
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
-    label_counter = Counter()
+    target_counter = Counter()
     token_counter = Counter()
     type_counter = Counter()
-    train_data_path = path.join(config.data_path, f"{config.dataset_name}.train.c2s")
+    train_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.train.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
-            label_counter.update(label.split("|"))
+            target_counter.update(label.split("|"))
             cur_tokens = []
             cur_types = []
             for path_context in path_contexts:
@@ -27,13 +42,15 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
                 cur_types += path_types.split("|")
             token_counter.update(cur_tokens)
             type_counter.update(cur_types)
-    vocab = Vocabulary()
-    vocab.add_from_counter(
-        "token_to_id", token_counter, config.subtoken_vocab_max_size, [SOS, EOS, PAD, UNK],
-    )
-    vocab.add_from_counter("label_to_id", label_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK])
-    vocab.add_from_counter("type_to_id", type_counter, -1, [SOS, EOS, PAD, UNK])
-    return vocab
+    return _vocab_from_counters(config, token_counter, target_counter, type_counter)
+
+
+def convert_vocabulary(config: PreprocessingConfig) -> Vocabulary:
+    with open(path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.dict.c2s"), "rb") as dict_file:
+        subtoken_to_count = Counter(pickle.load(dict_file))
+        node_to_count = Counter(pickle.load(dict_file))
+        target_to_count = Counter(pickle.load(dict_file))
+    return _vocab_from_counters(config, subtoken_to_count, target_to_count, node_to_count)
 
 
 def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[List[int], List[int], List[int]]:
@@ -48,8 +65,8 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
 
 
 def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig):
-    holdout_data_path = path.join(config.data_path, f"{config.dataset_name}.{holdout_name}.c2s")
-    holdout_output_folder = path.join(config.data_path, holdout_name)
+    holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
+    holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
     create_folder(holdout_output_folder)
     label_unk = vocab.label_to_id[UNK]
     with open(holdout_data_path, "r") as holdout_file:
@@ -77,13 +94,13 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
             )
 
 
-def preprocess(config: PreprocessingConfig):
+def preprocess(config: PreprocessingConfig, is_vocab_collected: bool):
     # Collect vocabulary from train holdout if needed
-    vocab_path = path.join(config.data_path, "vocabulary.pkl")
+    vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")
     if path.exists(vocab_path):
         vocab = Vocabulary.load(vocab_path)
     else:
-        vocab = collect_vocabulary(config)
+        vocab = collect_vocabulary(config) if is_vocab_collected else convert_vocabulary(config)
         vocab.dump(vocab_path)
     convert_holdout("train", vocab, config)
     convert_holdout("val", vocab, config)
@@ -93,6 +110,7 @@ def preprocess(config: PreprocessingConfig):
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
+    arg_parser.add_argument("--collect-vocabulary", action="store_true")
     args = arg_parser.parse_args()
 
-    preprocess(get_preprocessing_config_code2seq_params(args.data))
+    preprocess(get_preprocessing_config_code2seq_params(args.data), args.collect_vocabulary)

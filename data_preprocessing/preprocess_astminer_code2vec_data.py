@@ -31,9 +31,6 @@ def split_data(config: PreprocessingConfig) -> None:
             label, *_ = line.split(" ")
             label_to_line[label].append(line)
 
-        if args.shuffle:
-            shuffle(data)
-
         for label, lines in label_to_line.items():
             num_lines = len(lines)
             train = round(num_lines * args.train)
@@ -243,7 +240,6 @@ if __name__ == "__main__":
     arg_parser.add_argument("--train", type=float, default=0.7)
     arg_parser.add_argument("--test", type=float, default=0.1)
     arg_parser.add_argument("--val", type=float, default=0.2)
-    arg_parser.add_argument("--shuffle", type=float, default=True)
     args = arg_parser.parse_args()
 
     if args.train + args.test + args.val != 1.0:
@@ -251,6 +247,6 @@ if __name__ == "__main__":
 
     preprocess(
         get_preprocessing_config_astminer_code2vec_params(
-            args.data, args.train, args.test, args.val, args.shuffle
+            args.data, args.train, args.test, args.val
         )
     )

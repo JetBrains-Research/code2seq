@@ -20,7 +20,6 @@ class PreprocessingConfig:
     train: float = None
     test: float = None
     val: float = None
-    shuffle: bool = True
 
     def __post_init__(self):
         self.data_path = join(self.data_root, self.dataset_name)

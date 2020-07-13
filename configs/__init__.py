@@ -16,7 +16,7 @@ def get_preprocessing_config_code2seq_params(dataset_name: str) -> Preprocessing
 
 
 def get_preprocessing_config_astminer_code2vec_params(
-    dataset_name: str, train: float, test: float, val: float, shuffle: bool
+    dataset_name: str, train: float, test: float, val: float
 ) -> PreprocessingConfig:
     return PreprocessingConfig(
         dataset_name=dataset_name,
@@ -27,8 +27,7 @@ def get_preprocessing_config_astminer_code2vec_params(
         target_vocab_max_size=27000,
         train=train,
         test=test,
-        val=val,
-        shuffle=shuffle,
+        val=val
     )
 
 

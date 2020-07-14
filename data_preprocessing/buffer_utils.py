@@ -14,9 +14,7 @@ DATA_FOLDER = "data"
 
 
 # Buffering utils
-def read_file_by_batch(
-    filepath: str, batch_size: int
-) -> Generator[List[str], None, None]:
+def read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], None, None]:
     with open(filepath, "r") as file:
         lines = []
         for line in file:
@@ -28,13 +26,7 @@ def read_file_by_batch(
 
 
 def convert_raw_buffer(
-    convert_args: Tuple[
-        List[str],
-        PreprocessingConfig,
-        Vocabulary,
-        str,
-        Callable[[str, Vocabulary, Any], Any],
-    ],
+    convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, Callable[[str, Vocabulary, Any], Any],],
     **kwargs,
 ):
     lines, config, vocab, output_path, splitting_func = convert_args
@@ -47,31 +39,11 @@ def convert_raw_buffer(
         to_tokens.append([cc[2] for cc in converted_context])
 
     BufferedPathContext.create_from_lists(
-        (
-            labels,
-            ConvertParameters(
-                config.max_target_parts, config.wrap_target, vocab.label_to_id
-            ),
-        ),
+        (labels, ConvertParameters(config.max_target_parts, config.wrap_target, vocab.label_to_id),),
         {
-            FROM_TOKEN: (
-                from_tokens,
-                ConvertParameters(
-                    config.max_name_parts, config.wrap_name, vocab.token_to_id
-                ),
-            ),
-            PATH_TYPES: (
-                path_types,
-                ConvertParameters(
-                    config.max_path_length, config.wrap_path, vocab.type_to_id
-                ),
-            ),
-            TO_TOKEN: (
-                to_tokens,
-                ConvertParameters(
-                    config.max_name_parts, config.wrap_name, vocab.token_to_id
-                ),
-            ),
+            FROM_TOKEN: (from_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id),),
+            PATH_TYPES: (path_types, ConvertParameters(config.max_path_length, config.wrap_path, vocab.type_to_id),),
+            TO_TOKEN: (to_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id),),
         },
     ).dump(output_path)
 
@@ -91,16 +63,8 @@ def convert_holdout(
         results = pool.imap(
             partial(convert_raw_buffer, **kwargs),
             (
-                (
-                    lines,
-                    config,
-                    vocab,
-                    join(holdout_output_folder, f"buffered_paths_{pos}.pkl"),
-                    split_context,
-                )
-                for pos, lines in enumerate(
-                    read_file_by_batch(holdout_data_path, config.buffer_size)
-                )
+                (lines, config, vocab, join(holdout_output_folder, f"buffered_paths_{pos}.pkl"), split_context,)
+                for pos, lines in enumerate(read_file_by_batch(holdout_data_path, config.buffer_size))
             ),
         )
         _ = [_ for _ in tqdm(results, total=n_buffers)]

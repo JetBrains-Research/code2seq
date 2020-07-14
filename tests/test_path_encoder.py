@@ -16,7 +16,7 @@ class TestPathEncoder(TestCase):
     _batch_size = 128
 
     def test_forward(self):
-        config = EncoderConfig(self._hidden_size, self._hidden_size, True, 0.5, 0.5)
+        config = EncoderConfig(self._hidden_size, self._hidden_size, True, 0.5, 1, 0.5)
 
         buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
         batch = PathContextBatch([buffered_path_contexts[i] for i in range(self._batch_size)])

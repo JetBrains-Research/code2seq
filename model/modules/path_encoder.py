@@ -31,7 +31,7 @@ class PathEncoder(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, samples: Dict[str, torch.Tensor]) -> torch.Tensor:
-        # [max name parts + 1; total paths]
+        # [max name parts; total paths]
         from_token = samples[FROM_TOKEN]
         to_token = samples[TO_TOKEN]
         # [max path length + 1; total paths]

@@ -3,11 +3,11 @@ from os import mkdir
 from os.path import exists
 from shutil import rmtree
 
-# sequence service tokens
 from typing import List
 
 import numpy
 
+# sequence service tokens
 SOS = "<SOS>"
 EOS = "<EOS>"
 PAD = "<PAD>"

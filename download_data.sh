@@ -20,9 +20,9 @@ then
 elif [ "$DATASET_NAME" = "java-medium" ]
 then
   echo "Downloading dataset $1"
-  wget https://s3.amazonaws.com/code2seq/datasets/java-medium-preprocessed.tar.gz -P data/
+  wget https://s3.amazonaws.com/code2seq/datasets/java-med-preprocessed.tar.gz -P data/
   echo "Unzip dataset"
-  tar -xvzf data/java-medium-preprocessed.tar.gz -C data/
+  tar -xvzf data/java-med-preprocessed.tar.gz -C data/
   echo "Deleting .tar.gz"
   rm data/java-medium-preprocessed.tar.gz
 elif [ "$DATASET_NAME" = "java-large" ]

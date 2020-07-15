@@ -29,7 +29,7 @@ class PathDecoder(nn.Module):
         # So, manually adding dropout for the first layer
         self.lstm_dropout = nn.Dropout(config.rnn_dropout)
         self.decoder_lstm = nn.LSTM(
-            config.embedding_size,
+            config.embedding_size + config.decoder_size,
             config.decoder_size,
             num_layers=config.num_decoder_layers,
             dropout=config.rnn_dropout,
@@ -93,11 +93,6 @@ class PathDecoder(nn.Module):
         # [1; batch size; embedding size] LSTM input required
         embedded = embedded.unsqueeze(0)
 
-        # [1; batch size; decoder size]
-        rnn_output, (h_prev, c_prev) = self.decoder_lstm(embedded, (h_prev, c_prev))
-        # [batch size; decoder size]
-        rnn_output = rnn_output.squeeze(0)
-
         # [batch size; 1; context size]
         attn_weights = self.attention(h_prev[-1], batched_context, attention_mask)
 
@@ -106,13 +101,18 @@ class PathDecoder(nn.Module):
         # [batch size; decoder size]
         context = context.squeeze(1)
 
-        # [batch size; 2 * decoder size]
-        concat_input = torch.cat([rnn_output, context], dim=1)
+        # [batch size; embedding size + decoder size]
+        lstm_input = torch.cat([embedded, context.unsqueeze(0)], dim=2)
+
+        # [1; batch size; decoder size]
+        rnn_output, (h_prev, c_prev) = self.decoder_lstm(lstm_input, (h_prev, c_prev))
+        # [batch size; decoder size]
+        rnn_output = rnn_output.squeeze(0)
 
         # [batch size; decoder size]
-        concat = torch.tanh(self.concat_layer(concat_input))
+        # concat = torch.tanh(self.concat_layer(concat_input))
 
         # [batch size; vocab size]
-        output = self.projection_layer(concat)
+        output = self.projection_layer(rnn_output)
 
         return output, (h_prev, c_prev)

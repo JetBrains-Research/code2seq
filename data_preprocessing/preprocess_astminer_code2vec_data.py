@@ -132,8 +132,15 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
         holdout_parsed_path = path.join(data_path, f"{holdout_name}.pkl")
         tokens, node_types, paths = _load_preprocessed_data(holdout_parsed_path)
         convert_holdout(
-            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, split_context,
-            paths=paths, tokens=tokens, node_types=node_types
+            holdout_data_path,
+            holdout_output_folder,
+            vocab,
+            config,
+            n_jobs,
+            split_context,
+            paths=paths,
+            tokens=tokens,
+            node_types=node_types,
         )
 
 

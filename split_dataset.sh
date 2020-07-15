@@ -76,7 +76,7 @@ while test $# -gt 0; do
 done
 
 dir_train="${split_dataset_path}/train"
-dir_validation="${split_dataset_path}/validation"
+dir_validation="${split_dataset_path}/val"
 dir_test="${split_dataset_path}/test"
 
 echo "Train $train % "

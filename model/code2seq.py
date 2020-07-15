@@ -54,7 +54,7 @@ class Code2Seq(LightningModule):
                 self.config.learning_rate,
                 momentum=0.95,
                 nesterov=self.config.nesterov,
-                # weight_decay=self.config.weight_decay,
+                weight_decay=self.config.weight_decay,
             )
         elif self.config.optimizer == "Adam":
             optimizer = Adam(self.parameters(), self.config.learning_rate, weight_decay=self.config.weight_decay)

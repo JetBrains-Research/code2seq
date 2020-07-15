@@ -66,7 +66,7 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
         batch_size=10,
         test_batch_size=10,
         learning_rate=0.01,
-        weight_decay=0.01,
+        weight_decay=0.00001,
         decay_gamma=0.95,
         clip_norm=5,
         max_context=200,

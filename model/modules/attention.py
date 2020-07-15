@@ -19,7 +19,7 @@ class LuongAttention(nn.Module):
         # [batch size; 1; units]
         hidden = hidden.unsqueeze(1)
         # [batch size; units; seq len]
-        encoder_outputs = encoder_outputs.permute(0, 2, 1)
+        encoder_outputs = encoder_outputs.transpose(1, 2)
         # [batch size; 1; units]
         score = self.attn(hidden)
         # [batch size; 1; seq len]

@@ -138,6 +138,15 @@ then
   ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104/train --output ../code2seq/data/poj_104_parsed/train --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
   ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104/test --output ../code2seq/data/poj_104_parsed/test --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
   ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104/val --output ../code2seq/data/poj_104_parsed/val --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+  cd ../code2seq
+  for folder in $(find ./data/poj_104_parsed/*/c -type d)
+  do
+    for file in $folder/*
+    do
+      mv "$file" "./data/poj_104_parsed/$(basename ${file/.csv/.$(basename $(dirname $folder)).csv})"
+    done
+    rm -rf $folder
+  done
 else
   echo "Dataset $DATASET_NAME does not exist"
 fi

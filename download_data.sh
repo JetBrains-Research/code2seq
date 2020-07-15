@@ -48,11 +48,16 @@ then
     do
       mv "$file" "${file/.txt/.c}"
     done
+    sh ./split_dataset.sh -i ./data/poj_104 -o ./data/poj_104_split --train 70 --test 10 --val 20
+    rm -rf ./data/poj_104
+    mv ./data/poj_104_split ./data/poj_104
   fi
   echo "Extracting AST using astminer. You need to clone astminer first"
   mkdir ./data/poj_104_parsed
   cd ../astminer
-  ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104 --output ../code2seq/data/poj_104_parsed --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+  ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104/train --output ../code2seq/data/poj_104_parsed/train --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+  ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104/test --output ../code2seq/data/poj_104_parsed/test --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+  ./cli.sh code2vec --lang c --project ../code2seq/data/poj_104/val --output ../code2seq/data/poj_104_parsed/val --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
 else
   echo "Dataset $DATASET_NAME does not exist"
 fi

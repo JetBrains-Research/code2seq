@@ -1,7 +1,6 @@
 from typing import List, Tuple
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 
 from configs import DecoderConfig
@@ -111,7 +110,7 @@ class PathDecoder(nn.Module):
         concat_input = torch.cat([rnn_output, context], dim=1)
 
         # [batch size; decoder size]
-        concat = F.tanh(self.concat_layer(concat_input))
+        concat = torch.tanh(self.concat_layer(concat_input))
 
         # [batch size; vocab size]
         output = self.projection_layer(concat)

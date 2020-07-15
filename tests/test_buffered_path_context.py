@@ -2,8 +2,7 @@ from unittest import TestCase
 
 import numpy
 
-from configs import PreprocessingConfig
-from dataset import Vocabulary, BufferedPathContext, ConvertParameters
+from dataset import BufferedPathContext, ConvertParameters
 from utils.common import SOS, EOS, PAD, FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 

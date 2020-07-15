@@ -13,7 +13,7 @@ class TestTrainingUtils(TestCase):
         contexts_per_label = list(range(1, batch_size + 1))
         max_context_len = max(contexts_per_label)
 
-        encoded_contexts = torch.cat([torch.full((i, units), i) for i in contexts_per_label])
+        encoded_contexts = torch.cat([torch.full((i, units), i, dtype=torch.float) for i in contexts_per_label])
 
         def create_true_batch(fill_value: int, counts: int, size: int) -> torch.tensor:
             return torch.cat(
@@ -28,7 +28,6 @@ class TestTrainingUtils(TestCase):
 
         true_batched_context = torch.cat([create_true_batch(i, i, max_context_len) for i in contexts_per_label])
         true_attention_mask = torch.cat([create_batch_mask(i, max_context_len) for i in contexts_per_label])
-        print(true_attention_mask)
 
         batched_context, attention_mask = cut_encoded_contexts(encoded_contexts, contexts_per_label, mask_value)
 

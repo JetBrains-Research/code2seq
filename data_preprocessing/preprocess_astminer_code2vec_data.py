@@ -24,11 +24,10 @@ def _get_id2value_from_csv(data_path: str) -> Dict[str, Dict[int, str]]:
     return pd.read_csv(data_path).fillna("").set_index("id").to_dict()
 
 
-def preprocess_csv(holdout_name: str, config: PreprocessingConfig):
+def preprocess_csv(data_path: str, holdout_name: str):
     """
     Preprocessing for files tokens.csv, paths.csv, node_types.csv
     """
-    data_path = path.join(DATA_FOLDER, config.dataset_name)
     token_data_path = path.join(data_path, f"tokens.{holdout_name}.csv")
     type_data_path = path.join(data_path, f"node_types.{holdout_name}.csv")
     paths_data_path = path.join(data_path, f"paths.{holdout_name}.csv")
@@ -85,10 +84,10 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
 
 
 def _convert_path_context_to_ids(
-    path_context: str, vocab: Vocabulary, paths: Dict[int, List[int]], tokens: Dict[int, List[int]],
+    path_context: str, vocab: Vocabulary, **kwargs
 ) -> Tuple[List[int], List[int], List[int]]:
+    paths, node_types, tokens = kwargs["paths"], kwargs["node_types"], kwargs["tokens"]
     from_token_id, path_types_id, to_token_id = list(map(int, path_context.split(",")))
-
     nodes = paths[path_types_id]
     type_unk = vocab.type_to_id[UNK]
 
@@ -97,17 +96,16 @@ def _convert_path_context_to_ids(
 
     return (
         [vocab.token_to_id.get(_t, token_unk) for _t in from_tokens],
-        [vocab.type_to_id.get(_n, type_unk) for _n in nodes],
+        [vocab.type_to_id.get(node_types[_n], type_unk) for _n in nodes],
         [vocab.token_to_id.get(_t, token_unk) for _t in to_tokens],
     )
 
 
-def _split_context(
-    line: str, vocab: Vocabulary, **kwargs: Any
+def split_context(
+    line: str, vocab: Vocabulary, **kwargs
 ) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
-    paths, tokens = kwargs["paths"], kwargs["tokens"]
     label, *path_contexts = line.split()
-    converted_context = [_convert_path_context_to_ids(pc, vocab, paths, tokens) for pc in path_contexts]
+    converted_context = [_convert_path_context_to_ids(pc, vocab, **kwargs) for pc in path_contexts]
     return [vocab.label_to_id[label]], converted_context
 
 
@@ -117,7 +115,8 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
 
     for folder_name in ("train", "test", "val"):
         if f"{folder_name}.pkl" not in os.listdir(data_path):
-            preprocess_csv(folder_name, config)
+            data_path = path.join(DATA_FOLDER, config.dataset_name)
+            preprocess_csv(data_path, folder_name)
 
     vocab_path = path.join(data_path, "vocabulary.pkl")
 
@@ -131,9 +130,10 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
         holdout_data_path = path.join(data_path, f"path_contexts.{holdout_name}.csv")
         holdout_output_folder = path.join(data_path, holdout_name)
         holdout_parsed_path = path.join(data_path, f"{holdout_name}.pkl")
-        tokens, _, paths = _load_preprocessed_data(holdout_parsed_path)
+        tokens, node_types, paths = _load_preprocessed_data(holdout_parsed_path)
         convert_holdout(
-            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, _split_context, paths=paths, tokens=tokens,
+            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, split_context,
+            paths=paths, tokens=tokens, node_types=node_types
         )
 
 

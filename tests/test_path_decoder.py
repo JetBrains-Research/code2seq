@@ -18,7 +18,7 @@ class TestPathDecoder(TestCase):
     _out_size = 128
 
     def test_forward(self):
-        config = DecoderConfig(self._hidden_size, self._hidden_size, 1)
+        config = DecoderConfig(self._hidden_size, self._hidden_size, 1, 0.5, 1)
 
         model = PathDecoder(config, self._out_size, 0, 0)
 

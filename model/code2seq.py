@@ -1,10 +1,8 @@
 from math import ceil
-from os import listdir
 from typing import Tuple, Dict, List
 
 import torch
 import torch.nn.functional as F
-import wandb
 from pytorch_lightning.core.lightning import LightningModule
 from torch.optim import Adam, Optimizer, SGD
 from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
@@ -39,15 +37,27 @@ class Code2Seq(LightningModule):
             decoder_config, len(vocab.label_to_id), vocab.label_to_id[SOS], vocab.label_to_id[PAD]
         )
 
-    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int], output_length: int) -> torch.Tensor:
-        return self.decoder(self.encoder(samples), paths_for_label, output_length)
+    def forward(
+        self,
+        samples: Dict[str, torch.Tensor],
+        paths_for_label: List[int],
+        output_length: int,
+        target_sequence: torch.Tensor = None,
+    ) -> torch.Tensor:
+        return self.decoder(self.encoder(samples), paths_for_label, output_length, target_sequence)
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         if self.config.optimizer == "Momentum":
             # using the same momentum value as in original realization by Alon
-            optimizer = SGD(self.parameters(), self.config.learning_rate, momentum=0.95)
+            optimizer = SGD(
+                self.parameters(),
+                self.config.learning_rate,
+                momentum=0.95,
+                nesterov=self.config.nesterov,
+                weight_decay=self.config.weight_decay,
+            )
         elif self.config.optimizer == "Adam":
-            optimizer = Adam(self.parameters(), self.config.learning_rate)
+            optimizer = Adam(self.parameters(), self.config.learning_rate, weight_decay=self.config.weight_decay)
         else:
             raise ValueError(f"Unknown optimizer name: {self.config.optimizer}, try one of: Adam, Momentum")
         scheduler = ExponentialLR(optimizer, self.config.decay_gamma)
@@ -69,23 +79,6 @@ class Code2Seq(LightningModule):
         )
         return loss
 
-    def _general_forward_step(self, batch: PathContextBatch) -> Tuple[torch.Tensor, SubtokenStatistic]:
-        # Dict str -> torch.Tensor [seq length; batch size * n_context]
-        context = batch.context
-        for k in context:
-            context[k] = context[k].to(self.device)
-        # [seq length; batch size]
-        labels = batch.labels.to(self.device)
-
-        # [seq length; batch size; vocab size]
-        logits = self(context, batch.contexts_per_label, labels.shape[0])
-        loss = self._calculate_loss(logits, labels)
-
-        subtoken_statistic = SubtokenStatistic.calculate_statistic(
-            labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
-        )
-        return loss, subtoken_statistic
-
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
         logs.update(
@@ -93,13 +86,6 @@ class Code2Seq(LightningModule):
         )
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
         return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
-
-    def on_epoch_end(self):
-        template = "epoch={:02d}".format(self.current_epoch)
-        ckpt = [name for name in listdir(self.logger.experiment.dir) if template in name]
-        if len(ckpt) == 0:
-            return
-        wandb.save(ckpt[0])
 
     # ===== TRAIN BLOCK =====
 
@@ -116,7 +102,21 @@ class Code2Seq(LightningModule):
         return dataloader
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        loss, subtoken_statistic = self._general_forward_step(batch)
+        # Dict str -> torch.Tensor [seq length; batch size * n_context]
+        context = batch.context
+        for k in context:
+            context[k] = context[k].to(self.device)
+        # [seq length; batch size]
+        labels = batch.labels.to(self.device)
+
+        # [seq length; batch size; vocab size]
+        logits = self(context, batch.contexts_per_label, labels.shape[0], labels)
+        loss = self._calculate_loss(logits, labels)
+
+        subtoken_statistic = SubtokenStatistic.calculate_statistic(
+            labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+        )
+
         log = {"train/loss": loss}
         log.update(subtoken_statistic.calculate_metrics(group="train"))
         progress_bar = {"train/f1": log["train/f1"]}
@@ -140,7 +140,20 @@ class Code2Seq(LightningModule):
         return dataloader
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        loss, subtoken_statistic = self._general_forward_step(batch)
+        # Dict str -> torch.Tensor [seq length; batch size * n_context]
+        context = batch.context
+        for k in context:
+            context[k] = context[k].to(self.device)
+        # [seq length; batch size]
+        labels = batch.labels.to(self.device)
+
+        # [seq length; batch size; vocab size]
+        logits = self(context, batch.contexts_per_label, labels.shape[0])
+        loss = self._calculate_loss(logits, labels)
+
+        subtoken_statistic = SubtokenStatistic.calculate_statistic(
+            labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+        )
         return {"val_loss": loss, "subtoken_statistic": subtoken_statistic}
 
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:
@@ -161,8 +174,10 @@ class Code2Seq(LightningModule):
         return dataloader
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        loss, subtoken_statistic = self._general_forward_step(batch)
-        return {"test_loss": loss, "subtoken_statistic": subtoken_statistic}
+        result = self.validation_step(batch, batch_idx)
+        result["test_loss"] = result["val_loss"]
+        del result["val_loss"]
+        return result
 
     def test_epoch_end(self, outputs: List[Dict]) -> Dict:
         return self._general_epoch_end(outputs, "test_loss", "test")

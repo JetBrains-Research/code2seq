@@ -27,3 +27,16 @@ def cut_encoded_contexts(
         attention_mask[i, cur_size:] = mask_value
 
     return batched_contexts, attention_mask
+
+
+def create_label_mask(labels: torch.Tensor, sos_id: int, eos_id: int, pad_id: int) -> torch.Tensor:
+    """
+
+    :param labels: [seq length; batch size]
+    :param sos_id: int
+    :param eos_id: int
+    :param pad_id: int
+    :return: [seq length; batch size]
+    """
+    valid_tokens_mask = (labels != sos_id).logical_and(labels != eos_id).logical_and(labels != pad_id)
+    return valid_tokens_mask

@@ -13,6 +13,7 @@ from dataset import Vocabulary, create_dataloader, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS, EOS, UNK
 from utils.metrics import SubtokenStatistic
+from utils.training import create_label_mask
 
 
 class Code2Seq(LightningModule):
@@ -64,20 +65,24 @@ class Code2Seq(LightningModule):
         return [optimizer], [scheduler]
 
     def _calculate_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """ Calculate cross entropy loss.
+        """ Calculate cross entropy loss with removing SOS tokens and masking PAD values.
+        Adaptation of tf.nn.sparse_softmax_cross_entropy_with_logits from original implementation.
 
         :param logits: [seq length; batch size; vocab size]
         :param labels: [seq length; batch size]
         :return: [1]
         """
-        # [(seq length - 1) * batch size; vocab size]
-        logits = logits[1:].view(-1, logits.shape[-1])
-        # [(seq length - 1) * batch size]
-        labels = labels[1:].view(-1)
-        loss = F.cross_entropy(
-            logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=self.vocab.label_to_id[PAD]
-        )
-        return loss
+        # [batch size; seq length - 1]
+        label_mask = create_label_mask(
+            labels, self.vocab.label_to_id[SOS], self.vocab.label_to_id[EOS], self.vocab.label_to_id[PAD]
+        )[1:].transpose(0, 1)
+        # [batch size; vocab size; seq length - 1]
+        logits = logits[1:].permute(1, 2, 0)
+        # [batch size; seq length - 1]
+        labels = labels[1:].transpose(0, 1)
+
+        loss = F.cross_entropy(logits, labels, reduction="none") * label_mask
+        return loss.sum() / labels.shape[0]
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}

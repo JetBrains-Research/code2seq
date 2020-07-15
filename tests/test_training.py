@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import torch
 
-from utils.training import cut_encoded_contexts
+from utils.training import cut_encoded_contexts, create_label_mask
 
 
 class TestTrainingUtils(TestCase):
@@ -33,3 +33,19 @@ class TestTrainingUtils(TestCase):
 
         torch.testing.assert_allclose(batched_context, true_batched_context)
         torch.testing.assert_allclose(attention_mask, true_attention_mask)
+
+    def test_create_label_mask(self):
+        labels = torch.tensor([[0, 0, 0, 0], [1, 3, 1, 1], [2, 4, 2, 3], [5, 4, 3, 4], [6, 4, 4, 4]])
+
+        mask = create_label_mask(labels, 0, 3, 4)
+        true_mask = torch.tensor(
+            [
+                [False, False, False, False],
+                [True, False, True, True],
+                [True, False, True, False],
+                [True, False, False, False],
+                [True, False, False, False],
+            ]
+        )
+        # convert to float since close method doesn't support bool tensors
+        torch.testing.assert_allclose(mask.type(torch.float), true_mask.type(torch.float))

@@ -1,10 +1,8 @@
 from math import ceil
-from os import listdir
 from typing import Tuple, Dict, List
 
 import torch
 import torch.nn.functional as F
-import wandb
 from pytorch_lightning.core.lightning import LightningModule
 from torch.optim import Adam, Optimizer, SGD
 from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler

@@ -8,7 +8,7 @@ from functools import partial
 from multiprocessing import Pool
 from utils.common import count_lines_in_file, create_folder
 from tqdm import tqdm
-from os.path import join
+from os.path import join, exists
 
 DATA_FOLDER = "data"
 
@@ -57,7 +57,9 @@ def convert_holdout(
     split_context: Callable[[Any, Any, Any], Any],
     **kwargs,
 ) -> None:
-    create_folder(holdout_output_folder)
+    if not exists(holdout_output_folder):
+        create_folder(holdout_output_folder)
+
     n_buffers = ceil(count_lines_in_file(holdout_data_path) / config.buffer_size)
     with Pool(n_jobs) as pool:
         results = pool.imap(

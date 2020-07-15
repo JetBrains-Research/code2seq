@@ -53,10 +53,10 @@ class PathEncoder(nn.Module):
 
         # [max path length + 1; total paths; embedding size]
         path_types_embed = self.type_embedding(path_types)
-        # [1 or 2 * num_layers; total paths; rnn size]
-        _, (hidden_states, _) = self.path_lstm(self.rnn_dropout(path_types_embed))
-        # [total_paths; rnn size * 2]
-        encoded_paths = hidden_states[-self.num_directions :].transpose(0, 1).reshape(hidden_states.shape[1], -1)
+        # [max path length + 1; total paths; rnn size (*2)]
+        output, _ = self.path_lstm(self.rnn_dropout(path_types_embed))
+        # [total_paths; rnn size (*2)]
+        encoded_paths = output[-1]
 
         # [total_paths; 2 * embedding size + rnn size (*2)]
         concat = torch.cat([encoded_from_tokens, encoded_paths, encoded_to_tokens], dim=-1)

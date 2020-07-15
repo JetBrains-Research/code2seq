@@ -57,13 +57,13 @@ class PathDecoder(nn.Module):
         batch_size = len(contexts_per_label)
         batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
-        # [batch size]
-        contexts_per_label_tensor = encoded_paths.new_tensor(contexts_per_label).view(-1, 1)
-        # [batch size; decoder size]
-        initial_state = batched_context.sum(dim=1) / contexts_per_label_tensor
         # [n layers; batch size; decoder size]
-        h_prev = torch.cat([initial_state.unsqueeze(0) for _ in range(self.num_decoder_layers)], dim=0)
-        c_prev = torch.cat([initial_state.unsqueeze(0) for _ in range(self.num_decoder_layers)], dim=0)
+        initial_state = (
+            torch.cat([ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(contexts_per_label)])
+            .unsqueeze(0)
+            .repeat(self.num_decoder_layers, 1, 1)
+        )
+        h_prev, c_prev = initial_state, initial_state
 
         # [target len; batch size; vocab size]
         output = encoded_paths.new_zeros((output_length, batch_size, self.out_size))

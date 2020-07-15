@@ -24,15 +24,14 @@ def _get_id2value_from_csv(data_path: str) -> Dict[str, Dict[int, str]]:
     return pd.read_csv(data_path).fillna("").set_index("id").to_dict()
 
 
-def preprocess_csv(folder: str, config: PreprocessingConfig):
+def preprocess_csv(holdout_name: str, config: PreprocessingConfig):
     """
     Preprocessing for files tokens.csv, paths.csv, node_types.csv
     """
-    output_path = path.join(DATA_FOLDER, config.dataset_name)
-    data_path = path.join(DATA_FOLDER, config.dataset_name, folder)
-    token_data_path = path.join(data_path, "c", "tokens.csv")
-    type_data_path = path.join(data_path, "c", "node_types.csv")
-    paths_data_path = path.join(data_path, "c", "paths.csv")
+    data_path = path.join(DATA_FOLDER, config.dataset_name)
+    token_data_path = path.join(data_path, f"tokens.{holdout_name}.csv")
+    type_data_path = path.join(data_path, f"node_types.{holdout_name}.csv")
+    paths_data_path = path.join(data_path, f"paths.{holdout_name}.csv")
 
     paths = _get_id2value_from_csv(paths_data_path)["path"]
     paths = {index: list(map(int, nodes.split())) for index, nodes in paths.items()}
@@ -42,7 +41,7 @@ def preprocess_csv(folder: str, config: PreprocessingConfig):
     tokens = _get_id2value_from_csv(token_data_path)["token"]
     tokens = {index: token_seq.split("|") for index, token_seq in tokens.items()}
 
-    parsed_data_path = path.join(output_path, f"{folder}.pkl")
+    parsed_data_path = path.join(data_path, f"{holdout_name}.pkl")
     with open(parsed_data_path, "wb+") as parsed_data_file:
         pickle.dump({"tokens": tokens, "node_types": node_types, "paths": paths}, parsed_data_file)
 
@@ -57,7 +56,7 @@ def _load_preprocessed_data(
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     train_parsed_path = path.join(DATA_FOLDER, config.dataset_name, "train.pkl")
-    train_contexts_path = path.join(DATA_FOLDER, config.dataset_name, "train", "c", "path_contexts.csv")
+    train_contexts_path = path.join(DATA_FOLDER, config.dataset_name, "path_contexts.train.csv")
     target_counter = Counter()
     token_counter = Counter()
     type_counter = Counter()
@@ -129,7 +128,7 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
         vocab.dump(vocab_path)
 
     for holdout_name in "train", "test", "val":
-        holdout_data_path = path.join(data_path, holdout_name, "c", "path_contexts.csv")
+        holdout_data_path = path.join(data_path, f"path_contexts.{holdout_name}.csv")
         holdout_output_folder = path.join(data_path, holdout_name)
         holdout_parsed_path = path.join(data_path, f"{holdout_name}.pkl")
         tokens, _, paths = _load_preprocessed_data(holdout_parsed_path)

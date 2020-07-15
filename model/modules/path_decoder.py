@@ -4,9 +4,9 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from .attention import LuongAttention
 from configs import DecoderConfig
-from utils.common import segment_sizes_to_slices
+from utils.training import cut_encoded_contexts
+from .attention import LuongAttention
 
 
 class PathDecoder(nn.Module):
@@ -55,15 +55,7 @@ class PathDecoder(nn.Module):
         :return:
         """
         batch_size = len(contexts_per_label)
-
-        max_context_per_batch = max(contexts_per_label)
-        # [batch size; context size; decoder size]
-        batched_context = encoded_paths.new_zeros(batch_size, max_context_per_batch, encoded_paths.shape[1])
-        # [batch size; context size]
-        attention_mask = encoded_paths.new_zeros((batch_size, max_context_per_batch))
-        for i, (cur_slice, cur_size) in enumerate(zip(segment_sizes_to_slices(contexts_per_label), contexts_per_label)):
-            batched_context[i, :cur_size] = encoded_paths[cur_slice]
-            attention_mask[i, cur_size:] = self._negative_value
+        batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
         # [batch size]
         contexts_per_label_tensor = encoded_paths.new_tensor(contexts_per_label).view(-1, 1)

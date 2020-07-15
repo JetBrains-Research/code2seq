@@ -29,7 +29,7 @@ class PathDecoder(nn.Module):
         # So, manually adding dropout for the first layer
         self.lstm_dropout = nn.Dropout(config.rnn_dropout)
         self.decoder_lstm = nn.LSTM(
-            config.embedding_size + config.decoder_size,
+            config.embedding_size,
             config.decoder_size,
             num_layers=config.num_decoder_layers,
             dropout=config.rnn_dropout,
@@ -89,10 +89,11 @@ class PathDecoder(nn.Module):
         batched_context: torch.Tensor,  # [batch size; context size; decoder size]
         attention_mask: torch.Tensor,  # [batch size; context size]
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        # [batch size; embedding size]
-        embedded = self.target_embedding(input_tokens)
-        # [1; batch size; embedding size] LSTM input required
-        embedded = embedded.unsqueeze(0)
+        # [1; batch size; embedding size]
+        embedded = self.target_embedding(input_tokens).unsqueeze(0)
+
+        # [1; batch size; decoder size]
+        rnn_output, (h_prev, c_prev) = self.decoder_lstm(embedded, (h_prev, c_prev))
 
         # [batch size; context size; 1]
         attn_weights = self.attention(h_prev[-1], batched_context, attention_mask)
@@ -103,17 +104,12 @@ class PathDecoder(nn.Module):
         context = context.view(1, context.shape[0], -1)
 
         # [batch size; embedding size + decoder size]
-        lstm_input = torch.cat([embedded, context], dim=2)
-
-        # [1; batch size; decoder size]
-        rnn_output, (h_prev, c_prev) = self.decoder_lstm(lstm_input, (h_prev, c_prev))
-        # [batch size; decoder size]
-        rnn_output = rnn_output.squeeze(0)
+        concat_input = torch.cat([rnn_output, context], dim=2)
 
         # [batch size; decoder size]
-        # concat = torch.tanh(self.concat_layer(concat_input))
+        concat = torch.tanh(self.concat_layer(concat_input))
 
         # [batch size; vocab size]
-        output = self.projection_layer(rnn_output)
+        output = self.projection_layer(concat)
 
         return output, (h_prev, c_prev)

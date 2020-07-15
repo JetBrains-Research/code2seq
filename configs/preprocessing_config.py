@@ -16,6 +16,3 @@ class PreprocessingConfig:
     subtoken_vocab_max_size: int = -1
     target_vocab_max_size: int = -1
     buffer_size: int = 10_000
-    train: float = None
-    test: float = None
-    val: float = None

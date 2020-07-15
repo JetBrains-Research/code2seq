@@ -18,25 +18,6 @@ def get_preprocessing_config_code2seq_params(dataset_name: str) -> Preprocessing
     )
 
 
-def get_preprocessing_config_astminer_code2vec_params(
-    dataset_name: str, train: float, test: float, val: float
-) -> PreprocessingConfig:
-    return PreprocessingConfig(
-        dataset_name=dataset_name,
-        max_path_length=8,
-        max_name_parts=5,
-        max_target_parts=6,
-        wrap_name=False,
-        wrap_path=True,
-        wrap_target=True,
-        subtoken_vocab_max_size=190000,
-        target_vocab_max_size=27000,
-        train=train,
-        test=test,
-        val=val,
-    )
-
-
 def get_code2seq_default_config(dataset_main_folder: str) -> Code2SeqConfig:
     encoder = EncoderConfig(
         embedding_size=128, rnn_size=128, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5

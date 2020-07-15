@@ -1,10 +1,76 @@
 #!/bin/bash
 
-DATASET_NAME=$1
+train=60
+val=20
+test=20
+dev=false
+
+while test $# -gt 0; do
+  case "$1" in
+    -h|--help)
+      echo "options:"
+      echo "-h, --help                show brief help"
+      echo "-d, --dataset=NAME        specify dataset name"
+      echo "--train=VAL               specify a percentage of dataset used as train set"
+      echo "--test=VAL                specify a percentage of dataset used as test set"
+      echo "--val=VAL                 specify a percentage of dataset used as validation set"
+      exit 0
+      ;;
+    -d|--dataset*)
+      shift
+      if test $# -gt 0; then
+        DATASET_NAME=$1
+      else
+        echo "no dataset specified"
+        exit 1
+      fi
+      shift
+      ;;
+    --train*)
+      shift
+      if test $# -gt 0; then
+        train=$1
+      else
+        echo "no train specified, using default: 60 %"
+        exit 1
+      fi
+      shift
+      ;;
+    --test*)
+      shift
+      if test $# -gt 0; then
+        test=$1
+      else
+        echo "no test specified, using default: 20 %"
+        exit 1
+      fi
+      shift
+      ;;
+    --val*)
+      shift
+      if test $# -gt 0; then
+        val=$1
+      else
+        echo "no val specified, using default: 20 %"
+        exit 1
+      fi
+      shift
+      ;;
+    --dev*)
+      shift
+      dev=true
+      shift
+      ;;
+    *)
+      echo "something went wrong"
+      exit 1
+  esac
+done
+
 DATA_DIR=data
 DATA_PATH=${DATA_DIR}/${DATASET_NAME}
 
-if [ ! -d "$data" ]
+if [ ! -d "data" ]
 then
   mkdir data
 fi
@@ -40,15 +106,29 @@ then
   then
     echo "$DATA_PATH exists."
   else
-    python utils/download_poj_104.py
+    if [ ! -f "$DATA_PATH.tgz" ]
+    then
+      python utils/download_poj_104.py
+    fi
+
     echo "Unzip dataset"
     tar -xvzf data/poj_104.tgz -C data/
     mv ./data/ProgramData ./data/poj_104
+
+    # In the developer mode we leave only several classes
+    if [ $dev ]
+    then
+      find ./data/poj_104/* -type d -name "[2-9]*" -exec rm -rf {} \;
+    fi
+
+    # To prepare our dataset for astminer we need to rename all .txt files to .c files
     for file in ./data/poj_104/*/*.txt
     do
       mv "$file" "${file/.txt/.c}"
     done
-    sh ./split_dataset.sh -i ./data/poj_104 -o ./data/poj_104_split --train 70 --test 10 --val 20
+
+    # Splitting dataset on train/test/val parts
+    sh ./split_dataset.sh -i ./data/poj_104 -o ./data/poj_104_split --train "$train" --test "$test" --val "$val"
     rm -rf ./data/poj_104
     mv ./data/poj_104_split ./data/poj_104
   fi

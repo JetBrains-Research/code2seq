@@ -47,7 +47,7 @@ def preprocess_csv(holdout_name: str, config: PreprocessingConfig):
 
 
 def _load_preprocessed_data(
-        train_parsed_path: str
+    train_parsed_path: str,
 ) -> Tuple[Dict[int, List[int]], Dict[int, List[int]], Dict[int, List[int]]]:
     with open(train_parsed_path, "rb") as train_parsed_data:
         data = pickle.load(train_parsed_data)
@@ -145,6 +145,5 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     preprocess(
-        get_preprocessing_config_code2seq_params(args.data),
-        args.n_jobs or cpu_count(),
+        get_preprocessing_config_code2seq_params(args.data), args.n_jobs or cpu_count(),
     )

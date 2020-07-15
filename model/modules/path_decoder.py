@@ -103,8 +103,8 @@ class PathDecoder(nn.Module):
         # [1; batch size; decoder size]
         context = context.view(1, context.shape[0], -1)
 
-        # [batch size; embedding size + decoder size]
-        concat_input = torch.cat([rnn_output, context], dim=2)
+        # [batch size; 2 * decoder size]
+        concat_input = torch.cat([h_prev[[-1]], context], dim=2)
 
         # [batch size; decoder size]
         concat = torch.tanh(self.concat_layer(concat_input))

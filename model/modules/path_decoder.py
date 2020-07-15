@@ -54,6 +54,7 @@ class PathDecoder(nn.Module):
         :return:
         """
         batch_size = len(contexts_per_label)
+        # [batch size; max context size; decoder size], [batch size; max context size]
         batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
         # [n layers; batch size; decoder size]
@@ -82,27 +83,27 @@ class PathDecoder(nn.Module):
 
     def decoder_step(
         self,
-        input_tokens: torch.Tensor,
-        h_prev: torch.Tensor,
-        c_prev: torch.Tensor,
-        batched_context: torch.Tensor,
-        attention_mask: torch.Tensor,
+        input_tokens: torch.Tensor,  # [batch size]
+        h_prev: torch.Tensor,  # [n layers; batch size; decoder size]
+        c_prev: torch.Tensor,  # [n layers; batch size; decoder size]
+        batched_context: torch.Tensor,  # [batch size; context size; decoder size]
+        attention_mask: torch.Tensor,  # [batch size; context size]
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         # [batch size; embedding size]
         embedded = self.target_embedding(input_tokens)
         # [1; batch size; embedding size] LSTM input required
         embedded = embedded.unsqueeze(0)
 
-        # [batch size; 1; context size]
+        # [batch size; context size; 1]
         attn_weights = self.attention(h_prev[-1], batched_context, attention_mask)
 
         # [batch size; 1; decoder size]
-        context = torch.bmm(attn_weights, batched_context)
-        # [batch size; decoder size]
-        context = context.squeeze(1)
+        context = torch.bmm(attn_weights.transpose(1, 2), batched_context)
+        # [1; batch size; decoder size]
+        context = context.view(1, context.shape[0], -1)
 
         # [batch size; embedding size + decoder size]
-        lstm_input = torch.cat([embedded, context.unsqueeze(0)], dim=2)
+        lstm_input = torch.cat([embedded, context], dim=2)
 
         # [1; batch size; decoder size]
         rnn_output, (h_prev, c_prev) = self.decoder_lstm(lstm_input, (h_prev, c_prev))

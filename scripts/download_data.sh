@@ -118,7 +118,7 @@ then
 
     echo "Unzip dataset"
     tar -xvzf "$DATA_DIR/poj-104-original.tar.gz" -C $DATA_DIR/
-    mv ./"$DATA_DIR"/ProgramData ./"$DATA_PATH"
+    mv "$DATA_DIR"/ProgramData "$DATA_PATH"
 
     # In the developer mode we leave only several classes
     if [ $DEV ]

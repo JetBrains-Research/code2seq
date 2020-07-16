@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from collections import Counter
 from os import path
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict
 from multiprocessing import cpu_count
 
 from tqdm import tqdm
@@ -101,7 +101,7 @@ def _convert_path_context_to_ids(
     )
 
 
-def split_context(
+def _split_context(
     line: str, vocab: Vocabulary, **kwargs
 ) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
     label, *path_contexts = line.split()
@@ -137,7 +137,7 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
             vocab,
             config,
             n_jobs,
-            split_context,
+            _split_context,
             paths=paths,
             tokens=tokens,
             node_types=node_types,

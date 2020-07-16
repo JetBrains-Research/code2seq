@@ -61,7 +61,7 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
     type_unk = vocab.type_to_id[UNK]
     return (
         [vocab.token_to_id.get(_t, token_unk) for _t in from_token.split("|")],
-        [vocab.type_to_id.get(_t, type_unk) for _t in path.split("|")],
+        [vocab.type_to_id.get(_t, type_unk) for _t in path_types.split("|")],
         [vocab.token_to_id.get(_t, token_unk) for _t in to_token.split("|")],
     )
 

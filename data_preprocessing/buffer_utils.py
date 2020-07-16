@@ -24,6 +24,7 @@ def read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], N
                 lines = []
     yield lines
 
+
 def split_context(
     line: str, vocab: Vocabulary, convert_path_context_to_ids: Any, **kwargs
 ) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
@@ -33,8 +34,7 @@ def split_context(
 
 
 def convert_raw_buffer(
-    convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, Any,],
-    **kwargs,
+    convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, Any,], **kwargs,
 ):
     lines, config, vocab, output_path, convert_path_context_to_ids = convert_args
     labels, from_tokens, path_types, to_tokens = [], [], [], []

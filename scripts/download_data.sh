@@ -124,9 +124,8 @@ then
     if [ $DEV ]
     then
       echo "Dev mode"
-      find "$DATA_PATH"/* -type d -name "[2-9]*" -exec rm -rf {} \;
-      find "$DATA_PATH"/* -type d -name "*[2-9]" -exec rm -rf {} \;
-      find "$DATA_PATH"/* -type d -name "*0" -exec rm -rf {} \;
+      find "$DATA_PATH"/* -type d -name "1[0-9][0-9]" -exec rm -rf {} \;
+      find "$DATA_PATH"/* -type d -name "[1-9][0-9]" -exec rm -rf {} \;
     fi
 
     # To prepare our dataset for astminer we need to rename all .txt files to .c files

@@ -7,11 +7,11 @@ from .code2seq_config import Code2SeqConfig, DecoderConfig, EncoderConfig
 def get_preprocessing_config_code2seq_params(dataset_name: str) -> PreprocessingConfig:
     return PreprocessingConfig(
         dataset_name=dataset_name,
-        max_path_length=8,
+        max_path_length=9,
         max_name_parts=5,
         max_target_parts=6,
         wrap_name=False,
-        wrap_path=True,
+        wrap_path=False,
         wrap_target=True,
         subtoken_vocab_max_size=190000,
         target_vocab_max_size=27000,

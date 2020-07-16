@@ -138,7 +138,12 @@ then
     mv "$DATA_PATH"_split "$DATA_PATH"
   fi
   echo "Extracting AST using astminer. You need to clone astminer first"
+  if [ -d "$DATA_PATH"_parsed ]
+  then
+    rm -rf "$DATA_PATH"_parsed
+  fi
   mkdir "$DATA_PATH"_parsed
+
   java -jar -Xmx2048m $ASTMINER_PATH code2vec --lang c --project "$DATA_PATH"/train --output "$DATA_PATH"_parsed/train --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
   java -jar -Xmx2048m $ASTMINER_PATH code2vec --lang c --project "$DATA_PATH"/test --output "$DATA_PATH"_parsed/test --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
   java -jar -Xmx2048m $ASTMINER_PATH code2vec --lang c --project "$DATA_PATH"/val --output "$DATA_PATH"_parsed/val --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens

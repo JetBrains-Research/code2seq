@@ -53,7 +53,7 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
     )
 
 
-def _split_context(
+def split_context(
     line: str, vocab: Vocabulary, **kwargs: Any
 ) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
     label, *path_contexts = line.split()
@@ -77,7 +77,7 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: in
         holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s",)
         holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
         convert_holdout(
-            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, _split_context,
+            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, split_context,
         )
 
 

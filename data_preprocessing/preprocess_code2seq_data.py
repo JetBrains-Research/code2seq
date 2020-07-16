@@ -42,7 +42,7 @@ def convert_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     return vocab_from_counters(config, subtoken_to_count, target_to_count, node_to_count)
 
 
-def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[List[int], List[int], List[int]]:
+def convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[List[int], List[int], List[int]]:
     from_token, path_types, to_token = path_context.split(",")
     token_unk = vocab.token_to_id[UNK]
     type_unk = vocab.type_to_id[UNK]
@@ -50,17 +50,6 @@ def _convert_path_context_to_ids(path_context: str, vocab: Vocabulary) -> Tuple[
         [vocab.token_to_id.get(_t, token_unk) for _t in from_token.split("|")],
         [vocab.type_to_id.get(_t, type_unk) for _t in path.split("|")],
         [vocab.token_to_id.get(_t, token_unk) for _t in to_token.split("|")],
-    )
-
-
-def _split_context(
-    line: str, vocab: Vocabulary, **kwargs: Any
-) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
-    label, *path_contexts = line.split()
-    converted_context = [_convert_path_context_to_ids(pc, vocab) for pc in path_contexts]
-    return (
-        [vocab.label_to_id.get(_l, vocab.label_to_id[UNK]) for _l in label.split("|")],
-        converted_context,
     )
 
 
@@ -77,7 +66,7 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: in
         holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s",)
         holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
         convert_holdout(
-            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, _split_context,
+            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, convert_path_context_to_ids,
         )
 
 

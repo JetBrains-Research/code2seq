@@ -83,7 +83,7 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     return vocab_from_counters(config, token_counter, target_counter, type_counter)
 
 
-def _convert_path_context_to_ids(
+def convert_path_context_to_ids(
     path_context: str, vocab: Vocabulary, **kwargs
 ) -> Tuple[List[int], List[int], List[int]]:
     paths, node_types, tokens = kwargs["paths"], kwargs["node_types"], kwargs["tokens"]
@@ -99,14 +99,6 @@ def _convert_path_context_to_ids(
         [vocab.type_to_id.get(node_types[_n], type_unk) for _n in nodes],
         [vocab.token_to_id.get(_t, token_unk) for _t in to_tokens],
     )
-
-
-def split_context(
-    line: str, vocab: Vocabulary, **kwargs
-) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
-    label, *path_contexts = line.split()
-    converted_context = [_convert_path_context_to_ids(pc, vocab, **kwargs) for pc in path_contexts]
-    return [vocab.label_to_id[label]], converted_context
 
 
 def preprocess(config: PreprocessingConfig, n_jobs: int):
@@ -137,7 +129,7 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
             vocab,
             config,
             n_jobs,
-            split_context,
+            convert_path_context_to_ids,
             paths=paths,
             tokens=tokens,
             node_types=node_types,

@@ -6,7 +6,7 @@ import numpy as np
 from collections import Counter
 
 from data_preprocessing.buffer_utils import convert_holdout
-from data_preprocessing.preprocess_astminer_code2vec_data import preprocess_csv, split_context
+from data_preprocessing.preprocess_astminer_code2vec_data import preprocess_csv, convert_path_context_to_ids
 from configs import get_preprocessing_config_code2seq_params
 from utils.common import vocab_from_counters
 
@@ -40,7 +40,6 @@ class TestConvertHoldout(TestCase):
         data_path = path.join(".", "tests", "resources", "poj_104-test")
         preprocess_csv(data_path, "test")
         config = get_preprocessing_config_code2seq_params("poj_104-test")
-        contexts_path = path.join(data_path, "path_contexts.test.csv")
 
         token_counter = Counter({"int": 1, "sum": 2, "m": 3, "f": 4, "n": 5, "d": 6, "i": 7})
         type_counter = Counter(
@@ -71,7 +70,7 @@ class TestConvertHoldout(TestCase):
             vocab,
             config,
             cpu_count(),
-            split_context,
+            convert_path_context_to_ids,
             paths=paths,
             tokens=tokens,
             node_types=node_types,

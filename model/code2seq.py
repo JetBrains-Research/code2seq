@@ -13,7 +13,6 @@ from dataset import Vocabulary, create_dataloader, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS, EOS, UNK
 from utils.metrics import SubtokenStatistic
-from utils.training import create_label_mask
 
 
 class Code2Seq(LightningModule):
@@ -72,17 +71,17 @@ class Code2Seq(LightningModule):
         :param labels: [seq length; batch size]
         :return: [1]
         """
-        # [batch size; seq length - 1]
-        label_mask = create_label_mask(
-            labels, self.vocab.label_to_id[SOS], self.vocab.label_to_id[EOS], self.vocab.label_to_id[PAD]
-        )[1:].transpose(0, 1)
-        # [batch size; vocab size; seq length - 1]
+        # remove SOS token
+        # [batch size; vocab size; seq length]
         logits = logits[1:].permute(1, 2, 0)
-        # [batch size; seq length - 1]
+        # [batch size; seq length]
         labels = labels[1:].transpose(0, 1)
 
-        loss = F.cross_entropy(logits, labels, reduction="none") * label_mask
-        return loss.sum() / labels.shape[0]
+        loss = F.cross_entropy(logits, labels, reduction="none")
+
+        label_mask = labels != self.vocab.label_to_id[PAD]
+        loss = (loss * label_mask).sum() / labels.shape[0]
+        return loss
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}

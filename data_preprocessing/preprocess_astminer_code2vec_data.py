@@ -101,7 +101,7 @@ def _convert_path_context_to_ids(
     )
 
 
-def _split_context(
+def split_context(
     line: str, vocab: Vocabulary, **kwargs
 ) -> Tuple[List[int], List[Tuple[List[int], List[int], List[int]]]]:
     label, *path_contexts = line.split()
@@ -137,7 +137,7 @@ def preprocess(config: PreprocessingConfig, n_jobs: int):
             vocab,
             config,
             n_jobs,
-            _split_context,
+            split_context,
             paths=paths,
             tokens=tokens,
             node_types=node_types,

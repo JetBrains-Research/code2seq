@@ -7,6 +7,7 @@ TEST_SPLIT_PART=20
 DEV=false
 DATA_DIR=./data
 ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
+SPLIT_SCRIPT=./scripts/split_dataset.sh
 
 function is_int(){
   if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then
@@ -84,10 +85,20 @@ then
 fi
 
 function load_java_dataset(){
-  echo "Downloading dataset $1"
-  wget https://s3.amazonaws.com/code2seq/datasets/$1-preprocessed.tar.gz -P $DATA_DIR/
-  echo "Unzip dataset"
-  tar -xvzf $DATA_DIR/$1-preprocessed.tar.gz -C data/
+  if [ ! -d "$DATA_PATH" ]
+  then
+    if [ ! -f "$DATA_DIR"/"$1"-preprocessed.tar.gz ]
+    then
+      echo "Downloading dataset $1"
+      wget https://s3.amazonaws.com/code2seq/datasets/$1-preprocessed.tar.gz -P $DATA_DIR/
+    else
+      echo "Dataset $1 already downloaded"
+    fi
+    echo "Unzip dataset"
+    tar -xvzf $DATA_DIR/$1-preprocessed.tar.gz -C data/
+  else
+    echo "Dataset $1 already exists"
+  fi
 }
 
 if [[ "$DATASET_NAME" == "java-"* ]]
@@ -123,7 +134,7 @@ then
     find "$DATA_PATH"/*  -name "*.txt" -type f -exec sh -c 'mv "$0" "${0%.txt}.c"' {} \;
     echo "Splitting on train/test/val"
     # Splitting dataset on train/test/val parts
-    sh ./scripts/split_dataset.sh "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" --shuffle
+    sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" --shuffle
     rm -rf "$DATA_PATH"
     mv "$DATA_PATH"_split "$DATA_PATH"
   fi

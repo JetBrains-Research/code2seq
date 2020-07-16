@@ -5,8 +5,8 @@ from multiprocessing import cpu_count
 import numpy as np
 from collections import Counter
 
-from data_preprocessing.buffer_utils import convert_holdout, convert_raw_buffer
-from data_preprocessing.preprocess_astminer_code2vec_data import preprocess_csv, collect_vocabulary, split_context
+from data_preprocessing.buffer_utils import convert_holdout
+from data_preprocessing.preprocess_astminer_code2vec_data import preprocess_csv, split_context
 from configs import get_preprocessing_config_code2seq_params
 from utils.common import vocab_from_counters
 
@@ -38,6 +38,7 @@ class TestConvertHoldout(TestCase):
 
     def test_convert_holdout(self):
         data_path = path.join(".", "tests", "resources", "poj_104-test")
+        preprocess_csv(data_path, "test")
         config = get_preprocessing_config_code2seq_params("poj_104-test")
         contexts_path = path.join(data_path, "path_contexts.test.csv")
 

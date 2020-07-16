@@ -56,8 +56,8 @@ class PathEncoder(nn.Module):
         path_types_embed = self.rnn_dropout(self.type_embedding(path_types))
         path_lengths = (path_types != self.type_pad_id).sum(0)
 
-        # create packed sequence
-        packed_path_types = nn.utils.rnn.pack_padded_sequence(path_types_embed, path_lengths)
+        # create packed sequence (don't forget to set enforce sorted True for ONNX support)
+        packed_path_types = nn.utils.rnn.pack_padded_sequence(path_types_embed, path_lengths, enforce_sorted=False)
 
         # [num directions; total paths; rnn size]
         _, (h_t, _) = self.path_lstm(packed_path_types)

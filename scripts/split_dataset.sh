@@ -19,11 +19,11 @@ while (( "$#" )); do
       echo "options:"
       echo "-h, --help     show brief help"
       echo "--shuffle      specify if data should be shuffled"
-      echo "1 arg             specify a directory where dataset is located"
-      echo "2 arg           specify a directory to store output in"
-      echo "3 arg            specify a percentage of dataset used as train set"
-      echo "4             specify a percentage of dataset used as test set"
-      echo "5             specify a percentage of dataset used as validation set"
+      echo "1 arg          specify a directory where dataset is located"
+      echo "2 arg          specify a directory to store output in"
+      echo "3 arg          specify a percentage of dataset used as train set"
+      echo "4 arg          specify a percentage of dataset used as test set"
+      echo "5 arg          specify a percentage of dataset used as validation set"
       exit 0
       ;;
     --shuffle*)

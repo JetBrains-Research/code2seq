@@ -52,15 +52,15 @@ class PathEncoder(nn.Module):
         path_types = contexts[PATH_TYPES]
         # [max path length; total paths; embedding size]
         path_types_embed = self.type_embedding(path_types)
-        with torch.no_grad():
-            path_lengths = (path_types != self.type_pad_id).sum(0)
 
         # create packed sequence (don't forget to set enforce sorted True for ONNX support)
+        with torch.no_grad():
+            path_lengths = (path_types != self.type_pad_id).sum(0)
         packed_path_types = nn.utils.rnn.pack_padded_sequence(path_types_embed, path_lengths, enforce_sorted=False)
 
-        # [num directions; total paths; rnn size]
+        # [num layers * num directions; total paths; rnn size]
         _, (h_t, _) = self.path_lstm(packed_path_types)
-        # [total_paths; rnn size (*2)]
+        # [total_paths; rnn size * num directions]
         encoded_paths = h_t[-self.num_directions :].transpose(0, 1).reshape(h_t.shape[1], -1)
 
         # [total_paths; 2 * embedding size + rnn size (*2)]

@@ -26,14 +26,13 @@ class TestConvertHoldout(TestCase):
         self.assertDictEqual(paths, {1: [1, 2, 3, 4], 2: [5, 2, 3, 6]})
 
     def test_convert_holdout(self):
-        preprocess_csv(self._test_data_path, "test")
+        tokens, node_types, paths = preprocess_csv(self._test_data_path, "test")
         config = get_preprocessing_config_code2seq_params("poj_104-test")
 
         token_counter = Counter({"int": 1, "sum": 2, "m": 3, "f": 4, "n": 5, "d": 6, "i": 7})
         type_counter = Counter({"LOCAL": 1, "TYPE_FULL_NAME": 2, "NAME": 3,})
         target_counter = Counter({"1": 1})
         vocab = vocab_from_counters(config, token_counter, target_counter, type_counter)
-        tokens, node_types, paths = preprocess_csv(self._test_data_path, "test")
 
         convert_holdout(
             self._test_data_path,

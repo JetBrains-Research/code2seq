@@ -33,7 +33,6 @@ class TestConvertHoldout(TestCase):
         type_counter = Counter({"LOCAL": 1, "TYPE_FULL_NAME": 2, "NAME": 3,})
         target_counter = Counter({"1": 1})
         vocab = vocab_from_counters(config, token_counter, target_counter, type_counter)
-
         convert_holdout(
             self._test_data_path,
             "test",
@@ -48,27 +47,27 @@ class TestConvertHoldout(TestCase):
         holdout_output_folder = path.join(self._test_data_path, "test")
         with open(path.join(holdout_output_folder, "buffered_paths_0.pkl"), "rb") as buf_paths:
             buf, labels, contexts_per_label = pickle.load(buf_paths)
-            from_tokens = numpy.array(
-                [[10, 8, 7, 10, 10], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]]
-            )
-            to_tokens = numpy.array(
-                [[9, 10, 10, 6, 4], [2, 2, 2, 5, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]]
-            )
-            path_types = numpy.array(
-                [
-                    [0, 0, 0, 0, 0],
-                    [5, 4, 4, 5, 5],
-                    [6, 6, 6, 6, 6],
-                    [6, 6, 6, 6, 6],
-                    [4, 5, 5, 4, 4],
-                    [1, 1, 1, 1, 1],
-                    [2, 2, 2, 2, 2],
-                    [2, 2, 2, 2, 2],
-                    [2, 2, 2, 2, 2],
-                ]
-            )
-            numpy.testing.assert_array_equal(buf["path_types"], path_types)
-            numpy.testing.assert_array_equal(buf["from_token"], from_tokens)
-            numpy.testing.assert_array_equal(buf["to_token"], to_tokens)
-            numpy.testing.assert_array_equal(contexts_per_label, [5])
-            numpy.testing.assert_array_equal(labels, numpy.array([[0], [4], [1], [2], [2], [2], [2]]))
+        from_tokens = numpy.array(
+            [[10, 8, 7, 10, 10], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]]
+        )
+        to_tokens = numpy.array(
+            [[9, 10, 10, 6, 4], [2, 2, 2, 5, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]]
+        )
+        path_types = numpy.array(
+            [
+                [0, 0, 0, 0, 0],
+                [5, 4, 4, 5, 5],
+                [6, 6, 6, 6, 6],
+                [6, 6, 6, 6, 6],
+                [4, 5, 5, 4, 4],
+                [1, 1, 1, 1, 1],
+                [2, 2, 2, 2, 2],
+                [2, 2, 2, 2, 2],
+                [2, 2, 2, 2, 2],
+            ]
+        )
+        numpy.testing.assert_array_equal(buf["path_types"], path_types)
+        numpy.testing.assert_array_equal(buf["from_token"], from_tokens)
+        numpy.testing.assert_array_equal(buf["to_token"], to_tokens)
+        numpy.testing.assert_array_equal(contexts_per_label, [5])
+        numpy.testing.assert_array_equal(labels, numpy.array([[0], [4], [1], [2], [2], [2], [2]]))

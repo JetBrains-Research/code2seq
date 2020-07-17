@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
 from dataset import Vocabulary
-from utils.common import UNK, count_lines_in_file, vocab_from_counters
-from utils.preprocessing import convert_holdout, DATA_FOLDER
+from utils.common import UNK, count_lines_in_file
+from utils.preprocessing import convert_holdout, DATA_FOLDER, vocab_from_counters
 
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:

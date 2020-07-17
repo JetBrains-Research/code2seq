@@ -1,6 +1,6 @@
 from unittest import TestCase
 import pickle
-from os import path, getcwd
+from os import path
 from multiprocessing import cpu_count
 import numpy as np
 from collections import Counter

@@ -62,14 +62,7 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: in
         vocab.dump(vocab_path)
     data_path = path.join(DATA_FOLDER, config.dataset_name)
     for holdout_name in "train", "test", "val":
-        convert_holdout(
-            data_path,
-            holdout_name,
-            vocab,
-            config,
-            n_jobs,
-            convert_path_context_to_ids
-        )
+        convert_holdout(data_path, holdout_name, vocab, config, n_jobs, convert_path_context_to_ids)
 
 
 if __name__ == "__main__":

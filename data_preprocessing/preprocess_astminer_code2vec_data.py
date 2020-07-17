@@ -41,10 +41,10 @@ def preprocess_csv(data_path: str, holdout_name: str):
 
 
 def collect_vocabulary(
-        config: PreprocessingConfig,
-        tokens: Dict[int, List[int]],
-        node_types: Dict[int, List[int]],
-        paths: Dict[int, List[int]]
+    config: PreprocessingConfig,
+    tokens: Dict[int, List[int]],
+    node_types: Dict[int, List[int]],
+    paths: Dict[int, List[int]],
 ) -> Vocabulary:
     train_contexts_path = path.join(DATA_FOLDER, config.dataset_name, "path_contexts.train.csv")
     target_counter = Counter()
@@ -74,7 +74,7 @@ def convert_path_context_to_ids(
     vocab: Vocabulary,
     paths: Dict[int, List[int]],
     node_types: Dict[int, List[int]],
-    tokens: Dict[int, List[int]]
+    tokens: Dict[int, List[int]],
 ) -> Tuple[List[int], List[int], List[int]]:
     from_token_id, path_types_id, to_token_id = (int(_) for _ in path_context.split(","))
     nodes = paths[path_types_id]

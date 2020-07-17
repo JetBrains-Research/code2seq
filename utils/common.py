@@ -37,4 +37,3 @@ def segment_sizes_to_slices(sizes: List) -> List:
     cum_sums = numpy.cumsum(sizes)
     start_of_segments = numpy.append([0], cum_sums[:-1])
     return [slice(start, end) for start, end in zip(start_of_segments, cum_sums)]
-

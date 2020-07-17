@@ -33,5 +33,5 @@ def create_embedding_tf_style(vocab_size: int, embedding_dim: int, pad_idx: int)
     embedding = torch.nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_idx)
     torch.nn.init.kaiming_uniform_(embedding.weight, mode="fan_out")
     with torch.no_grad():
-        embedding.weight[pad_idx, :] = 0
+        embedding.weight[pad_idx].fill_(0)
     return embedding

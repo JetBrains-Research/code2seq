@@ -22,7 +22,9 @@ class PathEncoder(nn.Module):
         self.num_directions = 2 if config.use_bi_rnn else 1
 
         self.subtoken_embedding = nn.Embedding(n_subtokens, config.embedding_size, padding_idx=subtoken_pad_id)
+        nn.init.kaiming_uniform_(self.subtoken_embedding.weight, mode="fan_out")
         self.type_embedding = nn.Embedding(n_types, config.embedding_size, padding_idx=type_pad_id)
+        nn.init.kaiming_uniform_(self.type_embedding.weight, mode="fan_out")
 
         # TF apply RNN dropout on inputs, but Torch apply it to the outputs except lasts
         # So, manually adding dropout for the first layer

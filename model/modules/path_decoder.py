@@ -22,6 +22,7 @@ class PathDecoder(nn.Module):
         self.teacher_forcing = config.teacher_forcing
 
         self.target_embedding = nn.Embedding(self.out_size, config.embedding_size, padding_idx=pad_token)
+        nn.init.kaiming_uniform_(self.target_embedding.weight, mode="fan_out")
 
         self.attention = LuongAttention(config.decoder_size)
 

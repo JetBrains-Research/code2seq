@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from configs import DecoderConfig
-from utils.training import cut_encoded_contexts
+from utils.training import cut_encoded_contexts, create_embedding_tf_style
 from .attention import LuongAttention
 
 
@@ -21,8 +21,7 @@ class PathDecoder(nn.Module):
         self.num_decoder_layers = config.num_decoder_layers
         self.teacher_forcing = config.teacher_forcing
 
-        self.target_embedding = nn.Embedding(self.out_size, config.embedding_size, padding_idx=pad_token)
-        nn.init.kaiming_uniform_(self.target_embedding.weight, mode="fan_out")
+        self.target_embedding = create_embedding_tf_style(out_size, config.embedding_size, pad_token)
 
         self.attention = LuongAttention(config.decoder_size)
 

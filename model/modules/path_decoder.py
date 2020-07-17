@@ -25,9 +25,6 @@ class PathDecoder(nn.Module):
 
         self.attention = LuongAttention(config.decoder_size)
 
-        # TF apply RNN dropout on inputs, but Torch apply it to the outputs except lasts
-        # So, manually adding dropout for the first layer
-        self.lstm_dropout = nn.Dropout(config.rnn_dropout)
         self.decoder_lstm = nn.LSTM(
             config.embedding_size,
             config.decoder_size,

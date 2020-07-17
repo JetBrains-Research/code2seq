@@ -25,9 +25,6 @@ class PathEncoder(nn.Module):
         self.subtoken_embedding = create_embedding_tf_style(n_subtokens, config.embedding_size, subtoken_pad_id)
         self.type_embedding = create_embedding_tf_style(n_types, config.embedding_size, type_pad_id)
 
-        # TF apply RNN dropout on inputs, but Torch apply it to the outputs except lasts
-        # So, manually adding dropout for the first layer
-        self.rnn_dropout = nn.Dropout(config.rnn_dropout)
         self.path_lstm = nn.LSTM(
             config.embedding_size,
             config.rnn_size,
@@ -54,7 +51,7 @@ class PathEncoder(nn.Module):
         # [max path length; total paths]
         path_types = contexts[PATH_TYPES]
         # [max path length; total paths; embedding size]
-        path_types_embed = self.rnn_dropout(self.type_embedding(path_types))
+        path_types_embed = self.type_embedding(path_types)
         path_lengths = (path_types != self.type_pad_id).sum(0)
 
         # create packed sequence (don't forget to set enforce sorted True for ONNX support)

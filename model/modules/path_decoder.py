@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from configs import DecoderConfig
-from utils.training import cut_encoded_contexts
+from utils.training import cut_encoded_contexts, create_embedding_tf_style
 from .attention import LuongAttention
 
 
@@ -21,13 +21,10 @@ class PathDecoder(nn.Module):
         self.num_decoder_layers = config.num_decoder_layers
         self.teacher_forcing = config.teacher_forcing
 
-        self.target_embedding = nn.Embedding(self.out_size, config.embedding_size, padding_idx=pad_token)
+        self.target_embedding = create_embedding_tf_style(out_size, config.embedding_size, pad_token)
 
         self.attention = LuongAttention(config.decoder_size)
 
-        # TF apply RNN dropout on inputs, but Torch apply it to the outputs except lasts
-        # So, manually adding dropout for the first layer
-        self.lstm_dropout = nn.Dropout(config.rnn_dropout)
         self.decoder_lstm = nn.LSTM(
             config.embedding_size,
             config.decoder_size,
@@ -103,8 +100,8 @@ class PathDecoder(nn.Module):
         # [1; batch size; decoder size]
         context = context.view(1, context.shape[0], -1)
 
-        # [batch size; embedding size + decoder size]
-        concat_input = torch.cat([rnn_output, context], dim=2)
+        # [batch size; 2 * decoder size]
+        concat_input = torch.cat([h_prev[[-1]], context], dim=2)
 
         # [batch size; decoder size]
         concat = torch.tanh(self.concat_layer(concat_input))

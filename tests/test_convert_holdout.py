@@ -50,9 +50,7 @@ class TestConvertHoldout(TestCase):
         from_tokens = numpy.array(
             [[10, 8, 7, 10, 10], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]]
         )
-        to_tokens = numpy.array(
-            [[9, 10, 10, 6, 4], [2, 2, 2, 5, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]]
-        )
+        to_tokens = numpy.array([[9, 10, 10, 6, 4], [2, 2, 2, 5, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2], [2, 2, 2, 2, 2]])
         path_types = numpy.array(
             [
                 [0, 0, 0, 0, 0],

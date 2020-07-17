@@ -61,7 +61,7 @@ def convert_holdout(
     vocab: Vocabulary,
     config: PreprocessingConfig,
     n_jobs: int,
-    split_context: Callable[[Any, Any, Any], Any],
+    convert_path_context_to_ids: Any,
     **kwargs,
 ) -> None:
     if not exists(holdout_output_folder):
@@ -72,7 +72,8 @@ def convert_holdout(
         results = pool.imap(
             partial(convert_raw_buffer, **kwargs),
             (
-                (lines, config, vocab, join(holdout_output_folder, f"buffered_paths_{pos}.pkl"), split_context,)
+                (lines, config, vocab, join(holdout_output_folder, f"buffered_paths_{pos}.pkl"),
+                 convert_path_context_to_ids,)
                 for pos, lines in enumerate(read_file_by_batch(holdout_data_path, config.buffer_size))
             ),
         )

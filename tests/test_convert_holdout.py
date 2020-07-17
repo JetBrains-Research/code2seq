@@ -1,6 +1,6 @@
 from unittest import TestCase
 import pickle
-from os import path
+from os import path, getcwd
 from multiprocessing import cpu_count
 import numpy as np
 from collections import Counter
@@ -9,14 +9,15 @@ from data_preprocessing.buffer_utils import convert_holdout
 from data_preprocessing.preprocess_astminer_code2vec_data import preprocess_csv, convert_path_context_to_ids
 from configs import get_preprocessing_config_code2seq_params
 from utils.common import vocab_from_counters
+from tests.tools import get_path_to_test_data
 
 
 class TestConvertHoldout(TestCase):
     def test_preprocess_csv(self):
-        data_path = path.join(".", "tests", "resources", "poj_104-test")
-        preprocess_csv(data_path, "test")
+        _test_data_path = get_path_to_test_data("poj_104-test")
+        preprocess_csv(_test_data_path, "test")
 
-        test_parsed_path = path.join("tests", "resources", "poj_104-test", "test.pkl")
+        test_parsed_path = path.join(_test_data_path, "test.pkl")
         with open(test_parsed_path, "rb") as train_parsed_data:
             data = pickle.load(train_parsed_data)
             tokens, node_types, paths = data["tokens"], data["node_types"], data["paths"]
@@ -37,8 +38,8 @@ class TestConvertHoldout(TestCase):
         self.assertEqual(paths, {1: [1, 2, 3, 4], 2: [5, 2, 3, 6]})
 
     def test_convert_holdout(self):
-        data_path = path.join(".", "tests", "resources", "poj_104-test")
-        preprocess_csv(data_path, "test")
+        _test_data_path = get_path_to_test_data("poj_104-test")
+        preprocess_csv(_test_data_path, "test")
         config = get_preprocessing_config_code2seq_params("poj_104-test")
 
         token_counter = Counter({"int": 1, "sum": 2, "m": 3, "f": 4, "n": 5, "d": 6, "i": 7})
@@ -56,10 +57,9 @@ class TestConvertHoldout(TestCase):
 
         vocab = vocab_from_counters(config, token_counter, target_counter, type_counter)
 
-        holdout_data_path = path.join(data_path, f"path_contexts.test.csv")
-        holdout_output_folder = path.join(data_path, "test")
-        holdout_parsed_path = path.join("tests", "resources", "poj_104-test", "test.pkl")
-
+        holdout_data_path = path.join(_test_data_path, f"path_contexts.test.csv")
+        holdout_output_folder = path.join(_test_data_path, "test")
+        holdout_parsed_path = path.join(_test_data_path, "test.pkl")
         with open(holdout_parsed_path, "rb") as parsed_data:
             data = pickle.load(parsed_data)
             tokens, node_types, paths = data["tokens"], data["node_types"], data["paths"]

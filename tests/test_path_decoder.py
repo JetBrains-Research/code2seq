@@ -12,7 +12,7 @@ from tests.tools import get_path_to_test_data
 
 class TestPathDecoder(TestCase):
 
-    _test_data_path = join(get_path_to_test_data(), "train", "buffered_paths_0.pkl")
+    _test_data_path = join(get_path_to_test_data("java-test"), "train", "buffered_paths_0.pkl")
     _hidden_size = 64
     _target_length = 10
     _out_size = 128

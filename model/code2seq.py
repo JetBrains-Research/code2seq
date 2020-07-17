@@ -79,7 +79,8 @@ class Code2Seq(LightningModule):
 
         loss = F.cross_entropy(logits, labels, reduction="none")
 
-        label_mask = labels != self.vocab.label_to_id[PAD]
+        with torch.no_grad():
+            label_mask = labels != self.vocab.label_to_id[PAD]
         loss = (loss * label_mask).sum() / labels.shape[0]
         return loss
 
@@ -117,9 +118,10 @@ class Code2Seq(LightningModule):
         logits = self(context, batch.contexts_per_label, labels.shape[0], labels)
         loss = self._calculate_loss(logits, labels)
 
-        subtoken_statistic = SubtokenStatistic.calculate_statistic(
-            labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
-        )
+        with torch.no_grad():
+            subtoken_statistic = SubtokenStatistic.calculate_statistic(
+                labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+            )
 
         log = {"train/loss": loss}
         log.update(subtoken_statistic.calculate_metrics(group="train"))
@@ -155,9 +157,10 @@ class Code2Seq(LightningModule):
         logits = self(context, batch.contexts_per_label, labels.shape[0])
         loss = self._calculate_loss(logits, labels)
 
-        subtoken_statistic = SubtokenStatistic.calculate_statistic(
-            labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
-        )
+        with torch.no_grad():
+            subtoken_statistic = SubtokenStatistic.calculate_statistic(
+                labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+            )
         return {"val_loss": loss, "subtoken_statistic": subtoken_statistic}
 
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:

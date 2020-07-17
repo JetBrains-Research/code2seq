@@ -52,7 +52,8 @@ class PathEncoder(nn.Module):
         path_types = contexts[PATH_TYPES]
         # [max path length; total paths; embedding size]
         path_types_embed = self.type_embedding(path_types)
-        path_lengths = (path_types != self.type_pad_id).sum(0)
+        with torch.no_grad():
+            path_lengths = (path_types != self.type_pad_id).sum(0)
 
         # create packed sequence (don't forget to set enforce sorted True for ONNX support)
         packed_path_types = nn.utils.rnn.pack_padded_sequence(path_types_embed, path_lengths, enforce_sorted=False)

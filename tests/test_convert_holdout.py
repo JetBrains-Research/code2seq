@@ -14,7 +14,7 @@ from tests.tools import get_path_to_test_data
 
 class TestConvertHoldout(TestCase):
     def test_preprocess_csv(self):
-        _test_data_path = get_path_to_test_data("poj_104-test")
+        _test_data_path = path.join(get_path_to_test_data(), "poj_104-test")
         preprocess_csv(_test_data_path, "test")
 
         test_parsed_path = path.join(_test_data_path, "test.pkl")
@@ -38,7 +38,7 @@ class TestConvertHoldout(TestCase):
         self.assertEqual(paths, {1: [1, 2, 3, 4], 2: [5, 2, 3, 6]})
 
     def test_convert_holdout(self):
-        _test_data_path = get_path_to_test_data("poj_104-test")
+        _test_data_path = path.join(get_path_to_test_data(), "poj_104-test")
         preprocess_csv(_test_data_path, "test")
         config = get_preprocessing_config_code2seq_params("poj_104-test")
 

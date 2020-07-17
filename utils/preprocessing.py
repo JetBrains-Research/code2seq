@@ -1,16 +1,32 @@
-from dataset import Vocabulary, ConvertParameters, BufferedPathContext
-from configs.preprocessing_config import PreprocessingConfig
-
-from typing import List, Generator, Tuple, Callable, Any
-from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
-from math import ceil
+from collections import Counter
 from functools import partial
+from math import ceil
 from multiprocessing import Pool
-from utils.common import count_lines_in_file, create_folder
-from tqdm import tqdm
 from os.path import join, exists
+from typing import List, Generator, Tuple, Any
+
+from tqdm import tqdm
+
+from configs.preprocessing_config import PreprocessingConfig
+from dataset import Vocabulary, ConvertParameters, BufferedPathContext
+from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN, count_lines_in_file, create_folder, SOS, EOS, PAD, UNK
 
 DATA_FOLDER = "data"
+
+
+# Vocab utils
+def vocab_from_counters(
+    config: PreprocessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter,
+) -> Vocabulary:
+    vocab = Vocabulary()
+    vocab.add_from_counter(
+        "token_to_id", token_counter, config.subtoken_vocab_max_size, [SOS, EOS, PAD, UNK],
+    )
+    vocab.add_from_counter(
+        "label_to_id", target_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK],
+    )
+    vocab.add_from_counter("type_to_id", type_counter, -1, [SOS, EOS, PAD, UNK])
+    return vocab
 
 
 # Buffering utils
@@ -34,7 +50,7 @@ def split_context(
 
 
 def convert_raw_buffer(
-    convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, Any,], **kwargs,
+    convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, Any], **kwargs,
 ):
     lines, config, vocab, output_path, convert_path_context_to_ids = convert_args
     labels, from_tokens, path_types, to_tokens = [], [], [], []
@@ -56,14 +72,16 @@ def convert_raw_buffer(
 
 
 def convert_holdout(
-    holdout_data_path: str,
-    holdout_output_folder: str,
+    data_path: str,
+    holdout_name: str,
     vocab: Vocabulary,
     config: PreprocessingConfig,
     n_jobs: int,
     convert_path_context_to_ids: Any,
     **kwargs,
 ) -> None:
+    holdout_data_path = join(data_path, f"path_contexts.{holdout_name}.csv")
+    holdout_output_folder = join(data_path, holdout_name)
     if not exists(holdout_output_folder):
         create_folder(holdout_output_folder)
 

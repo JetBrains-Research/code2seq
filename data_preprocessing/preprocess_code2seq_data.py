@@ -3,15 +3,14 @@ from argparse import ArgumentParser
 from collections import Counter
 from multiprocessing import cpu_count
 from os import path
-from typing import Tuple, List, Any
+from typing import Tuple, List
 
 from tqdm import tqdm
 
 from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
 from dataset import Vocabulary
 from utils.common import UNK, count_lines_in_file, vocab_from_counters
-
-from data_preprocessing.buffer_utils import convert_holdout, DATA_FOLDER
+from utils.preprocessing import convert_holdout, DATA_FOLDER
 
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
@@ -61,12 +60,15 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: in
     else:
         vocab = collect_vocabulary(config) if is_vocab_collected else convert_vocabulary(config)
         vocab.dump(vocab_path)
-
+    data_path = path.join(DATA_FOLDER, config.dataset_name)
     for holdout_name in "train", "test", "val":
-        holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s",)
-        holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
         convert_holdout(
-            holdout_data_path, holdout_output_folder, vocab, config, n_jobs, convert_path_context_to_ids,
+            data_path,
+            holdout_name,
+            vocab,
+            config,
+            n_jobs,
+            convert_path_context_to_ids
         )
 
 
@@ -77,6 +79,4 @@ if __name__ == "__main__":
     arg_parser.add_argument("--n-jobs", type=int, default=None)
     args = arg_parser.parse_args()
 
-    preprocess(
-        get_preprocessing_config_code2seq_params(args.data), args.collect_vocabulary, args.n_jobs or cpu_count(),
-    )
+    preprocess(get_preprocessing_config_code2seq_params(args.data), args.collect_vocabulary, args.n_jobs or cpu_count())

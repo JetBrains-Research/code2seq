@@ -5,6 +5,7 @@ TRAIN_SPLIT_PART=60
 VAL_SPLIT_PART=20
 TEST_SPLIT_PART=20
 DEV=false
+SHUFFLE=true
 DATA_DIR=./data
 ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
 SPLIT_SCRIPT=./scripts/split_dataset.sh
@@ -25,6 +26,7 @@ while (( "$#" )); do
       echo "--train-part=VAL               specify a percentage of dataset used as train set"
       echo "--test-part=VAL                specify a percentage of dataset used as test set"
       echo "--val-part=VAL                 specify a percentage of dataset used as validation set"
+      echo "--shuffle=BOOL                 specify if dataset is suffled"
       exit 0
       ;;
     -d|--dataset*)
@@ -67,8 +69,11 @@ while (( "$#" )); do
       fi
       ;;
     --dev*)
-      shift
       DEV=true
+      shift
+      ;;
+    --shuffle*)
+      SHUFFLE=true
       shift
       ;;
     *)
@@ -133,11 +138,11 @@ then
     find "$DATA_PATH"/*  -name "*.txt" -type f -exec sh -c 'mv "$0" "${0%.txt}.c"' {} \;
     echo "Splitting on train/test/val"
     # Splitting dataset on train/test/val parts
-    sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" --shuffle
+    sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$SHUFFLE"
     rm -rf "$DATA_PATH"
     mv "$DATA_PATH"_split "$DATA_PATH"
   fi
-  echo "Extracting AST using astminer. You need to clone astminer first"
+  echo "Extracting paths using astminer. You need to specify the path to .jar in \"ASTMINER_PATH\" variable first"
   if [ -d "$DATA_PATH"_parsed ]
   then
     rm -rf "$DATA_PATH"_parsed

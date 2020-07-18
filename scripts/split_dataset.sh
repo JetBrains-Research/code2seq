@@ -8,47 +8,16 @@
 # $3              specify a percentage of dataset used as train set
 # $4              specify a percentage of dataset used as test set
 # $5              specify a percentage of dataset used as validation set
+# $6              specify if dataset needs to be shuffled, default: false
 
 SHUFFLE=false
-
-PARAMS=""
-
-while (( "$#" )); do
-  case "$1" in
-    -h|--help)
-      echo "options:"
-      echo "-h, --help     show brief help"
-      echo "--shuffle      specify if data should be shuffled"
-      echo "1 arg          specify a directory where dataset is located"
-      echo "2 arg          specify a directory to store output in"
-      echo "3 arg          specify a percentage of dataset used as train set"
-      echo "4 arg          specify a percentage of dataset used as test set"
-      echo "5 arg          specify a percentage of dataset used as validation set"
-      exit 0
-      ;;
-    --shuffle*)
-      shift
-      SHUFFLE=true
-      shift
-      ;;
-    -*|--*)
-      echo "Something went wrong"
-      exit 1
-      ;;
-    *)
-      PARAMS="$PARAMS $1"
-      shift
-      ;;
-  esac
-done
-
-eval set -- "$PARAMS"
 
 ORIGINAL_DATASET_PATH=$1
 SPLIT_DATASET_PATH=$2
 TRAIN_SPLIT_PART=$3
 TEST_SPLIT_PART=$4
 VAL_SPLIT_PART=$5
+SHUFFLE=${6:-false}
 
 DIR_TRAIN="${SPLIT_DATASET_PATH}/train"
 DIR_VAL="${SPLIT_DATASET_PATH}/val"
@@ -85,7 +54,7 @@ do
 
     counter=0
 
-    if [ $SHUFFLE ]
+    if [ "$SHUFFLE" ]
     then
       files=$(find "$DIR_TRAIN/$DIR_CLASS" -type f -exec basename {} \; | sort -R)
     else

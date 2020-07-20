@@ -1,11 +1,10 @@
-from typing import Dict, List
+from typing import Dict
 
 import torch
 from torch import nn
 
 from configs import EncoderConfig
 from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
-from utils.training import create_embedding_tf_style
 
 
 class PathEncoder(nn.Module):
@@ -22,8 +21,8 @@ class PathEncoder(nn.Module):
         self.type_pad_id = type_pad_id
         self.num_directions = 2 if config.use_bi_rnn else 1
 
-        self.subtoken_embedding = create_embedding_tf_style(n_subtokens, config.embedding_size, subtoken_pad_id)
-        self.type_embedding = create_embedding_tf_style(n_types, config.embedding_size, type_pad_id)
+        self.subtoken_embedding = nn.Embedding(n_subtokens, config.embedding_size, padding_idx=subtoken_pad_id)
+        self.type_embedding = nn.Embedding(n_types, config.embedding_size, padding_idx=type_pad_id)
 
         self.path_lstm = nn.LSTM(
             config.embedding_size,

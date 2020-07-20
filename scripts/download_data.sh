@@ -26,7 +26,8 @@ while (( "$#" )); do
       echo "--train-part=VAL               specify a percentage of dataset used as train set"
       echo "--test-part=VAL                specify a percentage of dataset used as test set"
       echo "--val-part=VAL                 specify a percentage of dataset used as validation set"
-      echo "--shuffle=BOOL                 specify if dataset is suffled"
+      echo "--shuffle=BOOL                 pass it if dataset should be shuffled"
+      echo "--dev=BOOL                 pass it if developer mode should be used"
       exit 0
       ;;
     -d|--dataset*)
@@ -68,12 +69,12 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
-    --dev*)
-      DEV=true
-      shift
-      ;;
     --shuffle*)
       SHUFFLE=true
+      shift
+      ;;
+    --dev*)
+      DEV=true
       shift
       ;;
     *)

@@ -11,7 +11,7 @@ from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
 class TestPathEncoder(TestCase):
 
-    _test_data_path = join(get_path_to_test_data(), "java-test", "train", "buffered_paths_0.pkl")
+    _test_data_path = join(get_path_to_test_data(), "train", "buffered_paths_0.pkl")
     _hidden_size = 64
     _batch_size = 128
 

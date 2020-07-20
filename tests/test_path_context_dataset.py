@@ -8,7 +8,7 @@ from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 class TestPathContextDataset(TestCase):
 
-    _data_path = join(get_path_to_test_data(), "java-test", "train")
+    _data_path = join(get_path_to_test_data(), "train")
     _max_context = 5
     _random_context = True
     _shuffle = True

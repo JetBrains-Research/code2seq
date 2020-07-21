@@ -79,16 +79,9 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
 
 def get_code2class_test_config(dataset_main_folder: str) -> Code2ClassConfig:
     encoder = EncoderConfig(
-        embedding_size=64,
-        rnn_size=16,
-        use_bi_rnn=True,
-        embedding_dropout=0.25,
-        rnn_num_layers=1,
-        rnn_dropout=0.5
+        embedding_size=64, rnn_size=16, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
-    classifier = ClassifierConfig(
-        num_classes=22, classifier_size=24
-    )
+    classifier = ClassifierConfig(num_classes=22, classifier_size=24)
 
     code2class = Code2ClassConfig(
         train_data_path=join(dataset_main_folder, "train"),

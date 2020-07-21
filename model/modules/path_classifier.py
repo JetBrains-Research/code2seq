@@ -12,20 +12,14 @@ class PathClassifier(nn.Module):
 
     _negative_value = -1e9
 
-    def __init__(
-        self, config: ClassifierConfig
-    ):
+    def __init__(self, config: ClassifierConfig):
         super().__init__()
 
         self.attention = LuongAttention(config.classifier_size)
 
         self.linear = nn.Linear(config.classifier_size, config.num_classes)
 
-    def forward(
-        self,
-        encoded_paths: torch.Tensor,
-        contexts_per_label: List[int],
-    ) -> torch.Tensor:
+    def forward(self, encoded_paths: torch.Tensor, contexts_per_label: List[int],) -> torch.Tensor:
         """Decode given paths into sequence
 
         :param encoded_paths: [n paths; decoder size]
@@ -38,8 +32,8 @@ class PathClassifier(nn.Module):
         batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
         # [batch size; classifier size]
-        initial_state = (
-            torch.cat([ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(contexts_per_label)])
+        initial_state = torch.cat(
+            [ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(contexts_per_label)]
         )
         attn_weights = self.attention(initial_state, batched_context, attention_mask)
 

@@ -34,7 +34,7 @@ def preprocess_csv(data_folder: str, dataset_name: str, holdout_name: str):
 
     if path.exists(output_c2s_path):
         remove(output_c2s_path)
-    with open(path_contexts_path, "r") as path_contexts_file, open(poj_c2s_path, "a+") as c2s_output:
+    with open(path_contexts_path, "r") as path_contexts_file, open(output_c2s_path, "a+") as c2s_output:
         for line in tqdm(path_contexts_file, total=count_lines_in_file(path_contexts_path)):
             label, *path_contexts = line.split()
             parsed_line = [label]

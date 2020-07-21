@@ -1,13 +1,11 @@
 from argparse import ArgumentParser
-from multiprocessing import cpu_count
 from os import path, remove
 from typing import Dict
 
 import numpy
 from tqdm import tqdm
 
-from configs import get_preprocessing_config_code2seq_params
-from data_preprocessing.preprocess_code2seq_data import preprocess, DATA_FOLDER
+from data_preprocessing.preprocess_code2seq_data import DATA_FOLDER
 from utils.common import count_lines_in_file
 
 
@@ -24,7 +22,7 @@ def preprocess_csv(data_folder: str, dataset_name: str, holdout_name: str):
     id_to_type_data_path = path.join(dataset_path, f"node_types.{holdout_name}.csv")
     id_to_paths_data_path = path.join(dataset_path, f"paths.{holdout_name}.csv")
     path_contexts_path = path.join(dataset_path, f"path_contexts.{holdout_name}.csv")
-    poj_c2s_path = path.join(dataset_path, f"{dataset_name}.{holdout_name}.c2s")
+    output_c2s_path = path.join(dataset_path, f"{dataset_name}.{holdout_name}.c2s")
 
     id_to_paths = _get_id2value_from_csv(id_to_paths_data_path)
     id_to_paths = {index: [n for n in nodes.split()] for index, nodes in id_to_paths.items()}
@@ -34,8 +32,8 @@ def preprocess_csv(data_folder: str, dataset_name: str, holdout_name: str):
 
     id_to_tokens = _get_id2value_from_csv(id_to_token_data_path)
 
-    if path.exists(poj_c2s_path):
-        remove(poj_c2s_path)
+    if path.exists(output_c2s_path):
+        remove(output_c2s_path)
     with open(path_contexts_path, "r") as path_contexts_file, open(poj_c2s_path, "a+") as c2s_output:
         for line in tqdm(path_contexts_file, total=count_lines_in_file(path_contexts_path)):
             label, *path_contexts = line.split()
@@ -54,7 +52,5 @@ if __name__ == "__main__":
     arg_parser.add_argument("--n-jobs", type=int, default=None)
     args = arg_parser.parse_args()
     data_path = path.join(DATA_FOLDER, args.data)
-    for holdout_name in "train", "test", "val":
+    for holdout_name in ["train", "test", "val"]:
         preprocess_csv(DATA_FOLDER, args.data, holdout_name)
-
-    preprocess(get_preprocessing_config_code2seq_params(args.data), True, args.n_jobs or cpu_count())

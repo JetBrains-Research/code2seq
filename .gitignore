@@ -10,3 +10,4 @@ data/
 wandb/
 notebooks/
 scripts/codeforces
+lightning_logs/

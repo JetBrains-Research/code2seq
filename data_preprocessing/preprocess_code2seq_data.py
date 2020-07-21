@@ -67,9 +67,7 @@ def convert_vocabulary(config: PreprocessingConfig) -> Vocabulary:
 
 
 def _convert_path_context_to_ids(
-        config: PreprocessingConfig,
-        path_context: str,
-        vocab: Vocabulary
+    config: PreprocessingConfig, path_context: str, vocab: Vocabulary
 ) -> Tuple[List[int], List[int], List[int]]:
     from_token, path_types, to_token = path_context.split(",")
 

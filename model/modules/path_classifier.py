@@ -40,9 +40,7 @@ class PathClassifier(nn.Module):
         # [batch size; classifier size]
         initial_state = (
             torch.cat([ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(contexts_per_label)])
-            .unsqueeze(0)
         )
-
         attn_weights = self.attention(initial_state, batched_context, attention_mask)
 
         # [batch size; 1; classifier size]

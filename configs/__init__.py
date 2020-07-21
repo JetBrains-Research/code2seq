@@ -79,10 +79,15 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
 
 def get_code2class_test_config(dataset_main_folder: str) -> Code2ClassConfig:
     encoder = EncoderConfig(
-        embedding_size=64, rnn_size=64, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
+        embedding_size=64,
+        rnn_size=16,
+        use_bi_rnn=True,
+        embedding_dropout=0.25,
+        rnn_num_layers=1,
+        rnn_dropout=0.5
     )
     classifier = ClassifierConfig(
-        num_classes=3, input_size=120
+        num_classes=22, classifier_size=24
     )
 
     code2class = Code2ClassConfig(
@@ -93,13 +98,13 @@ def get_code2class_test_config(dataset_main_folder: str) -> Code2ClassConfig:
         classifier=classifier,
         n_epochs=5,
         patience=3,
-        batch_size=10,
+        batch_size=15,
         test_batch_size=10,
         learning_rate=0.01,
         weight_decay=0,
         decay_gamma=0.95,
         clip_norm=5,
-        max_context=200,
+        max_context=100,
         random_context=True,
         shuffle_data=True,
     )

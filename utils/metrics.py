@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List
+import numpy
 
 import torch
 
@@ -68,3 +69,52 @@ class SubtokenStatistic:
         for stat in stats:
             union_subtoken_statistic.update(stat)
         return union_subtoken_statistic
+
+
+@dataclass
+class ClassificationStatistic:
+    num_classes: int
+    confusion_matrix: numpy.ndarray
+
+    def __post_init__(self):
+        self.confusion_matrix = numpy.zeros((self.num_classes, self.num_classes))
+
+    def update(self, other_statistic: "ClassificationStatistic"):
+        self.confusion_matrix += other_statistic.confusion_matrix
+
+    def calculate_metrics(self, group: str = None) -> Dict[str, int]:
+        accuracy = 0
+
+        if self.confusion_matrix.sum() > 0:
+            accuracy = self.confusion_matrix.trace() / self.confusion_matrix.sum()
+        metrics_dict = {"accuracy": accuracy, "confusion_matrix": self.confusion_matrix}
+        if group is not None:
+            for key in list(metrics_dict.keys()):
+                metrics_dict[f"{group}/{key}"] = metrics_dict.pop(key)
+        return metrics_dict
+
+    def calculate_statistic(
+        self, true_labels: torch.Tensor, predicted_labels: torch.Tensor
+    ) -> "ClassificationStatistic":
+        """Calculate subtoken statistic for ground truth and predicted batches of labels.
+
+        :param true_labels: [batch size] ground truth labels
+        :param predicted_labels: [batch size] predicted labels
+        :return: dataclass with calculated statistic
+        """
+        if true_labels.shape[0] != predicted_labels.shape[0]:
+            raise ValueError(
+                f"unequal batch sizes for ground truth ({true_labels.shape[0]})"
+                f"and predicted ({predicted_labels.shape[0]})"
+            )
+
+        classification_statistic = ClassificationStatistic(self.num_classes)
+        true_labels, predicted_labels = true_labels.detach().numpy(), predicted_labels.detach().numpy()
+        classification_statistic.confusion_matrix[true_labels, predicted_labels] += 1
+        return classification_statistic
+
+    def union_statistics(self, stats: List["ClassificationStatistic"]) -> "ClassificationStatistic":
+        union_classification_statistic = ClassificationStatistic(self.num_classes)
+        for stat in stats:
+            union_classification_statistic.update(stat)
+        return union_classification_statistic

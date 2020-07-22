@@ -20,15 +20,13 @@ class PathClassifier(nn.Module):
         self.linear = nn.Linear(config.classifier_size, config.num_classes)
 
     def forward(self, encoded_paths: torch.Tensor, contexts_per_label: List[int],) -> torch.Tensor:
-        """Decode given paths into sequence
+        """Classify given paths
 
-        :param encoded_paths: [n paths; decoder size]
+        :param encoded_paths: [n paths; classifier size]
         :param contexts_per_label: [n1, n2, ..., nk] sum = n paths
-        :param output_length: length of output sequence
-        :param target_sequence: [sequence length; batch size]
         :return:
         """
-        # [batch size; max context size; decoder size], [batch size; max context size]
+        # [batch size; max context size; classifier size], [batch size; max context size]
         batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
         # [batch size; classifier size]

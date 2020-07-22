@@ -74,7 +74,6 @@ class SubtokenStatistic:
 @dataclass
 class ClassificationStatistic:
     num_classes: int
-    confusion_matrix: numpy.ndarray
 
     def __post_init__(self):
         self.confusion_matrix = numpy.zeros((self.num_classes, self.num_classes))
@@ -110,7 +109,8 @@ class ClassificationStatistic:
 
         classification_statistic = ClassificationStatistic(self.num_classes)
         true_labels, predicted_labels = true_labels.detach().numpy(), predicted_labels.detach().numpy()
-        classification_statistic.confusion_matrix[true_labels, predicted_labels] += 1
+        for true_index, pred_index in zip(true_labels, predicted_labels):
+            classification_statistic.confusion_matrix[true_index, pred_index] += 1
         return classification_statistic
 
     def union_statistics(self, stats: List["ClassificationStatistic"]) -> "ClassificationStatistic":

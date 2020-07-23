@@ -5,19 +5,23 @@ from torch import nn
 
 from configs import ClassifierConfig
 from utils.training import cut_encoded_contexts
-from .attention import LuongAttention
+from .attention import LocalAttention
+
+activations = {"relu": torch.nn.ReLU(), "sigmoid": torch.nn.Sigmoid(), "tanh": torch.nn.Tanh()}
 
 
 class PathClassifier(nn.Module):
+
     _negative_value = -1e9
 
     def __init__(self, config: ClassifierConfig, out_size: int):
         super().__init__()
         self.out_size = out_size
-        self.attention = LuongAttention(config.classifier_input_size)
-        self.concat_layer = nn.Linear(2 * config.classifier_input_size, config.hidden_size)
+        self.attention = LocalAttention(config.classifier_input_size)
+        self.concat_layer = nn.Linear(config.classifier_input_size, config.hidden_size)
         layers = [
-            config.activation(nn.Linear(config.hidden_size, config.hidden_size)) for _ in range(config.n_hidden_layers)
+            nn.Sequential(activations[config.activation], nn.Linear(config.hidden_size, config.hidden_size))
+            for _ in range(config.n_hidden_layers)
         ]
         self.hidden_layers = nn.Sequential(*layers)
         self.classification_layer = nn.Linear(config.hidden_size, self.out_size)
@@ -33,27 +37,17 @@ class PathClassifier(nn.Module):
         batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
         # [batch size; classifier input size]
-        initial_state = torch.cat(
-            [ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(contexts_per_label)]
-        )
-        attn_weights = self.attention(initial_state, batched_context, attention_mask)
-
-        # [batch size; 1; classifier input size]
-        context = torch.bmm(attn_weights.transpose(1, 2), batched_context)
+        attn_weights = self.attention(batched_context, attention_mask)
 
         # [batch size; classifier input size]
-        context = context.view(context.shape[0], -1)
-
-        # [batch size; 2 * classifier input size]
-        concat_input = torch.cat([initial_state, context], dim=1)
+        context = torch.sum(batched_context * attn_weights, dim=1)
 
         # [batch size; classifier input size]
-        concat = torch.tanh(self.concat_layer(concat_input))
+        concat = torch.tanh(self.concat_layer(context))
 
         # [batch size; hidden size]
         hidden = self.hidden_layers(concat)
 
         # [batch size; num classes]
         output = self.classification_layer(hidden)
-
         return output

@@ -9,7 +9,6 @@ from .attention import LuongAttention
 
 
 class PathClassifier(nn.Module):
-
     _negative_value = -1e9
 
     def __init__(self, config: ClassifierConfig, out_size: int):
@@ -17,6 +16,10 @@ class PathClassifier(nn.Module):
         self.out_size = out_size
         self.attention = LuongAttention(config.classifier_input_size)
         self.concat_layer = nn.Linear(2 * config.classifier_input_size, config.hidden_size)
+        layers = [
+            config.activation(nn.Linear(config.hidden_size, config.hidden_size)) for _ in range(config.n_hidden_layers)
+        ]
+        self.hidden_layers = nn.Sequential(*layers)
         self.classification_layer = nn.Linear(config.hidden_size, self.out_size)
 
     def forward(self, encoded_paths: torch.Tensor, contexts_per_label: List[int],) -> torch.Tensor:
@@ -47,7 +50,10 @@ class PathClassifier(nn.Module):
         # [batch size; classifier input size]
         concat = torch.tanh(self.concat_layer(concat_input))
 
+        # [batch size; hidden size]
+        hidden = self.hidden_layers(concat)
+
         # [batch size; num classes]
-        output = self.classification_layer(concat)
+        output = self.classification_layer(hidden)
 
         return output

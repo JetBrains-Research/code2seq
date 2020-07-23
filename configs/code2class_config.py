@@ -6,5 +6,5 @@ import torch
 class ClassifierConfig:
     classifier_input_size: int
     n_hidden_layers: int
-    activation: torch.nn.functional
+    activation: str
     hidden_size: int

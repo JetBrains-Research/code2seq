@@ -13,6 +13,7 @@ from dataset import Vocabulary, BufferedPathContext, ConvertParameters
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
 DATA_FOLDER = "data"
+SEPARATOR = "|"
 
 
 def _vocab_from_counters(
@@ -27,11 +28,8 @@ def _vocab_from_counters(
     return vocab
 
 
-def _parse_name(split_names: bool, _name: str, separator: str = "|") -> List[str]:
-    if split_names:
-        return _name.split(separator)
-    else:
-        return [_name]
+def _parse_name(token: str, is_split: bool) -> List[str]:
+    return token.split(SEPARATOR) if is_split else [token]
 
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
@@ -47,11 +45,7 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
             cur_types = []
             for path_context in path_contexts:
                 from_token, path_types, to_token = path_context.split(",")
-
-                from_token = _parse_name(config.split_names, from_token)
-                to_token = _parse_name(config.split_names, to_token)
-
-                cur_tokens += from_token + to_token
+                cur_tokens += _parse_name(config.split_names, from_token) + _parse_name(config.split_names, to_token)
                 cur_types += path_types.split("|")
             token_counter.update(cur_tokens)
             type_counter.update(cur_types)
@@ -67,12 +61,12 @@ def convert_vocabulary(config: PreprocessingConfig) -> Vocabulary:
 
 
 def _convert_path_context_to_ids(
-    config: PreprocessingConfig, path_context: str, vocab: Vocabulary
+    is_split: bool, path_context: str, vocab: Vocabulary
 ) -> Tuple[List[int], List[int], List[int]]:
     from_token, path_types, to_token = path_context.split(",")
 
-    from_token = _parse_name(config.split_names, from_token)
-    to_token = _parse_name(config.split_names, to_token)
+    from_token = _parse_name(from_token, is_split)
+    to_token = _parse_name(to_token, is_split)
 
     token_unk = vocab.token_to_id[UNK]
     type_unk = vocab.type_to_id[UNK]
@@ -88,9 +82,9 @@ def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Voca
     labels, from_tokens, path_types, to_tokens = [], [], [], []
     for line in lines:
         label, *path_contexts = line.split()
-        label = _parse_name(config.split_target, label)
+        label = _parse_name(label, config.split_target)
         labels.append([vocab.label_to_id.get(_l, vocab.label_to_id[UNK]) for _l in label])
-        converted_context = [_convert_path_context_to_ids(config, pc, vocab) for pc in path_contexts]
+        converted_context = [_convert_path_context_to_ids(config.split_names, pc, vocab) for pc in path_contexts]
         from_tokens.append([cc[0] for cc in converted_context])
         path_types.append([cc[1] for cc in converted_context])
         to_tokens.append([cc[2] for cc in converted_context])

@@ -16,8 +16,8 @@ class PathClassifier(nn.Module):
         super().__init__()
 
         self.attention = LuongAttention(config.classifier_size)
-
-        self.linear = nn.Linear(config.classifier_size, config.num_classes)
+        self.concat_layer = nn.Linear(2 * config.classifier_size, config.hidden_size)
+        self.classification_layer = nn.Linear(config.hidden_size, config.num_classes)
 
     def forward(self, encoded_paths: torch.Tensor, contexts_per_label: List[int],) -> torch.Tensor:
         """Classify given paths
@@ -41,7 +41,13 @@ class PathClassifier(nn.Module):
         # [batch size; classifier size]
         context = context.view(context.shape[0], -1)
 
+        # [batch size; 2 * decoder size]
+        concat_input = torch.cat([initial_state, context], dim=2)
+
+        # [batch size; classifier size]
+        concat = torch.tanh(self.concat_layer(concat_input))
+
         # [batch size; num classes]
-        output = self.linear(context)
+        output = self.classification_layer(concat)
 
         return output

@@ -2,7 +2,6 @@ from os.path import join
 
 from .preprocessing_config import PreprocessingConfig
 from .code2seq_config import Code2SeqConfig, DecoderConfig, EncoderConfig
-from .code2class_config import ClassifierConfig, Code2ClassConfig
 
 
 def get_preprocessing_config_code2seq_params(dataset_name: str) -> PreprocessingConfig:
@@ -75,30 +74,3 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
         shuffle_data=True,
     )
     return code2seq
-
-
-def get_code2class_test_config(dataset_main_folder: str) -> Code2ClassConfig:
-    encoder = EncoderConfig(
-        embedding_size=64, rnn_size=16, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
-    )
-    classifier = ClassifierConfig(num_classes=22, classifier_size=24)
-
-    code2class = Code2ClassConfig(
-        train_data_path=join(dataset_main_folder, "train"),
-        val_data_path=join(dataset_main_folder, "val"),
-        test_data_path=join(dataset_main_folder, "test"),
-        encoder=encoder,
-        classifier=classifier,
-        n_epochs=5,
-        patience=3,
-        batch_size=15,
-        test_batch_size=10,
-        learning_rate=0.01,
-        weight_decay=0,
-        decay_gamma=0.95,
-        clip_norm=5,
-        max_context=100,
-        random_context=True,
-        shuffle_data=True,
-    )
-    return code2class

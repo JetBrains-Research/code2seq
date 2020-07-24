@@ -2,6 +2,7 @@ from os.path import join
 
 from .preprocessing_config import PreprocessingConfig
 from .code2seq_config import Code2SeqConfig, DecoderConfig, EncoderConfig
+from .code2class_config import ClassifierConfig
 
 
 def get_preprocessing_config_code2seq_params(dataset_name: str) -> PreprocessingConfig:

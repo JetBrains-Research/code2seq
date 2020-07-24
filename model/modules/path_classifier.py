@@ -44,11 +44,8 @@ class PathClassifier(nn.Module):
         # [batch size; classifier input size]
         context = torch.sum(batched_context * attn_weights, dim=1)
 
-        # [batch size; classifier input size]
-        concat = torch.tanh(self.concat_layer(context))
-
         # [batch size; hidden size]
-        hidden = self.hidden_layers(concat)
+        hidden = self.hidden_layers(context)
 
         # [batch size; num classes]
         output = self.classification_layer(hidden)

@@ -22,11 +22,11 @@ class PathClassifier(nn.Module):
         super().__init__()
         self.out_size = out_size
         self.attention = LocalAttention(config.classifier_input_size)
-        layers = [self._get_activation(config.activation), nn.Linear(config.classifier_input_size, config.hidden_size)]
+        layers = [nn.Linear(config.classifier_input_size, config.hidden_size), self._get_activation(config.activation)]
         if config.n_hidden_layers < 1:
             raise ValueError(f"Invalid layers number ({config.n_hidden_layers})")
         for _ in range(config.n_hidden_layers - 1):
-            layers += [self.activations[config.activation], nn.Linear(config.hidden_size, config.hidden_size)]
+            layers += [nn.Linear(config.hidden_size, config.hidden_size), self._get_activation(config.activation)]
         self.hidden_layers = nn.Sequential(*layers)
         self.classification_layer = nn.Linear(config.hidden_size, self.out_size)
 

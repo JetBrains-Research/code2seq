@@ -13,19 +13,18 @@ class PathClassifier(nn.Module):
     _negative_value = -1e9
     _activations = {"relu": torch.nn.ReLU(), "sigmoid": torch.nn.Sigmoid(), "tanh": torch.nn.Tanh()}
 
+    def _get_activation(self, activation_name: str) -> torch.nn.Module:
+        if activation_name in self._activations:
+            return self._activations[activation_name]
+        raise KeyError(f"Activation {activation_name} is not supported")
+
     def __init__(self, config: ClassifierConfig, out_size: int):
         super().__init__()
         self.out_size = out_size
         self.attention = LocalAttention(config.classifier_input_size)
-        layers = [
-            nn.Sequential(
-                self.activations[config.activation], nn.Linear(config.classifier_input_size, config.hidden_size)
-            )
-        ]
-        layers += [
-            nn.Sequential(self.activations[config.activation], nn.Linear(config.hidden_size, config.hidden_size))
-            for _ in range(config.n_hidden_layers)
-        ]
+        layers = [self._get_activation(config.activation), nn.Linear(config.classifier_input_size, config.hidden_size)]
+        for _ in range(config.n_hidden_layers):
+            layers += [self.activations[config.activation], nn.Linear(config.hidden_size, config.hidden_size)]
         self.hidden_layers = nn.Sequential(*layers)
         self.classification_layer = nn.Linear(config.hidden_size, self.out_size)
 

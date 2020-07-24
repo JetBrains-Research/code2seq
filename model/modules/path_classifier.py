@@ -7,20 +7,23 @@ from configs import ClassifierConfig
 from utils.training import cut_encoded_contexts
 from .attention import LocalAttention
 
-activations = {"relu": torch.nn.ReLU(), "sigmoid": torch.nn.Sigmoid(), "tanh": torch.nn.Tanh()}
-
 
 class PathClassifier(nn.Module):
 
     _negative_value = -1e9
+    _activations = {"relu": torch.nn.ReLU(), "sigmoid": torch.nn.Sigmoid(), "tanh": torch.nn.Tanh()}
 
     def __init__(self, config: ClassifierConfig, out_size: int):
         super().__init__()
         self.out_size = out_size
         self.attention = LocalAttention(config.classifier_input_size)
-        self.concat_layer = nn.Linear(config.classifier_input_size, config.hidden_size)
         layers = [
-            nn.Sequential(activations[config.activation], nn.Linear(config.hidden_size, config.hidden_size))
+            nn.Sequential(
+                self.activations[config.activation], nn.Linear(config.classifier_input_size, config.hidden_size)
+            )
+        ]
+        layers += [
+            nn.Sequential(self.activations[config.activation], nn.Linear(config.hidden_size, config.hidden_size))
             for _ in range(config.n_hidden_layers)
         ]
         self.hidden_layers = nn.Sequential(*layers)

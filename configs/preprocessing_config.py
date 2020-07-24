@@ -13,6 +13,8 @@ class PreprocessingConfig:
     wrap_path: bool
     wrap_name: bool
     wrap_target: bool
+    split_target: bool
+    split_names: bool
     subtoken_vocab_max_size: int = -1
     target_vocab_max_size: int = -1
     buffer_size: int = 10_000

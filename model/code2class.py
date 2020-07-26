@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from model.modules import PathEncoder, PathClassifier
 from utils.common import PAD
 from utils.metrics import ClassificationStatistic
-from . import BaseCodeModel, EncoderConfigType, DecoderConfigType, StatisticType
+from .base_code_model import BaseCodeModel, EncoderConfigType, DecoderConfigType, StatisticType
 
 
 class Code2Class(BaseCodeModel):
@@ -35,12 +35,12 @@ class Code2Class(BaseCodeModel):
 
     def _compute_metrics(self, logits: torch.Tensor, labels: torch.Tensor) -> StatisticType:
         classification_statistic = ClassificationStatistic(len(self.vocab.type_to_id)).calculate_statistic(
-            labels.squeeze(0).detach(), logits.detach().argmax(-1),
+            labels.detach().squeeze(0), logits.detach().argmax(-1),
         )
         return classification_statistic
 
     def _get_progress_bar(self, log: Dict, group: str) -> Dict:
-        return {f"{group}/accuracy": log[f"{group}/accuracy"]}
+        return {f"{group}/acc": log[f"{group}/accuracy"]}
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
@@ -49,6 +49,6 @@ class Code2Class(BaseCodeModel):
             .union_statistics([out["statistic"] for out in outputs])
             .calculate_metrics(group)
         )
-        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/accuracy"]}
+        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/acc"]}
 
         return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}

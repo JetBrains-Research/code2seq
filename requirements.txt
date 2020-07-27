@@ -1,6 +1,6 @@
 black==19.10b0
 torch==1.5.1
-tqdm==4.47.0
-numpy==1.19.0
+tqdm==4.48.0
+numpy==1.19.1
 pytorch-lightning==0.8.5
-wandb==0.9.3
+wandb==0.9.4

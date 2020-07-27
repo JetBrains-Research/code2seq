@@ -31,9 +31,6 @@ class Code2Class(BaseCodeModel):
         )
         self.decoder = PathClassifier(decoder_config, len(self.vocab.label_to_id))
 
-    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int],) -> torch.Tensor:
-        return self.decoder(self.encoder(samples), paths_for_label)
-
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
         logs.update(
@@ -48,7 +45,8 @@ class Code2Class(BaseCodeModel):
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
-        loss = torch.nn.CrossEntropyLoss(logits, batch.labels)
+        print(logits.shape, batch.labels.shape)
+        loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         log = {"train/loss": loss}
         with torch.no_grad():
             statistic = ClassificationStatistic(len(self.vocab.label_to_id)).calculate_statistic(
@@ -63,7 +61,8 @@ class Code2Class(BaseCodeModel):
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
-        loss = torch.nn.CrossEntropyLoss(logits, batch.labels)
+        print(logits.shape, batch.labels.shape)
+        loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         with torch.no_grad():
             classification_statistic = ClassificationStatistic(len(self.vocab.label_to_id)).calculate_statistic(
                 batch.labels.detach().squeeze(0), logits.detach().argmax(-1),

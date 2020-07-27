@@ -22,7 +22,6 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         self.vocab = vocab
         self.num_workers = num_workers
 
-    @abstractmethod
     def forward(
         self,
         samples: Dict[str, torch.Tensor],
@@ -30,7 +29,7 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         output_length: int = None,
         target_sequence: torch.Tensor = None,
     ) -> torch.Tensor:
-        pass
+        return self.decoder(self.encoder(samples), paths_for_label, output_length, target_sequence)
 
     @abstractmethod
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:

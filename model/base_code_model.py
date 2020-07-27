@@ -112,7 +112,6 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
 
     def transfer_batch_to_device(self, batch: PathContextBatch, device: torch.device) -> PathContextBatch:
         # Dict str -> torch.Tensor [seq length; batch size * n_context]
-        print(1)
         for k in batch.context:
             batch.context[k] = batch.context[k].to(self.device)
         # [seq length; batch size]

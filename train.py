@@ -30,19 +30,21 @@ def train(
 
     if model_name == "code2seq":
         config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-        config, encoder_config, decoder_config = config_function(dataset_main_folder)
-        model = Code2Seq(config, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config)
+        hyperparams, encoder_config, decoder_config = config_function(dataset_main_folder)
+        model = Code2Seq(hyperparams, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config)
     elif model_name == "code2class":
         config_function = get_code2class_test_config if is_test else get_code2class_default_config
-        config, encoder_config, decoder_config = config_function(dataset_main_folder)
-        model = Code2Class(config, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config)
+        hyperparams, encoder_config, decoder_config = config_function(dataset_main_folder)
+        model = Code2Class(
+            hyperparams, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config
+        )
     else:
         raise ValueError(f"Model {model_name} is not supported")
 
     # define logger
     wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", log_model=True, offline=is_test)
     wandb_logger.watch(model)
-    wandb_logger.log_hyperparams(asdict(config))
+    wandb_logger.log_hyperparams(asdict(hyperparams))
     wandb_logger.log_hyperparams(asdict(encoder_config))
     wandb_logger.log_hyperparams(asdict(decoder_config))
     # define model checkpoint callback

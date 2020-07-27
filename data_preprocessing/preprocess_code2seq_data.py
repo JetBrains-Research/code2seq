@@ -143,9 +143,9 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
 def preprocess(problem: str, data: str, is_vocab_collected: bool, n_jobs: int):
     # Collect vocabulary from train holdout if needed
     if problem == "code2seq":
-        config = get_preprocessing_config_code2class_params(data)
-    elif problem == "code2class":
         config = get_preprocessing_config_code2seq_params(data)
+    elif problem == "code2class":
+        config = get_preprocessing_config_code2class_params(data)
     else:
         raise ValueError(f"Not supported problem: {problem}")
     vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")

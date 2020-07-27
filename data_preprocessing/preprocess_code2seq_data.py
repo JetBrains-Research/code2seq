@@ -40,12 +40,12 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
-            target_counter.update(_parse_token(config.split_target, label))
+            target_counter.update(_parse_token(label, config.split_target))
             cur_tokens = []
             cur_types = []
             for path_context in path_contexts:
                 from_token, path_types, to_token = path_context.split(",")
-                cur_tokens += _parse_token(config.split_names, from_token) + _parse_token(config.split_names, to_token)
+                cur_tokens += _parse_token(from_token, config.split_names) + _parse_token(to_token, config.split_names)
                 cur_types += path_types.split("|")
             token_counter.update(cur_tokens)
             type_counter.update(cur_types)

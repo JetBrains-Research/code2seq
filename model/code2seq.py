@@ -3,12 +3,12 @@ from typing import Dict, List
 import torch
 import torch.nn.functional as F
 
+from configs import ModelHyperparameters, EncoderConfig, DecoderConfig
 from dataset import Vocabulary
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS
 from utils.metrics import SubtokenStatistic
 from .base_code_model import BaseCodeModel, StatisticType
-from configs import ModelHyperparameters, EncoderConfig, DecoderConfig
 
 
 class Code2Seq(BaseCodeModel):

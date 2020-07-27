@@ -3,12 +3,12 @@ from typing import Dict, List
 import torch
 import torch.nn.functional as F
 
+from configs import ModelHyperparameters, EncoderConfig, ClassifierConfig
 from dataset import Vocabulary
 from model.modules import PathEncoder, PathClassifier
 from utils.common import PAD
 from utils.metrics import ClassificationStatistic
 from .base_code_model import BaseCodeModel, StatisticType
-from configs import ModelHyperparameters, EncoderConfig, ClassifierConfig
 
 
 class Code2Class(BaseCodeModel):

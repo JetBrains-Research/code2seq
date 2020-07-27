@@ -52,6 +52,7 @@ def train(dataset_name: str, num_workers: int = 0, is_test: bool = False, resume
         resume_from_checkpoint=resume_from_checkpoint,
         gpus=gpu,
         callbacks=[lr_logger],
+        reload_dataloaders_every_epoch=True,
     )
 
     trainer.fit(model)

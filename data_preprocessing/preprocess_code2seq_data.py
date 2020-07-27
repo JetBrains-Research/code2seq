@@ -13,6 +13,8 @@ from dataset import Vocabulary, BufferedPathContext, ConvertParameters
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
 DATA_FOLDER = "data"
+DESCRIPTION_FILE = "description.csv"
+BUFFERED_PATH_TEMPLATE = "buffered_paths_{}.pkl"
 SEPARATOR = "|"
 
 
@@ -77,8 +79,8 @@ def _convert_path_context_to_ids(
     )
 
 
-def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str]):
-    lines, config, vocab, output_path = convert_args
+def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, int]):
+    lines, config, vocab, output_folder, buffer_id = convert_args
     labels, from_tokens, path_types, to_tokens = [], [], [], []
     for line in lines:
         label, *path_contexts = line.split()
@@ -89,14 +91,20 @@ def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Voca
         path_types.append([cc[1] for cc in converted_context])
         to_tokens.append([cc[2] for cc in converted_context])
 
-    BufferedPathContext.create_from_lists(
+    bpc = BufferedPathContext.create_from_lists(
         (labels, ConvertParameters(config.max_target_parts, config.wrap_target, vocab.label_to_id)),
         {
             FROM_TOKEN: (from_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id),),
             PATH_TYPES: (path_types, ConvertParameters(config.max_path_length, config.wrap_path, vocab.type_to_id)),
             TO_TOKEN: (to_tokens, ConvertParameters(config.max_name_parts, config.wrap_name, vocab.token_to_id)),
         },
-    ).dump(output_path)
+    )
+
+    with open(path.join(output_folder, DESCRIPTION_FILE), "a") as desc_file:
+        n_samples = len(bpc.contexts_per_label)
+        n_paths = sum(bpc.contexts_per_label)
+        desc_file.write(f"{buffer_id},{BUFFERED_PATH_TEMPLATE.format(buffer_id)},{n_samples},{n_paths}\n")
+    bpc.dump(path.join(output_folder, BUFFERED_PATH_TEMPLATE.format(buffer_id)))
 
 
 def _read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], None, None]:
@@ -114,15 +122,17 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
     holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
     holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
     create_folder(holdout_output_folder)
-    n_buffers = ceil(count_lines_in_file(holdout_data_path) / config.buffer_size)
+    with open(path.join(holdout_output_folder, DESCRIPTION_FILE), "w") as desc_file:
+        desc_file.write("id,filename,n_samples,n_paths\n")
     with Pool(n_jobs) as pool:
         results = pool.imap(
             _convert_raw_buffer,
             (
-                (lines, config, vocab, path.join(holdout_output_folder, f"buffered_paths_{pos}.pkl"))
+                (lines, config, vocab, holdout_output_folder, pos)
                 for pos, lines in enumerate(_read_file_by_batch(holdout_data_path, config.buffer_size))
             ),
         )
+        n_buffers = ceil(count_lines_in_file(holdout_data_path) / config.buffer_size)
         _ = [_ for _ in tqdm(results, total=n_buffers)]
 
 
@@ -134,9 +144,8 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: in
     else:
         vocab = collect_vocabulary(config) if is_vocab_collected else convert_vocabulary(config)
         vocab.dump(vocab_path)
-    convert_holdout("train", vocab, config, n_jobs)
-    convert_holdout("val", vocab, config, n_jobs)
-    convert_holdout("test", vocab, config, n_jobs)
+    for holdout in ["train", "val", "test"]:
+        convert_holdout(holdout, vocab, config, n_jobs)
 
 
 if __name__ == "__main__":

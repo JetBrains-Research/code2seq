@@ -92,6 +92,14 @@ class Code2Seq(LightningModule):
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
         return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
 
+    def transfer_batch_to_device(self, batch: PathContextBatch, device: torch.device) -> PathContextBatch:
+        # Dict str -> torch.Tensor [seq length; batch size * n_context]
+        for k in batch.context:
+            batch.context[k] = batch.context[k].to(self.device)
+        # [seq length; batch size]
+        batch.labels = batch.labels.to(self.device)
+        return batch
+
     # ===== TRAIN BLOCK =====
 
     def train_dataloader(self) -> DataLoader:
@@ -107,20 +115,13 @@ class Code2Seq(LightningModule):
         return dataloader
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        # Dict str -> torch.Tensor [seq length; batch size * n_context]
-        context = batch.context
-        for k in context:
-            context[k] = context[k].to(self.device)
-        # [seq length; batch size]
-        labels = batch.labels.to(self.device)
-
         # [seq length; batch size; vocab size]
-        logits = self(context, batch.contexts_per_label, labels.shape[0], labels)
-        loss = self._calculate_loss(logits, labels)
+        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
+        loss = self._calculate_loss(logits, batch.labels)
 
         with torch.no_grad():
             subtoken_statistic = SubtokenStatistic.calculate_statistic(
-                labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
             )
 
         log = {"train/loss": loss}
@@ -146,20 +147,15 @@ class Code2Seq(LightningModule):
         return dataloader
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        # Dict str -> torch.Tensor [seq length; batch size * n_context]
-        context = batch.context
-        for k in context:
-            context[k] = context[k].to(self.device)
-        # [seq length; batch size]
-        labels = batch.labels.to(self.device)
-
         # [seq length; batch size; vocab size]
-        logits = self(context, batch.contexts_per_label, labels.shape[0])
-        loss = self._calculate_loss(logits, labels)
+        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
+        loss = self._calculate_loss(logits, batch.labels)
 
         with torch.no_grad():
             subtoken_statistic = SubtokenStatistic.calculate_statistic(
-                labels.detach(), logits.detach().argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]]
+                batch.labels.detach(),
+                logits.detach().argmax(-1),
+                [self.vocab.label_to_id[t] for t in [SOS, EOS, PAD, UNK]],
             )
         return {"val_loss": loss, "subtoken_statistic": subtoken_statistic}
 

@@ -45,7 +45,6 @@ class Code2Class(BaseCodeModel):
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
-        print(logits.shape, batch.labels.shape)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         log = {"train/loss": loss}
         with torch.no_grad():
@@ -61,14 +60,13 @@ class Code2Class(BaseCodeModel):
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
-        print(logits.shape, batch.labels.shape)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         with torch.no_grad():
-            classification_statistic = ClassificationStatistic(len(self.vocab.label_to_id)).calculate_statistic(
+            statistic = ClassificationStatistic(len(self.vocab.label_to_id)).calculate_statistic(
                 batch.labels.detach().squeeze(0), logits.detach().argmax(-1),
             )
 
-        return {"val_loss": loss, "classification_statistic": classification_statistic}
+        return {"val_loss": loss, "statistic": statistic}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         result = self.validation_step(batch, batch_idx)

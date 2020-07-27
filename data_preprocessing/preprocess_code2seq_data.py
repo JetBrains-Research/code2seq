@@ -22,11 +22,12 @@ def _vocab_from_counters(
     config: PreprocessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
 ) -> Vocabulary:
     vocab = Vocabulary()
-    vocab.add_from_counter(
-        "token_to_id", token_counter, config.subtoken_vocab_max_size, [SOS, EOS, PAD, UNK],
-    )
-    vocab.add_from_counter("label_to_id", target_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK])
+    vocab.add_from_counter("token_to_id", token_counter, config.subtoken_vocab_max_size, [SOS, EOS, PAD, UNK])
     vocab.add_from_counter("type_to_id", type_counter, -1, [SOS, EOS, PAD, UNK])
+    if config.wrap_target:
+        vocab.add_from_counter("label_to_id", target_counter, config.target_vocab_max_size, [SOS, EOS, PAD, UNK])
+    else:
+        vocab.add_from_counter("label_to_id", type_counter, -1, [PAD, UNK])
     return vocab
 
 

@@ -1,35 +1,39 @@
 from math import ceil
-from os import listdir
 from os.path import exists, join
 from typing import Dict, Tuple, List
 
 import numpy
 import torch
 from torch.utils.data import IterableDataset, DataLoader
-from tqdm.auto import tqdm
 
 from dataset import BufferedPathContext
 from utils.common import FROM_TOKEN, PATH_TYPES, TO_TOKEN
 
 
 class PathContextDataset(IterableDataset):
+
+    _description_filename = "description.csv"
+
     def __init__(self, path: str, max_context: int, random_context: bool, shuffle: bool):
         super().__init__()
         if not exists(path):
             raise ValueError(f"Path does not exist")
-        print(f"prepare {path} dataset...")
+        if not exists(join(path, self._description_filename)):
+            raise ValueError(f"Can't find description file with name {self._description_filename}")
+
+        self._buffered_files_paths = []
+        self._total_n_samples = 0
+        with open(join(path, self._description_filename)) as desc_file:
+            header = desc_file.readline()  # read header
+            assert header.strip() == "id,filename,n_samples,n_paths"
+            for line in desc_file:
+                file_id, filename, n_samples, n_paths = line.strip().split(",")
+                self._buffered_files_paths.insert(int(file_id), join(path, filename))
+                self._total_n_samples += int(n_samples)
+
         self.max_context = max_context
         self.random_context = random_context
         self.shuffle = shuffle
-
-        buffered_files = listdir(path)
-        buffered_files = sorted(buffered_files, key=lambda file: int(file.rsplit("_", 1)[1][:-4]))
-        self._buffered_files_paths = [join(path, bf) for bf in buffered_files]
-
-        self._total_n_samples = 0
-        for filepath in tqdm(self._buffered_files_paths):
-            buf_path_context = BufferedPathContext.load(filepath)
-            self._total_n_samples += len(buf_path_context)
 
         # each worker use data from _cur_file_idx and until it reaches _end_file_idx
         self._cur_file_idx = None

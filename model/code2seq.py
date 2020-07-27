@@ -65,4 +65,4 @@ class Code2Seq(BaseCodeModel):
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
         logs.update(SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group))
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
-        return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
+        return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}

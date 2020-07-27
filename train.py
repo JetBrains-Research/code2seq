@@ -67,6 +67,7 @@ def train(
         resume_from_checkpoint=resume_from_checkpoint,
         gpus=gpu,
         callbacks=[lr_logger],
+        reload_dataloaders_every_epoch=True,
     )
 
     trainer.fit(model)

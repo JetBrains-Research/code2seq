@@ -110,20 +110,22 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
 
     # ===== STEP =====
 
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def transfer_batch_to_device(self, batch: PathContextBatch, device: torch.device) -> PathContextBatch:
         # Dict str -> torch.Tensor [seq length; batch size * n_context]
-        context = batch.context
-        for k in context:
-            context[k] = context[k].to(self.device)
+        print(1)
+        for k in batch.context:
+            batch.context[k] = batch.context[k].to(self.device)
         # [seq length; batch size]
-        labels = batch.labels.to(self.device)
+        batch.labels = batch.labels.to(self.device)
+        return batch
 
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
-        logits = self(context, batch.contexts_per_label, labels.shape[0], labels)
-        loss = self._calculate_loss(logits, labels)
+        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
+        loss = self._calculate_loss(logits, batch.labels)
         log = {"train/loss": loss}
         with torch.no_grad():
-            statistic = self._compute_metrics(logits, labels)
+            statistic = self._compute_metrics(logits, batch.labels)
 
         log.update(statistic.calculate_metrics(group="train"))
         progress_bar = self._get_progress_bar(log, "train")
@@ -131,18 +133,11 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        # Dict str -> torch.Tensor [seq length; batch size * n_context]
-        context = batch.context
-        for k in context:
-            context[k] = context[k].to(self.device)
-        # [seq length; batch size]
-        labels = batch.labels.to(self.device)
-
         # [seq length; batch size; vocab size]
-        logits = self(context, batch.contexts_per_label, labels.shape[0])
-        loss = self._calculate_loss(logits, labels)
+        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
+        loss = self._calculate_loss(logits, batch.labels)
         with torch.no_grad():
-            statistic = self._compute_metrics(logits, labels)
+            statistic = self._compute_metrics(logits, batch.labels)
 
         return {"val_loss": loss, "statistic": statistic}
 

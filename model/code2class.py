@@ -3,14 +3,24 @@ from typing import Dict, List
 import torch
 import torch.nn.functional as F
 
+from dataset import Vocabulary
 from model.modules import PathEncoder, PathClassifier
 from utils.common import PAD
 from utils.metrics import ClassificationStatistic
-from .base_code_model import BaseCodeModel, EncoderConfigType, DecoderConfigType, StatisticType
+from .base_code_model import BaseCodeModel, StatisticType
+from configs import ModelHyperparameters, EncoderConfig, ClassifierConfig
 
 
 class Code2Class(BaseCodeModel):
-    def _init_models(self, encoder_config: EncoderConfigType, decoder_config: DecoderConfigType):
+    def __init__(
+        self,
+        config: ModelHyperparameters,
+        vocab: Vocabulary,
+        num_workers: int,
+        encoder_config: EncoderConfig,
+        decoder_config: ClassifierConfig,
+    ):
+        super().__init__(config, vocab, num_workers)
         self.encoder = PathEncoder(
             encoder_config,
             decoder_config.classifier_input_size,
@@ -49,6 +59,6 @@ class Code2Class(BaseCodeModel):
             .union_statistics([out["statistic"] for out in outputs])
             .calculate_metrics(group)
         )
-        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/acc"]}
+        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/accuracy"]}
 
         return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}

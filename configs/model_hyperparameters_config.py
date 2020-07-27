@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class BaseCodeModelConfig:
+class ModelHyperparameters:
     train_data_path: str
     val_data_path: str
     test_data_path: str

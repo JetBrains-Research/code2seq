@@ -3,14 +3,24 @@ from typing import Dict, List
 import torch
 import torch.nn.functional as F
 
+from dataset import Vocabulary
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS
 from utils.metrics import SubtokenStatistic
-from .base_code_model import BaseCodeModel, EncoderConfigType, DecoderConfigType, StatisticType
+from .base_code_model import BaseCodeModel, StatisticType
+from configs import ModelHyperparameters, EncoderConfig, DecoderConfig
 
 
 class Code2Seq(BaseCodeModel):
-    def _init_models(self, encoder_config: EncoderConfigType, decoder_config: DecoderConfigType):
+    def __init__(
+        self,
+        config: ModelHyperparameters,
+        vocab: Vocabulary,
+        num_workers: int,
+        encoder_config: EncoderConfig,
+        decoder_config: DecoderConfig,
+    ):
+        super().__init__(config, vocab, num_workers)
         self.encoder = PathEncoder(
             encoder_config,
             decoder_config.decoder_size,

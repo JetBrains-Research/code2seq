@@ -8,35 +8,22 @@ from torch.optim import Adam, Optimizer, SGD
 from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
 from torch.utils.data import DataLoader
 
-from configs import BaseCodeModelConfig, EncoderConfig, DecoderConfig, ClassifierConfig
+from configs import ModelHyperparameters
 from dataset import Vocabulary, create_dataloader, PathContextBatch
 from utils.metrics import SubtokenStatistic, ClassificationStatistic
 
 StatisticType = Union[SubtokenStatistic, ClassificationStatistic]
-EncoderConfigType = EncoderConfig
-DecoderConfigType = Union[DecoderConfig, ClassifierConfig]
 
 
 class BaseCodeModel(LightningModule, metaclass=ABCMeta):
     def __init__(
-        self,
-        config: BaseCodeModelConfig,
-        encoder_config: EncoderConfigType,
-        decoder_config: DecoderConfigType,
-        vocab: Vocabulary,
-        num_workers: int = 0,
+        self, config: ModelHyperparameters, vocab: Vocabulary, num_workers: int = 0,
     ):
         super().__init__()
         self.save_hyperparameters()
         self.config = config
         self.vocab = vocab
         self.num_workers = num_workers
-
-        self._init_models(encoder_config, decoder_config)
-
-    @abstractmethod
-    def _init_models(self, encoder_config: EncoderConfigType, decoder_config: DecoderConfigType) -> None:
-        pass
 
     def forward(
         self,

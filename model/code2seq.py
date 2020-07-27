@@ -4,23 +4,23 @@ import torch
 import torch.nn.functional as F
 
 from configs import ModelHyperparameters, EncoderConfig, DecoderConfig
-from dataset import Vocabulary
+from dataset import Vocabulary, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS
 from utils.metrics import SubtokenStatistic
-from .base_code_model import BaseCodeModel, StatisticType
+from .base_code_model import BaseCodeModel
 
 
 class Code2Seq(BaseCodeModel):
     def __init__(
         self,
-        config: ModelHyperparameters,
+        hyperparams: ModelHyperparameters,
         vocab: Vocabulary,
         num_workers: int,
         encoder_config: EncoderConfig,
         decoder_config: DecoderConfig,
     ):
-        super().__init__(config, vocab, num_workers)
+        super().__init__(hyperparams, vocab, num_workers)
         self.encoder = PathEncoder(
             encoder_config,
             decoder_config.decoder_size,
@@ -54,10 +54,6 @@ class Code2Seq(BaseCodeModel):
         loss = (loss * label_mask).sum() / labels.shape[0]
         return loss
 
-    def _compute_metrics(self, logits: torch.Tensor, labels: torch.Tensor) -> StatisticType:
-        classification_statistic = SubtokenStatistic().calculate_statistic(labels.detach(), logits.detach().argmax(-1))
-        return classification_statistic
-
     def _get_progress_bar(self, log: Dict, group: str) -> Dict:
         return {f"{group}/f1": log[f"{group}/f1"]}
 
@@ -66,3 +62,31 @@ class Code2Seq(BaseCodeModel):
         logs.update(SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group))
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
         return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
+
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+        # [seq length; batch size; vocab size]
+        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
+        loss = self._calculate_loss(logits, batch.labels)
+        log = {"train/loss": loss}
+        with torch.no_grad():
+            statistic = SubtokenStatistic().calculate_statistic(batch.labels.detach(), logits.detach().argmax(-1))
+
+        log.update(statistic.calculate_metrics(group="train"))
+        progress_bar = self._get_progress_bar(log, "train")
+
+        return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
+
+    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+        # [seq length; batch size; vocab size]
+        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
+        loss = self._calculate_loss(logits, batch.labels)
+        with torch.no_grad():
+            statistic = SubtokenStatistic().calculate_statistic(batch.labels.detach(), logits.detach().argmax(-1))
+
+        return {"val_loss": loss, "statistic": statistic}
+
+    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+        result = self.validation_step(batch, batch_idx)
+        result["test_loss"] = result["val_loss"]
+        del result["val_loss"]
+        return result

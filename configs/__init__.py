@@ -66,8 +66,8 @@ def get_code2seq_default_config(dataset_main_folder: str) -> Tuple[ModelHyperpar
         decoder_size=320, embedding_size=128, num_decoder_layers=1, rnn_dropout=0.5, teacher_forcing=1, beam_width=0
     )
 
-    config = _get_default_hyperparams(dataset_main_folder)
-    return config, encoder_config, decoder_config
+    hyperparams = _get_default_hyperparams(dataset_main_folder)
+    return hyperparams, encoder_config, decoder_config
 
 
 def get_code2class_default_config(
@@ -76,9 +76,9 @@ def get_code2class_default_config(
     encoder_config = EncoderConfig(
         embedding_size=128, rnn_size=128, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
-    decoder_config = ClassifierConfig(n_hidden_layers=5, hidden_size=128, classifier_input_size=256, activation="relu")
-    config = _get_default_hyperparams(dataset_main_folder)
-    return config, encoder_config, decoder_config
+    decoder_config = ClassifierConfig(n_hidden_layers=2, hidden_size=128, classifier_input_size=256, activation="relu")
+    hyperparams = _get_default_hyperparams(dataset_main_folder)
+    return hyperparams, encoder_config, decoder_config
 
 
 def _get_test_hyperparams(dataset_main_folder: str) -> ModelHyperparameters:
@@ -107,8 +107,8 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Tuple[ModelHyperparame
     decoder_config = DecoderConfig(
         decoder_size=120, embedding_size=64, num_decoder_layers=1, rnn_dropout=0.5, teacher_forcing=1, beam_width=0
     )
-    config = _get_test_hyperparams(dataset_main_folder)
-    return config, encoder_config, decoder_config
+    hyperparams = _get_test_hyperparams(dataset_main_folder)
+    return hyperparams, encoder_config, decoder_config
 
 
 def get_code2class_test_config(
@@ -118,5 +118,5 @@ def get_code2class_test_config(
         embedding_size=64, rnn_size=64, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
     decoder_config = ClassifierConfig(n_hidden_layers=2, activation="relu", hidden_size=64, classifier_input_size=120)
-    config = _get_test_hyperparams(dataset_main_folder)
-    return config, encoder_config, decoder_config
+    hyperparams = _get_test_hyperparams(dataset_main_folder)
+    return hyperparams, encoder_config, decoder_config

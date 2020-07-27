@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from math import ceil
-from typing import Tuple, Dict, List, Union
+from typing import Tuple, Dict, List, Any
 
 import torch
 from pytorch_lightning.core.lightning import LightningModule
@@ -10,21 +10,19 @@ from torch.utils.data import DataLoader
 
 from configs import ModelHyperparameters
 from dataset import Vocabulary, create_dataloader, PathContextBatch
-from utils.metrics import SubtokenStatistic, ClassificationStatistic
-
-StatisticType = Union[SubtokenStatistic, ClassificationStatistic]
 
 
 class BaseCodeModel(LightningModule, metaclass=ABCMeta):
     def __init__(
-        self, config: ModelHyperparameters, vocab: Vocabulary, num_workers: int = 0,
+        self, hyperparams: ModelHyperparameters, vocab: Vocabulary, num_workers: int = 0,
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.config = config
+        self.hyperparams = hyperparams
         self.vocab = vocab
         self.num_workers = num_workers
 
+    @abstractmethod
     def forward(
         self,
         samples: Dict[str, torch.Tensor],
@@ -32,15 +30,6 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         output_length: int = None,
         target_sequence: torch.Tensor = None,
     ) -> torch.Tensor:
-        return self.decoder(self.encoder(samples), paths_for_label, output_length, target_sequence)
-
-    @abstractmethod
-    def _calculate_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Calculate loss"""
-        pass
-
-    @abstractmethod
-    def _compute_metrics(self, logits: torch.Tensor, labels: torch.Tensor) -> StatisticType:
         pass
 
     @abstractmethod
@@ -48,64 +37,74 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _get_progress_bar(self, log: Dict, group: str) -> Dict[str, float]:
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+        pass
+
+    @abstractmethod
+    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+        pass
+
+    @abstractmethod
+    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         pass
 
     # ===== OPTIMIZERS =====
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
-        if self.config.optimizer == "Momentum":
+        if self.hyperparams.optimizer == "Momentum":
             # using the same momentum value as in original realization by Alon
             optimizer = SGD(
                 self.parameters(),
-                self.config.learning_rate,
+                self.hyperparams.learning_rate,
                 momentum=0.95,
-                nesterov=self.config.nesterov,
-                weight_decay=self.config.weight_decay,
+                nesterov=self.hyperparams.nesterov,
+                weight_decay=self.hyperparams.weight_decay,
             )
-        elif self.config.optimizer == "Adam":
-            optimizer = Adam(self.parameters(), self.config.learning_rate, weight_decay=self.config.weight_decay)
+        elif self.hyperparams.optimizer == "Adam":
+            optimizer = Adam(
+                self.parameters(), self.hyperparams.learning_rate, weight_decay=self.hyperparams.weight_decay
+            )
         else:
-            raise ValueError(f"Unknown optimizer name: {self.config.optimizer}, try one of: Adam, Momentum")
-        scheduler = ExponentialLR(optimizer, self.config.decay_gamma)
+            raise ValueError(f"Unknown optimizer name: {self.hyperparams.optimizer}, try one of: Adam, Momentum")
+        scheduler = ExponentialLR(optimizer, self.hyperparams.decay_gamma)
         return [optimizer], [scheduler]
 
     # ===== DATALOADERS BLOCK =====
 
     def train_dataloader(self) -> DataLoader:
         dataloader, n_samples = create_dataloader(
-            self.config.train_data_path,
-            self.config.max_context,
-            self.config.random_context,
-            self.config.shuffle_data,
-            self.config.batch_size,
+            self.hyperparams.train_data_path,
+            self.hyperparams.max_context,
+            self.hyperparams.random_context,
+            self.hyperparams.shuffle_data,
+            self.hyperparams.batch_size,
             self.num_workers,
         )
-        print(f"approximate number of steps for train is {ceil(n_samples / self.config.batch_size)}")
+        print(f"approximate number of steps for train is {ceil(n_samples / self.hyperparams.batch_size)}")
         return dataloader
 
     def val_dataloader(self) -> DataLoader:
         dataloader, n_samples = create_dataloader(
-            self.config.val_data_path,
-            self.config.max_context,
+            self.hyperparams.val_data_path,
+            self.hyperparams.max_context,
             False,
             False,
-            self.config.test_batch_size,
+            self.hyperparams.test_batch_size,
             self.num_workers,
         )
-        print(f"approximate number of steps for val is {ceil(n_samples / self.config.test_batch_size)}")
+        print(f"approximate number of steps for val is {ceil(n_samples / self.hyperparams.test_batch_size)}")
         return dataloader
 
     def test_dataloader(self) -> DataLoader:
         dataloader, n_samples = create_dataloader(
-            self.config.test_data_path,
-            self.config.max_context,
+            self.hyperparams.test_data_path,
+            self.hyperparams.max_context,
             False,
             False,
-            self.config.test_batch_size,
+            self.hyperparams.test_batch_size,
             self.num_workers,
         )
-        print(f"approximate number of steps for test is {ceil(n_samples / self.config.test_batch_size)}")
+        print(f"approximate number of steps for test is {ceil(n_samples / self.hyperparams.test_batch_size)}")
         return dataloader
 
     # ===== STEP =====
@@ -117,34 +116,6 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         # [seq length; batch size]
         batch.labels = batch.labels.to(self.device)
         return batch
-
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        # [seq length; batch size; vocab size]
-        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
-        loss = self._calculate_loss(logits, batch.labels)
-        log = {"train/loss": loss}
-        with torch.no_grad():
-            statistic = self._compute_metrics(logits, batch.labels)
-
-        log.update(statistic.calculate_metrics(group="train"))
-        progress_bar = self._get_progress_bar(log, "train")
-
-        return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
-
-    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        # [seq length; batch size; vocab size]
-        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
-        loss = self._calculate_loss(logits, batch.labels)
-        with torch.no_grad():
-            statistic = self._compute_metrics(logits, batch.labels)
-
-        return {"val_loss": loss, "statistic": statistic}
-
-    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        result = self.validation_step(batch, batch_idx)
-        result["test_loss"] = result["val_loss"]
-        del result["val_loss"]
-        return result
 
     # ===== ON EPOCH END =====
 

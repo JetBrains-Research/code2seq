@@ -44,7 +44,7 @@ class Code2Class(BaseCodeModel):
         return loss
 
     def _compute_metrics(self, logits: torch.Tensor, labels: torch.Tensor) -> StatisticType:
-        classification_statistic = ClassificationStatistic(len(self.vocab.type_to_id)).calculate_statistic(
+        classification_statistic = ClassificationStatistic(len(self.vocab.label_to_id)).calculate_statistic(
             labels.detach().squeeze(0), logits.detach().argmax(-1),
         )
         return classification_statistic
@@ -55,7 +55,7 @@ class Code2Class(BaseCodeModel):
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
         logs.update(
-            ClassificationStatistic(len(self.vocab.type_to_id))
+            ClassificationStatistic(len(self.vocab.label_to_id))
             .union_statistics([out["statistic"] for out in outputs])
             .calculate_metrics(group)
         )

@@ -54,9 +54,6 @@ class Code2Seq(BaseCodeModel):
         loss = (loss * label_mask).sum() / labels.shape[0]
         return loss
 
-    def _get_progress_bar(self, log: Dict, group: str) -> Dict:
-        return {f"{group}/f1": log[f"{group}/f1"]}
-
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
         logs.update(SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group))
@@ -72,7 +69,7 @@ class Code2Seq(BaseCodeModel):
             statistic = SubtokenStatistic().calculate_statistic(batch.labels.detach(), logits.detach().argmax(-1))
 
         log.update(statistic.calculate_metrics(group="train"))
-        progress_bar = self._get_progress_bar(log, "train")
+        progress_bar = {f"train/f1": log[f"train/f1"]}
 
         return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
 

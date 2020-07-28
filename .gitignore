@@ -9,4 +9,3 @@ __pycache__/
 data/
 wandb/
 notebooks/
-scripts/codeforces

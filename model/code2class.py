@@ -35,7 +35,6 @@ class Code2Class(BaseCodeModel):
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
-        print(outputs[0][f"{group}/correct"])
         correct = sum([out[f"{group}/correct"] for out in outputs])
         total = sum([out[f"{group}/total"] for out in outputs])
         logs.update({f"{group}/accuracy": correct / total})

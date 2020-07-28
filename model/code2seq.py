@@ -78,7 +78,7 @@ class Code2Seq(BaseCodeModel):
             statistic = SubtokenStatistic().calculate_statistic(batch.labels.detach(), logits.detach().argmax(-1))
 
         log.update(statistic.calculate_metrics(group="train"))
-        progress_bar = {f"train/f1": log[f"train/f1"]}
+        progress_bar = {"train/f1": log["train/f1"]}
 
         return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
 

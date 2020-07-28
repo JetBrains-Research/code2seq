@@ -30,11 +30,7 @@ class PathClassifier(nn.Module):
         self.hidden_layers = nn.Sequential(*layers)
         self.classification_layer = nn.Linear(config.hidden_size, self.out_size)
 
-    def forward(
-        self,
-        encoded_paths: torch.Tensor,
-        contexts_per_label: List[int],
-    ) -> torch.Tensor:
+    def forward(self, encoded_paths: torch.Tensor, contexts_per_label: List[int],) -> torch.Tensor:
         """Classify given paths
 
         :param encoded_paths: [n paths; classifier size]

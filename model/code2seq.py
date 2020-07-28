@@ -33,6 +33,15 @@ class Code2Seq(BaseCodeModel):
             decoder_config, len(self.vocab.label_to_id), self.vocab.label_to_id[SOS], self.vocab.label_to_id[PAD]
         )
 
+    def forward(
+        self,
+        samples: Dict[str, torch.Tensor],
+        paths_for_label: List[int],
+        output_length: int = None,
+        target_sequence: torch.Tensor = None,
+    ) -> torch.Tensor:
+        return self.decoder(self.encoder(samples), paths_for_label, output_length, target_sequence)
+
     def _calculate_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """ Calculate cross entropy loss with removing SOS tokens and masking PAD values.
         Adaptation of tf.nn.sparse_softmax_cross_entropy_with_logits from original implementation.

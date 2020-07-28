@@ -12,7 +12,7 @@ from configs import ModelHyperparameters
 from dataset import Vocabulary, create_dataloader, PathContextBatch
 
 
-class BaseCodeModel(LightningModule, metaclass=ABCMeta):
+class BaseCodeModel(LightningModule):
     def __init__(
         self, hyperparams: ModelHyperparameters, vocab: Vocabulary, num_workers: int = 0,
     ):
@@ -22,14 +22,13 @@ class BaseCodeModel(LightningModule, metaclass=ABCMeta):
         self.vocab = vocab
         self.num_workers = num_workers
 
+    @abstractmethod
     def forward(
         self,
         samples: Dict[str, torch.Tensor],
         paths_for_label: List[int],
-        output_length: int = None,
-        target_sequence: torch.Tensor = None,
     ) -> torch.Tensor:
-        return self.decoder(self.encoder(samples), paths_for_label, output_length, target_sequence)
+        pass
 
     @abstractmethod
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:

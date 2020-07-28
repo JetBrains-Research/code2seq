@@ -21,6 +21,11 @@ DESCRIPTION_FILE = "description.csv"
 BUFFERED_PATH_TEMPLATE = "buffered_paths_{}.pkl"
 SEPARATOR = "|"
 
+_config_switcher = {
+    "code2class": get_preprocessing_config_code2class_params,
+    "code2seq": get_preprocessing_config_code2seq_params,
+}
+
 
 def _vocab_from_counters(
     config: PreprocessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
@@ -143,12 +148,9 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
 
 def preprocess(problem: str, data: str, is_vocab_collected: bool, n_jobs: int):
     # Collect vocabulary from train holdout if needed
-    if problem == "code2seq":
-        config = get_preprocessing_config_code2seq_params(data)
-    elif problem == "code2class":
-        config = get_preprocessing_config_code2class_params(data)
-    else:
-        raise ValueError(f"Not supported problem: {problem}")
+    config_function = _config_switcher[problem]
+    config = config_function(data)
+
     vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")
     if path.exists(vocab_path):
         vocab = Vocabulary.load(vocab_path)
@@ -162,9 +164,9 @@ def preprocess(problem: str, data: str, is_vocab_collected: bool, n_jobs: int):
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
+    arg_parser.add_argument("problem", type=str, choices=["code2seq", "code2class"])
     arg_parser.add_argument("--collect-vocabulary", action="store_true")
     arg_parser.add_argument("--n-jobs", type=int, default=None)
-    arg_parser.add_argument("--problem", type=str, default="code2seq")
     args = arg_parser.parse_args()
 
     preprocess(args.problem, args.data, args.collect_vocabulary, args.n_jobs or cpu_count())

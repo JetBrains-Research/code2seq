@@ -23,7 +23,7 @@ class BaseCodeModel(LightningModule):
         self.num_workers = num_workers
 
     @abstractmethod
-    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int],) -> torch.Tensor:
+    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int], *args) -> torch.Tensor:
         pass
 
     @abstractmethod

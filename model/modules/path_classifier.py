@@ -34,8 +34,6 @@ class PathClassifier(nn.Module):
         self,
         encoded_paths: torch.Tensor,
         contexts_per_label: List[int],
-        output_length: int = None,
-        target_sequence: torch.Tensor = None,
     ) -> torch.Tensor:
         """Classify given paths
 

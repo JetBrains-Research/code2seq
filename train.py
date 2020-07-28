@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from dataclasses import asdict
 from os.path import join
 
 import torch
@@ -34,9 +33,9 @@ def train(
         model = Code2Seq(hyperparams, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config)
     elif model_name == "code2class":
         config_function = get_code2class_test_config if is_test else get_code2class_default_config
-        hyperparams, encoder_config, decoder_config = config_function(dataset_main_folder)
+        hyperparams, encoder_config, classifier_config = config_function(dataset_main_folder)
         model = Code2Class(
-            hyperparams, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config
+            hyperparams, vocab, num_workers, encoder_config=encoder_config, classifier_config=classifier_config
         )
     else:
         raise ValueError(f"Model {model_name} is not supported")
@@ -44,9 +43,6 @@ def train(
     # define logger
     wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", log_model=True, offline=is_test)
     wandb_logger.watch(model)
-    wandb_logger.log_hyperparams(asdict(hyperparams))
-    wandb_logger.log_hyperparams(asdict(encoder_config))
-    wandb_logger.log_hyperparams(asdict(decoder_config))
     # define model checkpoint callback
     model_checkpoint_callback = ModelCheckpoint(
         filepath=join(wandb.run.dir, "{epoch:02d}-{val_loss:.4f}"), period=hyperparams.save_every_epoch, save_top_k=3,
@@ -80,10 +76,10 @@ def train(
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
+    arg_parser.add_argument("model", choices=["code2seq", "code2class"])
     arg_parser.add_argument("--n_workers", type=int, default=0)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--resume", type=str, default=None)
-    arg_parser.add_argument("--model", type=str, default="code2seq")
     args = arg_parser.parse_args()
 
     train(args.data, args.model, args.n_workers, args.test, args.resume)

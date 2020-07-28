@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Dict, List
-from .cls_metrics import ClassificationStatistic
 
 import torch
 

@@ -37,7 +37,7 @@ class Code2Seq(BaseCodeModel):
         self,
         samples: Dict[str, torch.Tensor],
         paths_for_label: List[int],
-        output_length: int = None,
+        output_length: int,
         target_sequence: torch.Tensor = None,
     ) -> torch.Tensor:
         return self.decoder(self.encoder(samples), paths_for_label, output_length, target_sequence)

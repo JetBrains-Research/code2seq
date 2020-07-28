@@ -31,11 +31,7 @@ class Code2Class(BaseCodeModel):
         )
         self.decoder = PathClassifier(decoder_config, len(self.vocab.label_to_id))
 
-    def forward(
-        self,
-        samples: Dict[str, torch.Tensor],
-        paths_for_label: List[int],
-    ) -> torch.Tensor:
+    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int],) -> torch.Tensor:
         return self.decoder(self.encoder(samples), paths_for_label)
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:

@@ -1,6 +1,6 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from math import ceil
-from typing import Tuple, Dict, List, Any
+from typing import Tuple, Dict, List
 
 import torch
 from pytorch_lightning.core.lightning import LightningModule
@@ -23,11 +23,7 @@ class BaseCodeModel(LightningModule):
         self.num_workers = num_workers
 
     @abstractmethod
-    def forward(
-        self,
-        samples: Dict[str, torch.Tensor],
-        paths_for_label: List[int],
-    ) -> torch.Tensor:
+    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int],) -> torch.Tensor:
         pass
 
     @abstractmethod

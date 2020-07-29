@@ -148,10 +148,9 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
 
 def preprocess(problem: str, data: str, is_vocab_collected: bool, n_jobs: int):
     # Collect vocabulary from train holdout if needed
-    if problem in _config_switcher:
-        config_function = _config_switcher[problem]
-    else:
+    if problem not in _config_switcher:
         raise ValueError(f"Unknown problem ({problem}) passed")
+    config_function = _config_switcher[problem]
     config = config_function(data)
 
     vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")

@@ -8,7 +8,11 @@ from typing import Tuple, List, Generator
 
 from tqdm import tqdm
 
-from configs import get_preprocessing_config_code2seq_params, PreprocessingConfig
+from configs import (
+    get_preprocessing_config_code2seq_params,
+    get_preprocessing_config_code2class_params,
+    PreprocessingConfig,
+)
 from dataset import Vocabulary, BufferedPathContext, ConvertParameters
 from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
@@ -16,6 +20,11 @@ DATA_FOLDER = "data"
 DESCRIPTION_FILE = "description.csv"
 BUFFERED_PATH_TEMPLATE = "buffered_paths_{}.pkl"
 SEPARATOR = "|"
+
+_config_switcher = {
+    "code2class": get_preprocessing_config_code2class_params,
+    "code2seq": get_preprocessing_config_code2seq_params,
+}
 
 
 def _vocab_from_counters(
@@ -137,8 +146,13 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
         _ = [_ for _ in tqdm(results, total=n_buffers)]
 
 
-def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: int):
+def preprocess(problem: str, data: str, is_vocab_collected: bool, n_jobs: int):
     # Collect vocabulary from train holdout if needed
+    if problem not in _config_switcher:
+        raise ValueError(f"Unknown problem ({problem}) passed")
+    config_function = _config_switcher[problem]
+    config = config_function(data)
+
     vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")
     if path.exists(vocab_path):
         vocab = Vocabulary.load(vocab_path)
@@ -152,8 +166,9 @@ def preprocess(config: PreprocessingConfig, is_vocab_collected: bool, n_jobs: in
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
+    arg_parser.add_argument("problem", type=str, choices=["code2seq", "code2class"])
     arg_parser.add_argument("--collect-vocabulary", action="store_true")
     arg_parser.add_argument("--n-jobs", type=int, default=None)
     args = arg_parser.parse_args()
 
-    preprocess(get_preprocessing_config_code2seq_params(args.data), args.collect_vocabulary, args.n_jobs or cpu_count())
+    preprocess(args.problem, args.data, args.collect_vocabulary, args.n_jobs or cpu_count())

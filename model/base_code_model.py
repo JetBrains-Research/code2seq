@@ -17,29 +17,12 @@ class BaseCodeModel(LightningModule):
         self, hyperparams: ModelHyperparameters, vocab: Vocabulary, num_workers: int = 0,
     ):
         super().__init__()
-        self.save_hyperparameters()
         self.hyperparams = hyperparams
         self.vocab = vocab
         self.num_workers = num_workers
 
     @abstractmethod
-    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int], *args) -> torch.Tensor:
-        pass
-
-    @abstractmethod
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
-        pass
-
-    @abstractmethod
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        pass
-
-    @abstractmethod
-    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        pass
-
-    @abstractmethod
-    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         pass
 
     # ===== OPTIMIZERS =====

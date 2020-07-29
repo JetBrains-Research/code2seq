@@ -1,78 +1,15 @@
 #!/bin/bash
 # Run script from code2seq dir using command:
 #    sh scripts/download_data.sh
-TRAIN_SPLIT_PART=60
-VAL_SPLIT_PART=20
-TEST_SPLIT_PART=20
-DEV=false
-SHUFFLE=true
+TRAIN_SPLIT_PART=$1
+VAL_SPLIT_PART=$2
+TEST_SPLIT_PART=$3
+DEV=$4
+SHUFFLE=$5
 DATA_DIR=./data
 DATASET_NAME=cf
 ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
 SPLIT_SCRIPT=./scripts/split_dataset.sh
-
-function is_int(){
-  if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then
-    echo "Non integer {$1} passed in --$2-part"
-    exit 1
-  fi
-}
-
-while (( "$#" )); do
-  case "$1" in
-    -h|--help)
-      echo "options:"
-      echo "-h, --help                     show brief help"
-      echo "--train-part=VAL               specify a percentage of dataset used as train set"
-      echo "--test-part=VAL                specify a percentage of dataset used as test set"
-      echo "--val-part=VAL                 specify a percentage of dataset used as validation set"
-      echo "--shuffle                      pass it if dataset should be shuffled"
-      echo "--dev                          pass it if developer mode should be used"
-      exit 0
-      ;;
-    --train-part*)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        is_int "$2" "train"
-        TRAIN_SPLIT_PART=$2
-        shift 2
-      else
-        echo "Specify train part"
-        exit 1
-      fi
-      ;;
-    --test-part*)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        is_int "$2" "test"
-        TEST_SPLIT_PART=$2
-        shift 2
-      else
-        echo "Specify test part"
-        exit 1
-      fi
-      ;;
-    --val-part*)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        is_int "$2" "val"
-        VAL_SPLIT_PART=$2
-        shift 2
-      else
-        echo "Specify val part"
-        exit 1
-      fi
-      ;;
-    --shuffle*)
-      SHUFFLE=true
-      shift
-      ;;
-    --dev*)
-      DEV=true
-      shift
-      ;;
-    *)
-      echo "something went wrong"
-      exit 1
-  esac
-done
 
 DATA_PATH=${DATA_DIR}/${DATASET_NAME}
 

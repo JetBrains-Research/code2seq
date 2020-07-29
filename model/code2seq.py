@@ -16,6 +16,7 @@ class Code2Seq(BaseCodeModel):
         self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int,
     ):
         super().__init__(config.hyperparams, vocab, num_workers)
+        self.save_hyperparameters()
         self.encoder = PathEncoder(
             config.encoder_config,
             config.decoder_config.decoder_size,

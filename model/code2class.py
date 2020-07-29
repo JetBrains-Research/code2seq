@@ -15,6 +15,7 @@ class Code2Class(BaseCodeModel):
         self, config: Code2ClassConfig, vocab: Vocabulary, num_workers: int,
     ):
         super().__init__(config.hyperparams, vocab, num_workers)
+        self.save_hyperparameters()
         self.encoder = PathEncoder(
             config.encoder_config,
             config.classifier_config.classifier_input_size,

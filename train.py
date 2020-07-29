@@ -39,7 +39,7 @@ def train(
         raise ValueError(f"Model {model_name} is not supported")
 
     # define logger
-    wandb_logger = WandbLogger(project=f"code2seq-{dataset_name}", log_model=True, offline=is_test)
+    wandb_logger = WandbLogger(project=f"{model_name}-{dataset_name}", log_model=True, offline=is_test)
     wandb_logger.watch(model)
     # define model checkpoint callback
     model_checkpoint_callback = ModelCheckpoint(

@@ -29,14 +29,12 @@ def train(
 
     if model_name == "code2seq":
         config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-        hyperparams, encoder_config, decoder_config = config_function(dataset_main_folder)
-        model = Code2Seq(hyperparams, vocab, num_workers, encoder_config=encoder_config, decoder_config=decoder_config)
+        config = config_function(dataset_main_folder)
+        model = Code2Seq(config, vocab, num_workers)
     elif model_name == "code2class":
         config_function = get_code2class_test_config if is_test else get_code2class_default_config
-        hyperparams, encoder_config, classifier_config = config_function(dataset_main_folder)
-        model = Code2Class(
-            hyperparams, vocab, num_workers, encoder_config=encoder_config, classifier_config=classifier_config
-        )
+        config = config_function(dataset_main_folder)
+        model = Code2Class(config, vocab, num_workers)
     else:
         raise ValueError(f"Model {model_name} is not supported")
 
@@ -45,20 +43,22 @@ def train(
     wandb_logger.watch(model)
     # define model checkpoint callback
     model_checkpoint_callback = ModelCheckpoint(
-        filepath=join(wandb.run.dir, "{epoch:02d}-{val_loss:.4f}"), period=hyperparams.save_every_epoch, save_top_k=3,
+        filepath=join(wandb.run.dir, "{epoch:02d}-{val_loss:.4f}"),
+        period=config.hyperparams.save_every_epoch,
+        save_top_k=3,
     )
     # define early stopping callback
-    early_stopping_callback = EarlyStopping(patience=hyperparams.patience, verbose=True, mode="min")
+    early_stopping_callback = EarlyStopping(patience=config.hyperparams.patience, verbose=True, mode="min")
     # use gpu if it exists
     gpu = 1 if torch.cuda.is_available() else None
     # define learning rate logger
     lr_logger = LearningRateLogger()
     trainer = Trainer(
-        max_epochs=hyperparams.n_epochs,
-        gradient_clip_val=hyperparams.clip_norm,
+        max_epochs=config.hyperparams.n_epochs,
+        gradient_clip_val=config.hyperparams.clip_norm,
         deterministic=True,
-        check_val_every_n_epoch=hyperparams.val_every_epoch,
-        row_log_interval=hyperparams.log_every_epoch,
+        check_val_every_n_epoch=config.hyperparams.val_every_epoch,
+        row_log_interval=config.hyperparams.log_every_epoch,
         logger=wandb_logger,
         checkpoint_callback=model_checkpoint_callback,
         early_stop_callback=early_stopping_callback,

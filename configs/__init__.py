@@ -1,10 +1,10 @@
 from os.path import join
-from typing import Tuple
 
-from .preprocessing_config import PreprocessingConfig
-from .code2seq_config import Code2SeqConfig, DecoderConfig, EncoderConfig
-from .code2class_config import ClassifierConfig
+from .code2class_config import Code2ClassConfig
+from .code2seq_config import Code2SeqConfig
 from .model_hyperparameters_config import ModelHyperparameters
+from .modules_config import DecoderConfig, EncoderConfig, ClassifierConfig
+from .preprocessing_config import PreprocessingConfig
 
 
 def get_preprocessing_config_code2seq_params(dataset_name: str) -> PreprocessingConfig:
@@ -58,7 +58,7 @@ def _get_default_hyperparams(dataset_main_folder: str) -> ModelHyperparameters:
     )
 
 
-def get_code2seq_default_config(dataset_main_folder: str) -> Tuple[ModelHyperparameters, EncoderConfig, DecoderConfig]:
+def get_code2seq_default_config(dataset_main_folder: str) -> Code2SeqConfig:
     encoder_config = EncoderConfig(
         embedding_size=128, rnn_size=128, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
@@ -67,18 +67,18 @@ def get_code2seq_default_config(dataset_main_folder: str) -> Tuple[ModelHyperpar
     )
 
     hyperparams = _get_default_hyperparams(dataset_main_folder)
-    return hyperparams, encoder_config, decoder_config
+    return Code2SeqConfig(encoder_config=encoder_config, decoder_config=decoder_config, hyperparams=hyperparams)
 
 
-def get_code2class_default_config(
-    dataset_main_folder: str,
-) -> Tuple[ModelHyperparameters, EncoderConfig, ClassifierConfig]:
+def get_code2class_default_config(dataset_main_folder: str,) -> Code2ClassConfig:
     encoder_config = EncoderConfig(
         embedding_size=128, rnn_size=128, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
-    decoder_config = ClassifierConfig(n_hidden_layers=2, hidden_size=128, classifier_input_size=256, activation="relu")
+    classifier_config = ClassifierConfig(
+        n_hidden_layers=2, hidden_size=128, classifier_input_size=256, activation="relu"
+    )
     hyperparams = _get_default_hyperparams(dataset_main_folder)
-    return hyperparams, encoder_config, decoder_config
+    return Code2ClassConfig(encoder_config=encoder_config, classifier_config=classifier_config, hyperparams=hyperparams)
 
 
 def _get_test_hyperparams(dataset_main_folder: str) -> ModelHyperparameters:
@@ -100,7 +100,7 @@ def _get_test_hyperparams(dataset_main_folder: str) -> ModelHyperparameters:
     )
 
 
-def get_code2seq_test_config(dataset_main_folder: str) -> Tuple[ModelHyperparameters, EncoderConfig, DecoderConfig]:
+def get_code2seq_test_config(dataset_main_folder: str) -> Code2SeqConfig:
     encoder_config = EncoderConfig(
         embedding_size=64, rnn_size=64, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
@@ -108,15 +108,15 @@ def get_code2seq_test_config(dataset_main_folder: str) -> Tuple[ModelHyperparame
         decoder_size=120, embedding_size=64, num_decoder_layers=1, rnn_dropout=0.5, teacher_forcing=1, beam_width=0
     )
     hyperparams = _get_test_hyperparams(dataset_main_folder)
-    return hyperparams, encoder_config, decoder_config
+    return Code2SeqConfig(encoder_config=encoder_config, decoder_config=decoder_config, hyperparams=hyperparams)
 
 
-def get_code2class_test_config(
-    dataset_main_folder: str,
-) -> Tuple[ModelHyperparameters, EncoderConfig, ClassifierConfig]:
+def get_code2class_test_config(dataset_main_folder: str,) -> Code2ClassConfig:
     encoder_config = EncoderConfig(
         embedding_size=64, rnn_size=64, use_bi_rnn=True, embedding_dropout=0.25, rnn_num_layers=1, rnn_dropout=0.5
     )
-    decoder_config = ClassifierConfig(n_hidden_layers=2, activation="relu", hidden_size=64, classifier_input_size=120)
+    classifier_config = ClassifierConfig(
+        n_hidden_layers=2, activation="relu", hidden_size=64, classifier_input_size=120
+    )
     hyperparams = _get_test_hyperparams(dataset_main_folder)
-    return hyperparams, encoder_config, decoder_config
+    return Code2ClassConfig(encoder_config=encoder_config, classifier_config=classifier_config, hyperparams=hyperparams)

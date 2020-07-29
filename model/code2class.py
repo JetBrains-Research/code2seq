@@ -3,7 +3,7 @@ from typing import Dict, List
 import torch
 import torch.nn.functional as F
 
-from configs import ModelHyperparameters, EncoderConfig, ClassifierConfig
+from configs import Code2ClassConfig
 from dataset import Vocabulary, PathContextBatch
 from model.modules import PathEncoder, PathClassifier
 from utils.common import PAD
@@ -12,23 +12,18 @@ from .base_code_model import BaseCodeModel
 
 class Code2Class(BaseCodeModel):
     def __init__(
-        self,
-        hyperparams: ModelHyperparameters,
-        vocab: Vocabulary,
-        num_workers: int,
-        encoder_config: EncoderConfig,
-        classifier_config: ClassifierConfig,
+        self, config: Code2ClassConfig, vocab: Vocabulary, num_workers: int,
     ):
-        super().__init__(hyperparams, vocab, num_workers)
+        super().__init__(config.hyperparams, vocab, num_workers)
         self.encoder = PathEncoder(
-            encoder_config,
-            classifier_config.classifier_input_size,
+            config.encoder_config,
+            config.classifier_config.classifier_input_size,
             len(self.vocab.token_to_id),
             self.vocab.token_to_id[PAD],
             len(self.vocab.type_to_id),
             self.vocab.type_to_id[PAD],
         )
-        self.classifier = PathClassifier(classifier_config, len(self.vocab.label_to_id))
+        self.classifier = PathClassifier(config.classifier_config, len(self.vocab.label_to_id))
 
     def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int]) -> torch.Tensor:
         return self.classifier(self.encoder(samples), paths_for_label)

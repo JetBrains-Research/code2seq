@@ -3,7 +3,7 @@ from typing import Dict, List
 import torch
 import torch.nn.functional as F
 
-from configs import ModelHyperparameters, EncoderConfig, DecoderConfig
+from configs import Code2SeqConfig
 from dataset import Vocabulary, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS
@@ -13,24 +13,19 @@ from .base_code_model import BaseCodeModel
 
 class Code2Seq(BaseCodeModel):
     def __init__(
-        self,
-        hyperparams: ModelHyperparameters,
-        vocab: Vocabulary,
-        num_workers: int,
-        encoder_config: EncoderConfig,
-        decoder_config: DecoderConfig,
+        self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int,
     ):
-        super().__init__(hyperparams, vocab, num_workers)
+        super().__init__(config.hyperparams, vocab, num_workers)
         self.encoder = PathEncoder(
-            encoder_config,
-            decoder_config.decoder_size,
+            config.encoder_config,
+            config.decoder_config.decoder_size,
             len(self.vocab.token_to_id),
             self.vocab.token_to_id[PAD],
             len(self.vocab.type_to_id),
             self.vocab.type_to_id[PAD],
         )
         self.decoder = PathDecoder(
-            decoder_config, len(self.vocab.label_to_id), self.vocab.label_to_id[SOS], self.vocab.label_to_id[PAD]
+            config.decoder_config, len(self.vocab.label_to_id), self.vocab.label_to_id[SOS], self.vocab.label_to_id[PAD]
         )
 
     def forward(

@@ -14,10 +14,10 @@ VAL_SPLIT_PART=$2
 TEST_SPLIT_PART=$3
 DEV=$4
 SHUFFLE=$5
-DATA_DIR=./data
-DATASET_NAME=cf
 ASTMINER_PATH=$6
 SPLIT_SCRIPT=$7
+DATA_DIR=./data
+DATASET_NAME=codeforces
 
 DATA_PATH=${DATA_DIR}/${DATASET_NAME}
 
@@ -31,9 +31,9 @@ if [ -d "$DATA_PATH" ]
 then
   echo "$DATA_PATH exists."
 else
-  if [ ! -f "$DATA_DIR/cf.zip" ]
+  if [ ! -f "$DATA_DIR/$DATASET_NAME.zip" ]
   then
-    aws s3 cp s3://datasets.ml.labs.aws.intellij.net/codeforces-code-clone/anti-plagiarism-datasets-master.zip "$DATA_DIR/cf.zip"
+    aws s3 cp s3://datasets.ml.labs.aws.intellij.net/codeforces-code-clone/anti-plagiarism-datasets-master.zip "$DATA_DIR/$DATASET_NAME.zip"
   fi
 
   echo "Unzip dataset"
@@ -41,9 +41,9 @@ else
   if [ $DEV ]
   then
     echo "Dev mode"
-    unzip -qq "$DATA_DIR/cf.zip" "anti-plagiarism-datasets-master/rounds/1314,1315.zip" -d $DATA_DIR/
+    unzip -qq "$DATA_DIR/$DATASET_NAME.zip" "anti-plagiarism-datasets-master/rounds/1314,1315.zip" -d $DATA_DIR/
   else
-    unzip "$DATA_DIR/cf.zip" -d $DATA_DIR
+    unzip "$DATA_DIR/$DATASET_NAME.zip" -d $DATA_DIR
   fi
 
   mkdir $DATA_PATH

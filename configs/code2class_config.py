@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 
+from .model_hyperparameters_config import ModelHyperparameters
+from .modules_config import EncoderConfig, ClassifierConfig
+
 
 @dataclass(frozen=True)
-class ClassifierConfig:
-    classifier_input_size: int
-    n_hidden_layers: int
-    activation: str
-    hidden_size: int
+class Code2ClassConfig:
+    encoder_config: EncoderConfig
+    classifier_config: ClassifierConfig
+    hyperparams: ModelHyperparameters

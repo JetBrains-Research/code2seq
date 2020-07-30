@@ -52,20 +52,11 @@ else
   do
     unzip "$round" -d "$DATA_DIR/anti-plagiarism-datasets-master/rounds"
     round_dir="${round%.zip}"
-    find "$round_dir"/*  -type d -exec mv {} "$DATA_PATH" \;
+    find "$round_dir"/*  -type d -name "*[A-D]" -exec mv {} "$DATA_PATH" \;
     rm -rf "$round_dir"
     rm "$round"
   done
   rm -rf $DATA_DIR/anti-plagiarism-datasets-master
-
-  if [ $DEV ]
-  then
-    echo "Dev mode"
-    find "$DATA_PATH"/* -type d -name "*E" -exec rm -rf {} \;
-    find "$DATA_PATH"/* -type d -name "*F" -exec rm -rf {} \;
-    find "$DATA_PATH"/* -type d -name "*G" -exec rm -rf {} \;
-    find "$DATA_PATH"/* -type d -name "*H" -exec rm -rf {} \;
-  fi
 
   # Splitting dataset on train/test/val parts
   echo "Splitting on train/test/val"

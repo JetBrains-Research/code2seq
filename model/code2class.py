@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import torch
 import torch.nn.functional as F
-
+from pytorch_lightning.metrics.functional import confusion_matrix
 from configs import Code2ClassConfig
 from dataset import Vocabulary, PathContextBatch
 from model.modules import PathEncoder, PathClassifier
@@ -24,14 +24,21 @@ class Code2Class(BaseCodeModel):
             len(self.vocab.type_to_id),
             self.vocab.type_to_id[PAD],
         )
-        self.classifier = PathClassifier(config.classifier_config, len(self.vocab.label_to_id))
+        self.num_classes = len(self.vocab.label_to_id)
+        self.classifier = PathClassifier(config.classifier_config, self.num_classes)
 
     def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int]) -> torch.Tensor:
         return self.classifier(self.encoder(samples), paths_for_label)
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
-        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss"]}
+        accumulated_conf_matrix = torch.zeros(self.num_classes, self.num_classes, requires_grad=False)
+        for out in outputs:
+            _conf_matrix = out[f"{group}/confusion_matrix"]
+            max_class_index, _ = _conf_matrix.shape
+            accumulated_conf_matrix[:max_class_index, :max_class_index] += _conf_matrix
+        logs[f"{group}/accuracy"] = accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()
+        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/accuracy"]}
         return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
@@ -39,13 +46,21 @@ class Code2Class(BaseCodeModel):
         logits = self(batch.context, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         log = {"train/loss": loss}
-        return {"loss": loss, "log": log}
+        with torch.no_grad():
+            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))
+        log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
+        progress_bar = {"train/accuracy": log["train/accuracy"]}
+
+        return {"loss": loss, "log": log, "progress_bar": progress_bar, "train/confusion_matrix": conf_matrix}
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [batch size; num_classes]
         logits = self(batch.context, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
-        return {"val_loss": loss}
+        with torch.no_grad():
+            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))
+
+        return {"val_loss": loss, "val/confusion_matrix": conf_matrix}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         result = self.validation_step(batch, batch_idx)

@@ -1,6 +1,14 @@
 #!/bin/bash
-# Run script from code2seq dir using command:
-#    sh scripts/download_data.sh
+# Script - download codeforces dataset from s3
+# options:
+# $1              specify a percentage of dataset used as train set
+# $2              specify a percentage of dataset used as test set
+# $3              specify a percentage of dataset used as validation set
+# $4              specify if developer mode is on, default: false
+# $5              specify if dataset needs to be shuffled, default: false
+# $6              specify a path to astminer .jar file
+# $7              specify a path to splitiing script
+
 TRAIN_SPLIT_PART=$1
 VAL_SPLIT_PART=$2
 TEST_SPLIT_PART=$3
@@ -8,8 +16,8 @@ DEV=$4
 SHUFFLE=$5
 DATA_DIR=./data
 DATASET_NAME=poj_104
-ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
-SPLIT_SCRIPT=./scripts/split_dataset.sh
+ASTMINER_PATH=$6
+SPLIT_SCRIPT=$7
 
 DATA_PATH=${DATA_DIR}/${DATASET_NAME}
 
@@ -29,15 +37,15 @@ else
   fi
 
   echo "Unzip dataset"
-  tar -xvzf "$DATA_DIR/poj-104-original.tar.gz" -C $DATA_DIR/
-  mv "$DATA_DIR"/ProgramData "$DATA_PATH"
-
   # In the developer mode we leave only several classes
   if [ $DEV ]
   then
     echo "Dev mode"
-    find "$DATA_PATH"/* -type d -name "1[0-9][0-9]" -exec rm -rf {} \;
-    find "$DATA_PATH"/* -type d -name "[1-9][0-9]" -exec rm -rf {} \;
+    tar -C $DATA_DIR/ -xvf "$DATA_DIR/poj-104-original.tar.gz" "ProgramData/[1-3]"
+    mv "$DATA_DIR"/ProgramData "$DATA_PATH"
+  else
+    tar -xvzf "$DATA_DIR/poj-104-original.tar.gz" -C $DATA_DIR/
+    mv "$DATA_DIR"/ProgramData "$DATA_PATH"
   fi
 
   # To prepare our dataset for astminer we need to rename all .txt files to .c files

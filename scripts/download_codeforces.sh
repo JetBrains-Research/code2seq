@@ -1,6 +1,14 @@
 #!/bin/bash
-# Run script from code2seq dir using command:
-#    sh scripts/download_data.sh
+# Script - download codeforces dataset from s3
+# options:
+# $1              specify a percentage of dataset used as train set
+# $2              specify a percentage of dataset used as test set
+# $3              specify a percentage of dataset used as validation set
+# $4              specify if developer mode is on, default: false
+# $5              specify if dataset needs to be shuffled, default: false
+# $6              specify a path to astminer .jar file
+# $7              specify a path to splitiing script
+
 TRAIN_SPLIT_PART=$1
 VAL_SPLIT_PART=$2
 TEST_SPLIT_PART=$3
@@ -8,8 +16,8 @@ DEV=$4
 SHUFFLE=$5
 DATA_DIR=./data
 DATASET_NAME=cf
-ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
-SPLIT_SCRIPT=./scripts/split_dataset.sh
+ASTMINER_PATH=$6
+SPLIT_SCRIPT=$7
 
 DATA_PATH=${DATA_DIR}/${DATASET_NAME}
 
@@ -35,25 +43,21 @@ else
     echo "Dev mode"
     unzip -qq "$DATA_DIR/cf.zip" "anti-plagiarism-datasets-master/rounds/1314,1315.zip" -d $DATA_DIR/
   else
-    unzip "$DATA_DIR/cf.zip" -d $DATA_DIR/
+    unzip "$DATA_DIR/cf.zip" -d $DATA_DIR
   fi
-  mv "$DATA_DIR"/anti-plagiarism-datasets-master/rounds "$DATA_PATH"
-  rm -rf "$DATA_DIR"/anti-plagiarism-datasets-master
 
-  for file in $(find "$DATA_PATH" -type f)
+  mkdir $DATA_PATH
+
+  for round in $(find "$DATA_DIR/anti-plagiarism-datasets-master/rounds" -name "*.zip" -type f)
   do
-    unzip "$file" -d "$DATA_PATH"
-    competition="${file%.zip}"
-    for task in $(find "$competition"/* -type d)
-    do
-      echo "Moving $task to $DATA_PATH"
-      mv "$task" "$DATA_PATH"
-    done
-    echo "Remove $competition"
-    rm -rf "$competition"
-    rm "$file"
+    unzip "$round" -d "$DATA_DIR/anti-plagiarism-datasets-master/rounds"
+    round_dir="${round%.zip}"
+    find "$round_dir"/*  -type d -exec mv {} "$DATA_PATH" \;
+    rm -rf "$round_dir"
+    rm "$round"
   done
-  ls "$DATA_PATH"
+  rm -rf $DATA_DIR/anti-plagiarism-datasets-master
+
   if [ $DEV ]
   then
     echo "Dev mode"
@@ -75,9 +79,9 @@ then
   rm -rf "$DATA_PATH"_parsed
 fi
 mkdir "$DATA_PATH"_parsed
-java -jar -Xmx4096m $ASTMINER_PATH code2vec --lang cpp --project "$DATA_PATH"/train --output "$DATA_PATH"_parsed/train --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
-java -jar -Xmx4096m $ASTMINER_PATH code2vec --lang cpp --project "$DATA_PATH"/test --output "$DATA_PATH"_parsed/test --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
-java -jar -Xmx4096m $ASTMINER_PATH code2vec --lang cpp --project "$DATA_PATH"/val --output "$DATA_PATH"_parsed/val --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+java -jar -Xmx4096m "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/train --output "$DATA_PATH"_parsed/train --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+java -jar -Xmx4096m "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/test --output "$DATA_PATH"_parsed/test --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+java -jar -Xmx4096m "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/val --output "$DATA_PATH"_parsed/val --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
 for folder in $(find "$DATA_PATH"_parsed/*/cpp -type d)
 do
   for file in "$folder"/*

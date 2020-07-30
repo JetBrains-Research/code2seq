@@ -9,6 +9,8 @@ SHUFFLE=true
 DATA_DIR=./data
 POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
 CODEFORCES_DOWNLOAD_SCRIPT=./scripts/download_codeforces.sh
+ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
+SPLIT_SCRIPT=./scripts/split_dataset.sh
 
 function is_int(){
   if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then
@@ -108,10 +110,10 @@ then
   fi
 elif [ "$DATASET_NAME" == "poj_104" ]
 then
-  sh "$POJ_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE"
+  sh "$POJ_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT"
 elif [ "$DATASET_NAME" == "codeforces" ]
 then
-  sh "$CODEFORCES_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE"
+  sh "$CODEFORCES_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT"
 else
   echo "Dataset $DATASET_NAME does not exist"
 fi

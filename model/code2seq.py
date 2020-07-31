@@ -60,8 +60,11 @@ class Code2Seq(BaseCodeModel):
         return loss
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
-        logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
-        logs.update(SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group))
+        with torch.no_grad():
+            logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
+            logs.update(
+                SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group)
+            )
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
         return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
 
@@ -71,7 +74,7 @@ class Code2Seq(BaseCodeModel):
         loss = self._calculate_loss(logits, batch.labels)
         log = {"train/loss": loss}
         with torch.no_grad():
-            statistic = SubtokenStatistic().calculate_statistic(batch.labels.detach(), logits.detach().argmax(-1))
+            statistic = SubtokenStatistic().calculate_statistic(batch.labels, logits.argmax(-1))
 
         log.update(statistic.calculate_metrics(group="train"))
         progress_bar = {"train/f1": log["train/f1"]}
@@ -83,7 +86,7 @@ class Code2Seq(BaseCodeModel):
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         with torch.no_grad():
-            statistic = SubtokenStatistic().calculate_statistic(batch.labels.detach(), logits.detach().argmax(-1))
+            statistic = SubtokenStatistic().calculate_statistic(batch.labels, logits.argmax(-1))
 
         return {"val_loss": loss, "statistic": statistic}
 

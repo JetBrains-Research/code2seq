@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
 from .model_hyperparameters_config import ModelHyperparameters
-from .modules_config import EncoderConfig, DecoderConfig
+from .modules_config import EncoderConfig, ClassifierConfig
 
 
 @dataclass(frozen=True)
-class Code2SeqConfig:
+class Code2ClassConfig:
     encoder_config: EncoderConfig
-    decoder_config: DecoderConfig
+    classifier_config: ClassifierConfig
     hyperparams: ModelHyperparameters

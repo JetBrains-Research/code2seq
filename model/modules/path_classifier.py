@@ -40,11 +40,11 @@ class PathClassifier(nn.Module):
         # [batch size; max context size; classifier input size], [batch size; max context size]
         batched_context, attention_mask = cut_encoded_contexts(encoded_paths, contexts_per_label, self._negative_value)
 
-        # [batch size; classifier input size]
+        # [batch size; max context size; 1]
         attn_weights = self.attention(batched_context, attention_mask)
 
         # [batch size; classifier input size]
-        context = torch.sum(batched_context * attn_weights, dim=1)
+        context = torch.bmm(attn_weights.transpose(1, 2), batched_context).squeeze(1)
 
         # [batch size; hidden size]
         hidden = self.hidden_layers(context)

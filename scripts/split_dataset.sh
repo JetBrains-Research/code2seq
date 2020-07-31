@@ -54,7 +54,7 @@ do
 
     counter=0
 
-    if [ "$SHUFFLE" ]
+    if $SHUFFLE
     then
       files=$(find "$DIR_TRAIN/$DIR_CLASS" -type f -exec basename {} \; | sort -R)
     else

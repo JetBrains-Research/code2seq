@@ -38,7 +38,7 @@ class Code2Class(BaseCodeModel):
                 self.num_classes, self.num_classes, requires_grad=False, device=self.device
             )
             for out in outputs:
-                _conf_matrix = out["statistic"]
+                _conf_matrix = out["confusion_matrix"]
                 max_class_index, _ = _conf_matrix.shape
                 accumulated_conf_matrix[:max_class_index, :max_class_index] += _conf_matrix
             logs[f"{group}/accuracy"] = accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()
@@ -55,7 +55,7 @@ class Code2Class(BaseCodeModel):
             log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
         progress_bar = {"train/accuracy": log["train/accuracy"]}
 
-        return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": conf_matrix}
+        return {"loss": loss, "log": log, "progress_bar": progress_bar, "confusion_matrix": conf_matrix}
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [batch size; num_classes]
@@ -64,7 +64,7 @@ class Code2Class(BaseCodeModel):
         with torch.no_grad():
             conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))
 
-        return {"val_loss": loss, "statistic": conf_matrix}
+        return {"val_loss": loss, "confusion_matrix": conf_matrix}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         result = self.validation_step(batch, batch_idx)

@@ -34,12 +34,14 @@ class Code2Class(BaseCodeModel):
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
         with torch.no_grad():
             logs = {f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()}
-            accumulated_conf_matrix = torch.zeros(self.num_classes, self.num_classes, requires_grad=False)
+            accumulated_conf_matrix = torch.zeros(
+                self.num_classes, self.num_classes, requires_grad=False, device=self.device
+            )
             for out in outputs:
-                _conf_matrix = out[f"{group}/confusion_matrix"]
+                _conf_matrix = out["statistic"]
                 max_class_index, _ = _conf_matrix.shape
                 accumulated_conf_matrix[:max_class_index, :max_class_index] += _conf_matrix
-                logs[f"{group}/accuracy"] = accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()
+            logs[f"{group}/accuracy"] = accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/accuracy"]}
         return {"val_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
 
@@ -53,7 +55,7 @@ class Code2Class(BaseCodeModel):
             log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
         progress_bar = {"train/accuracy": log["train/accuracy"]}
 
-        return {"loss": loss, "log": log, "progress_bar": progress_bar, "train/confusion_matrix": conf_matrix}
+        return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": conf_matrix}
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [batch size; num_classes]
@@ -62,7 +64,7 @@ class Code2Class(BaseCodeModel):
         with torch.no_grad():
             conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))
 
-        return {"val_loss": loss, "val/confusion_matrix": conf_matrix}
+        return {"val_loss": loss, "statistic": conf_matrix}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         result = self.validation_step(batch, batch_idx)

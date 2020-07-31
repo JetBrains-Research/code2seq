@@ -8,6 +8,7 @@
 # $5              specify if dataset needs to be shuffled, default: false
 # $6              specify a path to astminer .jar file
 # $7              specify a path to splitiing script
+# $8              specify if splitted dataset needs to be downloaded
 
 TRAIN_SPLIT_PART=$1
 VAL_SPLIT_PART=$2
@@ -16,6 +17,7 @@ DEV=$4
 SHUFFLE=$5
 ASTMINER_PATH=$6
 SPLIT_SCRIPT=$7
+LOAD_SPLITTED=$8
 DATA_DIR=./data
 DATASET_NAME=poj_104
 
@@ -26,37 +28,53 @@ then
   mkdir $DATA_DIR
 fi
 
-echo "Downloading dataset ${DATASET_NAME}"
 if [ -d "$DATA_PATH" ]
 then
   echo "$DATA_PATH exists."
 else
-  if [ ! -f "$DATA_DIR/poj-104-original.tar.gz" ]
+  if $LOAD_SPLITTED
   then
-    wget https://s3-eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/poj-104/poj-104-original.tar.gz -P $DATA_DIR/
-  fi
+    if [ ! -f "$DATA_DIR/poj-104-splitted.tar.gz" ]
+    then
+      echo "Downloading splitted dataset ${DATASET_NAME}"
+      wget https://s3-eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/poj-104/poj-104-splitted.tar.gz -P $DATA_DIR/
+    fi
 
-  echo "Unzip dataset"
-  # In the developer mode we leave only several classes
-  if [ $DEV ]
-  then
-    echo "Dev mode"
-    tar -C $DATA_DIR/ -xvf "$DATA_DIR/poj-104-original.tar.gz" "ProgramData/[1-3]"
-    mv "$DATA_DIR"/ProgramData "$DATA_PATH"
+    echo "Unzip splitted dataset"
+    tar -C $DATA_DIR/ -xvf "$DATA_DIR/poj-104-splitted.tar.gz"
   else
-    tar -xvzf "$DATA_DIR/poj-104-original.tar.gz" -C $DATA_DIR/
-    mv "$DATA_DIR"/ProgramData "$DATA_PATH"
-  fi
+    if [ ! -f "$DATA_DIR/poj-104-original.tar.gz" ]
+    then
+      echo "Downloading dataset ${DATASET_NAME}"
+      wget https://s3-eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/poj-104/poj-104-original.tar.gz -P $DATA_DIR/
+    fi
 
-  # To prepare our dataset for astminer we need to rename all .txt files to .c files
-  echo "Renaming files"
-  find "$DATA_PATH"/*  -name "*.txt" -type f -exec sh -c 'mv "$0" "${0%.txt}.c"' {} \;
+    echo "Unzip dataset"
+    # In the developer mode we leave only several classes
+    if $DEV
+    then
+      echo "Dev mode"
+      tar -C $DATA_DIR/ -xvf "$DATA_DIR/poj-104-original.tar.gz" "ProgramData/[1-3]"
+    else
+      tar -C $DATA_DIR/ -xvf "$DATA_DIR/poj-104-original.tar.gz"
+    fi
+  fi
+  mv "$DATA_DIR"/ProgramData "$DATA_PATH"
+fi
+
+# To prepare our dataset for astminer we need to rename all .txt files to .c files
+echo "Renaming files"
+find "$DATA_PATH"/*/*  -name "*.txt" -type f -exec sh -c 'mv "$0" "${0%.txt}.c"' {} \;
+
+if [ ! -d "$DATA_PATH"/train ] || [ ! -d "$DATA_PATH"/test ] || [ ! -d "$DATA_PATH"/val ]
+then
   # Splitting dataset on train/test/val parts
   echo "Splitting on train/test/val"
   sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$SHUFFLE"
   rm -rf "$DATA_PATH"
   mv "$DATA_PATH"_split "$DATA_PATH"
 fi
+
 echo "Extracting paths using astminer. You need to specify the path to .jar in \"ASTMINER_PATH\" variable first"
 if [ -d "$DATA_PATH"_parsed ]
 then

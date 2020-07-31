@@ -6,6 +6,7 @@ VAL_SPLIT_PART=20
 TEST_SPLIT_PART=20
 DEV=false
 SHUFFLE=true
+LOAD_SPLITTED=false
 DATA_DIR=./data
 POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
 CODEFORCES_DOWNLOAD_SCRIPT=./scripts/download_codeforces.sh
@@ -30,6 +31,7 @@ while (( "$#" )); do
       echo "--val-part=VAL                 specify a percentage of dataset used as validation set"
       echo "--shuffle                      pass it if dataset should be shuffled, default true"
       echo "--dev                          pass it if developer mode should be used, default false"
+      echo "--load-splitted                pass it if splitted dataset needs to be loaded, available only for poj_104, default false"
       exit 0
       ;;
     -d|--dataset*)
@@ -79,6 +81,10 @@ while (( "$#" )); do
       DEV=true
       shift
       ;;
+    --load-splitted*)
+      LOAD_SPLITTED=true
+      shift
+      ;;
     *)
       echo "something went wrong"
       exit 1
@@ -101,16 +107,16 @@ then
       echo "Downloading dataset $DATASET_NAME"
       wget https://s3.amazonaws.com/code2seq/datasets/"$DATASET_NAME"-preprocessed.tar.gz -P $DATA_DIR/
     else
-      echo "Dataset $1 already downloaded"
+      echo "Dataset $DATASET_NAME already downloaded"
     fi
     echo "Unzip dataset"
     tar -xvzf $DATA_DIR/"$DATASET_NAME"-preprocessed.tar.gz -C data/
   else
-    echo "Dataset $1 already exists"
+    echo "Dataset $DATASET_NAME already exists"
   fi
 elif [ "$DATASET_NAME" == "poj_104" ]
 then
-  sh "$POJ_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT"
+  sh "$POJ_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT" "$LOAD_SPLITTED"
 elif [ "$DATASET_NAME" == "codeforces" ]
 then
   sh "$CODEFORCES_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT"

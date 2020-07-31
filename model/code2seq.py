@@ -12,21 +12,21 @@ from .base_code_model import BaseCodeModel
 
 
 class Code2Seq(BaseCodeModel):
-    def __init__(
-        self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int,
-    ):
+    def __init__(self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int):
         super().__init__(config.hyperparams, vocab, num_workers)
         self.save_hyperparameters()
+        encoder_config = config.encoder_config
+        decoder_config = config.decoder_config
         self.encoder = PathEncoder(
-            config.encoder_config,
-            config.decoder_config.decoder_size,
-            len(self.vocab.token_to_id),
-            self.vocab.token_to_id[PAD],
-            len(self.vocab.type_to_id),
-            self.vocab.type_to_id[PAD],
+            encoder_config,
+            decoder_config.decoder_size,
+            len(vocab.token_to_id),
+            vocab.token_to_id[PAD],
+            len(vocab.type_to_id),
+            vocab.type_to_id[PAD],
         )
         self.decoder = PathDecoder(
-            config.decoder_config, len(self.vocab.label_to_id), self.vocab.label_to_id[SOS], self.vocab.label_to_id[PAD]
+            decoder_config, len(vocab.label_to_id), vocab.label_to_id[SOS], vocab.label_to_id[PAD]
         )
 
     def forward(

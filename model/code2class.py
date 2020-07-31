@@ -12,9 +12,7 @@ from .base_code_model import BaseCodeModel
 
 
 class Code2Class(BaseCodeModel):
-    def __init__(
-        self, config: Code2ClassConfig, vocab: Vocabulary, num_workers: int,
-    ):
+    def __init__(self, config: Code2ClassConfig, vocab: Vocabulary, num_workers: int):
         super().__init__(config.hyperparams, vocab, num_workers)
         self.save_hyperparameters()
         self.encoder = PathEncoder(

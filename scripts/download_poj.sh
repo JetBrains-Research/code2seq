@@ -89,7 +89,8 @@ for folder in $(find "$DATA_PATH"_parsed/*/c -type d)
 do
   for file in "$folder"/*
   do
-    mv "$file" "$DATA_PATH"_parsed/"$(basename "${file/.csv/.$(basename "$(dirname "$folder")").csv}")"
+    type="$(basename -s .csv "$(dirname "$folder")")"
+    mv "$file" "$DATA_PATH"_parsed/"$(basename "${file%.csv}.$type.csv")"
   done
   rm -rf "$(dirname "$folder")"
 done

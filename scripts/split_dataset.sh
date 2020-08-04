@@ -52,7 +52,7 @@ do
     train_bound=$(expr $num_files \* $TRAIN_SPLIT_PART / 100)
     test_bound=$(expr $train_bound + $num_files \* $TEST_SPLIT_PART / 100)
 
-    counter=0
+    counter=$(expr 0)
 
     if $SHUFFLE
     then
@@ -63,11 +63,11 @@ do
 
     for file in $files;
     do
-        (( counter += 1 ))
-        if [[ $counter -gt train_bound && $counter -le test_bound ]]; then
+        counter=$(expr $counter + 1)
+        if [ $counter -gt $train_bound ] && [ $counter -le $test_bound ]; then
             mv "$DIR_TRAIN/$DIR_CLASS/$file" "$DIR_TEST/$DIR_CLASS/$file"
         fi
-        if [[ $counter -gt test_bound ]]; then
+        if [ $counter -gt $test_bound ]; then
             mv "$DIR_TRAIN/$DIR_CLASS/$file" "$DIR_VAL/$DIR_CLASS/$file"
         fi
     done

@@ -38,7 +38,7 @@ else
 
   echo "Unzip dataset"
 
-  if [ $DEV ]
+  if $DEV
   then
     echo "Dev mode"
     unzip -qq "$DATA_DIR/$DATASET_NAME.zip" "anti-plagiarism-datasets-master/rounds/1314,1315.zip" -d $DATA_DIR/

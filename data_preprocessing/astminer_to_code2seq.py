@@ -7,7 +7,9 @@ from tqdm import tqdm
 
 from data_preprocessing.preprocess_code2seq_data import DATA_FOLDER
 from utils.common import count_lines_in_file
-from random import shuffle
+from random import shuffle, seed
+
+SEED = 7
 
 
 def _get_id2value_from_csv(path_: str) -> Dict[str, str]:
@@ -57,5 +59,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--shuffle", action="store_true")
     args = arg_parser.parse_args()
     data_path = path.join(DATA_FOLDER, args.data)
+
+    seed(SEED)
     for holdout_name in ["train", "test", "val"]:
         preprocess_csv(DATA_FOLDER, args.data, holdout_name, args.shuffle)

@@ -5,19 +5,17 @@
 # $2              specify a percentage of dataset used as test set
 # $3              specify a percentage of dataset used as validation set
 # $4              specify if developer mode is on, default: false
-# $5              specify if dataset needs to be shuffled, default: false
-# $6              specify a path to astminer .jar file
-# $7              specify a path to splitiing script
-# $8              specify if splitted dataset needs to be downloaded
+# $5              specify a path to astminer .jar file
+# $6              specify a path to splitiing script
+# $7              specify if splitted dataset needs to be downloaded
 
 TRAIN_SPLIT_PART=$1
 VAL_SPLIT_PART=$2
 TEST_SPLIT_PART=$3
 DEV=$4
-SHUFFLE=$5
-ASTMINER_PATH=$6
-SPLIT_SCRIPT=$7
-LOAD_SPLITTED=$8
+ASTMINER_PATH=$5
+SPLIT_SCRIPT=$6
+LOAD_SPLITTED=$7
 DATA_DIR=./data
 DATASET_NAME=poj_104
 
@@ -70,7 +68,7 @@ if [ ! -d "$DATA_PATH"/train ] || [ ! -d "$DATA_PATH"/test ] || [ ! -d "$DATA_PA
 then
   # Splitting dataset on train/test/val parts
   echo "Splitting on train/test/val"
-  sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$SHUFFLE"
+  sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART"
   rm -rf "$DATA_PATH"
   mv "$DATA_PATH"_split "$DATA_PATH"
 fi

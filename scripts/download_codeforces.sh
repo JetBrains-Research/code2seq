@@ -5,17 +5,15 @@
 # $2              specify a percentage of dataset used as test set
 # $3              specify a percentage of dataset used as validation set
 # $4              specify if developer mode is on, default: false
-# $5              specify if dataset needs to be shuffled, default: false
-# $6              specify a path to astminer .jar file
-# $7              specify a path to splitiing script
+# $5              specify a path to astminer .jar file
+# $6              specify a path to splitiing script
 
 TRAIN_SPLIT_PART=$1
 VAL_SPLIT_PART=$2
 TEST_SPLIT_PART=$3
 DEV=$4
-SHUFFLE=$5
-ASTMINER_PATH=$6
-SPLIT_SCRIPT=$7
+ASTMINER_PATH=$5
+SPLIT_SCRIPT=$6
 DATA_DIR=./data
 DATASET_NAME=codeforces
 
@@ -60,7 +58,7 @@ else
 
   # Splitting dataset on train/test/val parts
   echo "Splitting on train/test/val"
-  sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$SHUFFLE"
+  sh "$SPLIT_SCRIPT" "$DATA_PATH" "$DATA_PATH"_split "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART"
   rm -rf "$DATA_PATH"
   mv "$DATA_PATH"_split "$DATA_PATH"
 fi

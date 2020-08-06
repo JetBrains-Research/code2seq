@@ -5,7 +5,6 @@ TRAIN_SPLIT_PART=60
 VAL_SPLIT_PART=20
 TEST_SPLIT_PART=20
 DEV=false
-SHUFFLE=true
 LOAD_SPLITTED=false
 DATA_DIR=./data
 POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
@@ -29,7 +28,6 @@ while (( "$#" )); do
       echo "--train-part=VAL               specify a percentage of dataset used as train set"
       echo "--test-part=VAL                specify a percentage of dataset used as test set"
       echo "--val-part=VAL                 specify a percentage of dataset used as validation set"
-      echo "--shuffle                      pass it if dataset should be shuffled, default true"
       echo "--dev                          pass it if developer mode should be used, default false"
       echo "--load-splitted                pass it if splitted dataset needs to be loaded, available only for poj_104, default false"
       exit 0
@@ -73,10 +71,6 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
-    --shuffle*)
-      SHUFFLE=true
-      shift
-      ;;
     --dev*)
       DEV=true
       shift
@@ -116,10 +110,10 @@ then
   fi
 elif [ "$DATASET_NAME" == "poj_104" ]
 then
-  sh "$POJ_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT" "$LOAD_SPLITTED"
+  sh "$POJ_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$ASTMINER_PATH" "$SPLIT_SCRIPT" "$LOAD_SPLITTED"
 elif [ "$DATASET_NAME" == "codeforces" ]
 then
-  sh "$CODEFORCES_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$SHUFFLE" "$ASTMINER_PATH" "$SPLIT_SCRIPT"
+  sh "$CODEFORCES_DOWNLOAD_SCRIPT" "$TRAIN_SPLIT_PART" "$TEST_SPLIT_PART" "$VAL_SPLIT_PART" "$DEV" "$ASTMINER_PATH" "$SPLIT_SCRIPT"
 else
   echo "Dataset $DATASET_NAME does not exist"
 fi

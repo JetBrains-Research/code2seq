@@ -8,7 +8,6 @@
 # $3              specify a percentage of dataset used as train set
 # $4              specify a percentage of dataset used as test set
 # $5              specify a percentage of dataset used as validation set
-# $6              specify if dataset needs to be shuffled, default: false
 
 SHUFFLE=false
 
@@ -17,7 +16,6 @@ SPLIT_DATASET_PATH=$2
 TRAIN_SPLIT_PART=$3
 TEST_SPLIT_PART=$4
 VAL_SPLIT_PART=$5
-SHUFFLE=${6:-false}
 
 DIR_TRAIN="${SPLIT_DATASET_PATH}/train"
 DIR_VAL="${SPLIT_DATASET_PATH}/val"
@@ -54,12 +52,7 @@ do
 
     counter=$(expr 0)
 
-    if $SHUFFLE
-    then
-      files=$(find "$DIR_TRAIN/$DIR_CLASS" -type f -exec basename {} \; | sort -R)
-    else
-      files=$(find "$DIR_TRAIN/$DIR_CLASS" -type f -exec basename {} \;)
-    fi
+    files=$(find "$DIR_TRAIN/$DIR_CLASS" -type f -exec basename {} \;)
 
     for file in $files;
     do

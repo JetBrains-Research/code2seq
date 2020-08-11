@@ -14,17 +14,16 @@ class LuongAttention(nn.Module):
         :param hidden: [batch size; units]
         :param encoder_outputs: [batch size; seq len; units]
         :param mask: [batch size; seq len]
-        :return: [batch size; 1; seq len]
+        :return: [batch size; seq len]
         """
-        # [batch size; seq len; units]
-        attended_encoder_outputs = self.attn(encoder_outputs)
-        # [batch size; units, 1]
-        hidden = hidden.unsqueeze(1).transpose(1, 2)
-        # [batch size; seq len; 1]
-        score = torch.bmm(attended_encoder_outputs, hidden)
-        score += mask.unsqueeze(2)
+        batch_size, seq_len = mask.shape
+        # [batch size; units]
+        attended_hidden = self.attn(hidden)
+        # [batch size; seq len]
+        score = torch.bmm(encoder_outputs, attended_hidden.view(batch_size, -1, 1)).squeeze(-1)
+        score += mask
 
-        # [batch size; seq len; 1]
+        # [batch size; seq len]
         weights = F.softmax(score, dim=1)
         return weights
 

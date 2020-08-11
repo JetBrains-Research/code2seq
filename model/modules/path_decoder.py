@@ -30,6 +30,7 @@ class PathDecoder(nn.Module):
             config.decoder_size,
             num_layers=config.num_decoder_layers,
             dropout=config.rnn_dropout,
+            batch_first=True,  # Since sequence length for decoding is always equal to 1
         )
 
         self.concat_layer = nn.Linear(config.decoder_size * 2, config.decoder_size)
@@ -86,22 +87,21 @@ class PathDecoder(nn.Module):
         batched_context: torch.Tensor,  # [batch size; context size; decoder size]
         attention_mask: torch.Tensor,  # [batch size; context size]
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        # [1; batch size; embedding size]
-        embedded = self.target_embedding(input_tokens).unsqueeze(0)
+        # [batch size; 1; embedding size]
+        embedded = self.target_embedding(input_tokens).unsqueeze(1)
 
-        # [1; batch size; decoder size]
+        # hidden -- [n layers; batch size; decoder size]
+        # output -- [batch size; 1; decoder size]
         rnn_output, (h_prev, c_prev) = self.decoder_lstm(embedded, (h_prev, c_prev))
 
-        # [batch size; context size; 1]
+        # [batch size; context size]
         attn_weights = self.attention(h_prev[-1], batched_context, attention_mask)
 
         # [batch size; 1; decoder size]
-        context = torch.bmm(attn_weights.transpose(1, 2), batched_context)
-        # [1; batch size; decoder size]
-        context = context.view(1, context.shape[0], -1)
+        context = torch.bmm(attn_weights.unsqueeze(1), batched_context)
 
         # [batch size; 2 * decoder size]
-        concat_input = torch.cat([h_prev[[-1]], context], dim=2)
+        concat_input = torch.cat([rnn_output, context], dim=2).squeeze(1)
 
         # [batch size; decoder size]
         concat = torch.tanh(self.concat_layer(concat_input))

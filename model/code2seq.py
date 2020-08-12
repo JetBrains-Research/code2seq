@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from configs import Code2SeqConfig
 from dataset import Vocabulary, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
-from utils.common import PAD, SOS
+from utils.common import PAD, SOS, UNK
 from utils.metrics import SubtokenStatistic
 from .base_code_model import BaseCodeModel
 
@@ -15,6 +15,8 @@ class Code2Seq(BaseCodeModel):
     def __init__(self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int):
         super().__init__(config.hyperparams, vocab, num_workers)
         self.save_hyperparameters()
+        if SOS not in vocab.label_to_id:
+            vocab.label_to_id[SOS] = len(vocab.label_to_id)
         encoder_config = config.encoder_config
         decoder_config = config.decoder_config
         self.encoder = PathEncoder(
@@ -74,7 +76,9 @@ class Code2Seq(BaseCodeModel):
         loss = self._calculate_loss(logits, batch.labels)
         log = {"train/loss": loss}
         with torch.no_grad():
-            statistic = SubtokenStatistic().calculate_statistic(batch.labels, logits.argmax(-1))
+            statistic = SubtokenStatistic().calculate_statistic(
+                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, PAD, UNK]],
+            )
 
         log.update(statistic.calculate_metrics(group="train"))
         progress_bar = {"train/f1": log["train/f1"]}
@@ -86,7 +90,9 @@ class Code2Seq(BaseCodeModel):
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         with torch.no_grad():
-            statistic = SubtokenStatistic().calculate_statistic(batch.labels, logits.argmax(-1))
+            statistic = SubtokenStatistic().calculate_statistic(
+                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, PAD, UNK]],
+            )
 
         return {"val_loss": loss, "statistic": statistic}
 

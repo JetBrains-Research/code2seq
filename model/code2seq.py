@@ -72,12 +72,20 @@ class Code2Seq(BaseCodeModel):
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
+        batch.labels = torch.cat(
+            [
+                batch.labels.new_full(
+                    (1, batch.labels.shape[1]), fill_value=self.vocab.label_to_id[SOS], dtype=batch.labels.dtype
+                ),
+                batch.labels,
+            ]
+        )
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
         log = {"train/loss": loss}
         with torch.no_grad():
             statistic = SubtokenStatistic().calculate_statistic(
-                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [EOS, PAD, UNK]],
+                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [PAD, UNK]],
             )
 
         log.update(statistic.calculate_metrics(group="train"))
@@ -87,11 +95,19 @@ class Code2Seq(BaseCodeModel):
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
+        batch.labels = torch.cat(
+            [
+                batch.labels.new_full(
+                    (1, batch.labels.shape[1]), fill_value=self.vocab.label_to_id[SOS], dtype=batch.labels.dtype
+                ),
+                batch.labels,
+            ]
+        )
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         with torch.no_grad():
             statistic = SubtokenStatistic().calculate_statistic(
-                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, PAD, UNK]],
+                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [PAD, UNK]],
             )
 
         return {"val_loss": loss, "statistic": statistic}

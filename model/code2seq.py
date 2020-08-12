@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from configs import Code2SeqConfig
 from dataset import Vocabulary, PathContextBatch
 from model.modules import PathEncoder, PathDecoder
-from utils.common import PAD, SOS, UNK
+from utils.common import PAD, SOS, UNK, EOS
 from utils.metrics import SubtokenStatistic
 from .base_code_model import BaseCodeModel
 
@@ -77,7 +77,7 @@ class Code2Seq(BaseCodeModel):
         log = {"train/loss": loss}
         with torch.no_grad():
             statistic = SubtokenStatistic().calculate_statistic(
-                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [SOS, PAD, UNK]],
+                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [EOS, PAD, UNK]],
             )
 
         log.update(statistic.calculate_metrics(group="train"))

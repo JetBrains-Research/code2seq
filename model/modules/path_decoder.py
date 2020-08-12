@@ -33,8 +33,8 @@ class PathDecoder(nn.Module):
             batch_first=True,  # Since sequence length for decoding is always equal to 1
         )
 
-        self.concat_layer = nn.Linear(config.decoder_size * 2, config.decoder_size)
-        self.projection_layer = nn.Linear(config.decoder_size, self.out_size)
+        self.concat_layer = nn.Linear(config.decoder_size * 2, config.decoder_size, bias=False)
+        self.projection_layer = nn.Linear(config.decoder_size, self.out_size, bias=False)
 
     def forward(
         self,

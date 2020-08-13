@@ -67,7 +67,7 @@ class PathDecoder(nn.Module):
         output = encoded_paths.new_zeros((output_length, batch_size, self.out_size))
         # [batch size]
         current_input = encoded_paths.new_full((batch_size,), self.sos_token, dtype=torch.long)
-        for step in range(1, output_length):
+        for step in range(output_length):
             current_output, (h_prev, c_prev) = self.decoder_step(
                 current_input, h_prev, c_prev, batched_context, attention_mask
             )

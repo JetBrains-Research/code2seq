@@ -5,7 +5,7 @@ from typing import Tuple, Dict, List
 import torch
 from pytorch_lightning.core.lightning import LightningModule
 from torch.optim import Adam, Optimizer, SGD
-from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler, LambdaLR
 from torch.utils.data import DataLoader
 
 from configs import ModelHyperparameters
@@ -43,7 +43,7 @@ class BaseCodeModel(LightningModule):
             )
         else:
             raise ValueError(f"Unknown optimizer name: {self.hyperparams.optimizer}, try one of: Adam, Momentum")
-        scheduler = ExponentialLR(optimizer, self.hyperparams.decay_gamma)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: self.hyperparams.decay_gamma ** epoch)
         return [optimizer], [scheduler]
 
     # ===== DATALOADERS BLOCK =====

@@ -1,14 +1,12 @@
 from argparse import ArgumentParser
 from math import ceil
 from multiprocessing import cpu_count
-from os.path import join
 
 import torch
 from pytorch_lightning import Trainer, seed_everything
 
 from dataset import create_dataloader
 from model import Code2Seq
-
 
 SEED = 7
 

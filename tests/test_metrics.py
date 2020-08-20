@@ -46,3 +46,14 @@ class TestSubtokenStatistic(TestCase):
         self.assertEqual(st_stat.true_positive, 3)
         self.assertEqual(st_stat.false_positive, 7)
         self.assertEqual(st_stat.false_negative, 4)
+
+    def test_calculate_statistic_equal_tensors(self):
+        gt_subtokens = torch.tensor([[1, 2, 3, 4, 5, 0, -1]])
+        pred_subtokens = torch.tensor([[1, 2, 3, 4, 5, 0, -1]])
+        skip = [-1, 0]
+
+        st_stat = SubtokenStatistic.calculate_statistic(gt_subtokens, pred_subtokens, skip)
+
+        self.assertEqual(st_stat.true_positive, 5)
+        self.assertEqual(st_stat.false_positive, 0)
+        self.assertEqual(st_stat.false_negative, 0)

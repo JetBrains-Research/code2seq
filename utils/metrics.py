@@ -52,6 +52,11 @@ class SubtokenStatistic:
         for batch_idx in range(batch_size):
             gt_seq = [st for st in true_subtokens[:, batch_idx] if st not in skip]
             pred_seq = [st for st in predicted_subtokens[:, batch_idx] if st not in skip]
+
+            if len(gt_seq) == len(pred_seq) and all([g == p for g, p in zip(gt_seq, pred_seq)]):
+                subtoken_statistic.true_positive += len(gt_seq)
+                continue
+
             for pred_subtoken in pred_seq:
                 if pred_subtoken in gt_seq:
                     subtoken_statistic.true_positive += 1

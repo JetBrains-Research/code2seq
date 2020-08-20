@@ -17,11 +17,11 @@ def evaluate(checkpoint: str, data: str = None, batch_size: int = None):
     batch_size = batch_size or model.hyperparams.test_batch_size
     data = data or model.hyperparams.test_data_path
     gpu = 1 if torch.cuda.is_available() else None
+    trainer = Trainer(gpus=gpu)
     data_loader, n_samples = create_dataloader(
         data, model.hyperparams.max_context, False, False, batch_size, cpu_count(),
     )
     print(f"approximate number of steps for test is {ceil(n_samples / batch_size)}")
-    trainer = Trainer(gpus=gpu)
     trainer.test(model, test_dataloaders=data_loader)
 
 

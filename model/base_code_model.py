@@ -57,7 +57,7 @@ class BaseCodeModel(LightningModule):
             self.hyperparams.batch_size,
             self.num_workers,
         )
-        print(f"approximate number of steps for train is {ceil(n_samples / self.hyperparams.batch_size)}")
+        print(f"\napproximate number of steps for train is {ceil(n_samples / self.hyperparams.batch_size)}")
         return dataloader
 
     def val_dataloader(self) -> DataLoader:
@@ -69,7 +69,7 @@ class BaseCodeModel(LightningModule):
             self.hyperparams.test_batch_size,
             self.num_workers,
         )
-        print(f"approximate number of steps for val is {ceil(n_samples / self.hyperparams.test_batch_size)}")
+        print(f"\napproximate number of steps for val is {ceil(n_samples / self.hyperparams.test_batch_size)}")
         return dataloader
 
     def test_dataloader(self) -> DataLoader:
@@ -81,7 +81,7 @@ class BaseCodeModel(LightningModule):
             self.hyperparams.test_batch_size,
             self.num_workers,
         )
-        print(f"approximate number of steps for test is {ceil(n_samples / self.hyperparams.test_batch_size)}")
+        print(f"\napproximate number of steps for test is {ceil(n_samples / self.hyperparams.test_batch_size)}")
         return dataloader
 
     # ===== STEP =====

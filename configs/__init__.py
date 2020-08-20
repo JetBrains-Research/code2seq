@@ -12,7 +12,7 @@ def get_preprocessing_config_code2seq_params(dataset_name: str) -> Preprocessing
         dataset_name=dataset_name,
         max_path_length=9,
         max_name_parts=5,
-        max_target_parts=6,
+        max_target_parts=7,
         wrap_name=False,
         wrap_path=False,
         wrap_target=False,

@@ -25,11 +25,12 @@ class PathDecoder(nn.Module):
 
         self.attention = LuongAttention(config.decoder_size)
 
+        self.dropout_rnn = nn.Dropout(config.rnn_dropout)
         self.decoder_lstm = nn.LSTM(
             config.embedding_size,
             config.decoder_size,
             num_layers=config.num_decoder_layers,
-            dropout=config.rnn_dropout,
+            dropout=config.rnn_dropout if config.num_decoder_layers > 1 else 0,
             batch_first=True,  # Since sequence length for decoding is always equal to 1
         )
 
@@ -93,6 +94,7 @@ class PathDecoder(nn.Module):
         # hidden -- [n layers; batch size; decoder size]
         # output -- [batch size; 1; decoder size]
         rnn_output, (h_prev, c_prev) = self.decoder_lstm(embedded, (h_prev, c_prev))
+        rnn_output = self.dropout_rnn(rnn_output)
 
         # [batch size; context size]
         attn_weights = self.attention(h_prev[-1], batched_context, attention_mask)

@@ -29,11 +29,11 @@ class PathEncoder(nn.Module):
             config.rnn_size,
             num_layers=config.rnn_num_layers,
             bidirectional=config.use_bi_rnn,
-            dropout=config.rnn_dropout,
+            dropout=config.rnn_dropout if config.rnn_num_layers > 1 else 0,
         )
+        self.dropout_rnn = nn.Dropout(config.rnn_dropout)
 
-        self.dropout = nn.Dropout(config.embedding_dropout)
-
+        self.dropout_concat = nn.Dropout(config.embedding_dropout)
         concat_size = config.embedding_size * 2 + config.rnn_size * self.num_directions
         self.linear = nn.Linear(concat_size, out_size, bias=False)
         self.tanh = nn.Tanh()
@@ -61,10 +61,11 @@ class PathEncoder(nn.Module):
         _, (h_t, _) = self.path_lstm(packed_path_types)
         # [total_paths; rnn size * num directions]
         encoded_paths = h_t[-self.num_directions :].transpose(0, 1).reshape(h_t.shape[1], -1)
+        encoded_paths = self.dropout_rnn(encoded_paths)
 
         # [total_paths; 2 * embedding size + rnn size (*2)]
         concat = torch.cat([encoded_from_tokens, encoded_paths, encoded_to_tokens], dim=-1)
-        concat = self.dropout(concat)
+        concat = self.dropout_concat(concat)
 
         # [total_paths; output size]
         output = self.tanh(self.linear(concat))

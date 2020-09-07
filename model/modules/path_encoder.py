@@ -33,10 +33,9 @@ class PathEncoder(nn.Module):
         )
         self.dropout_rnn = nn.Dropout(config.rnn_dropout)
 
-        self.dropout_concat = nn.Dropout(config.embedding_dropout)
         concat_size = config.embedding_size * 2 + config.rnn_size * self.num_directions
         self.linear = nn.Linear(concat_size, out_size, bias=False)
-        self.tanh = nn.Tanh()
+        self.output_concat = nn.Dropout(config.embedding_dropout)
 
     def forward(self, contexts: Dict[str, torch.Tensor]) -> torch.Tensor:
         # [max name parts; total paths]
@@ -65,8 +64,8 @@ class PathEncoder(nn.Module):
 
         # [total_paths; 2 * embedding size + rnn size (*2)]
         concat = torch.cat([encoded_from_tokens, encoded_paths, encoded_to_tokens], dim=-1)
-        concat = self.dropout_concat(concat)
 
         # [total_paths; output size]
-        output = self.tanh(self.linear(concat))
+        output = self.linear(concat)
+        output = self.output_concat(output)
         return output

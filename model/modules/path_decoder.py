@@ -34,7 +34,8 @@ class PathDecoder(nn.Module):
             batch_first=True,  # Since sequence length for decoding is always equal to 1
         )
 
-        self.output_layer = nn.Linear(config.decoder_size * 2, self.out_size)
+        self.concat_layer = nn.Linear(config.decoder_size * 2, config.decoder_size)
+        self.output_layer = nn.Linear(config.decoder_size, self.out_size)
 
     def forward(
         self,
@@ -104,6 +105,6 @@ class PathDecoder(nn.Module):
         concat = torch.cat([rnn_output, context], dim=2).squeeze(1)
 
         # [batch size; vocab size]
-        output = self.output_layer(concat)
+        output = self.output_layer(nn.functional.relu(self.concat_layer(concat)))
 
         return output, (h_prev, c_prev)

@@ -104,6 +104,6 @@ class PathDecoder(nn.Module):
         concat = torch.cat([rnn_output, context], dim=2).squeeze(1)
 
         # [batch size; vocab size]
-        output = self.projection_layer(concat)
+        output = self.output_layer(concat)
 
         return output, (h_prev, c_prev)

@@ -69,14 +69,24 @@ class Code2Seq(BaseCodeModel):
         progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
         return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
 
+    def _calculate_metric(self, logits: torch.Tensor, labels: torch.Tensor) -> SubtokenStatistic:
+        with torch.no_grad():
+            # [seq length; batch size]
+            prediction = logits.argmax(-1)
+            mask_max_value, mask_max_indices = torch.max(prediction == self.vocab.label_to_id[PAD], dim=0)
+            mask_max_indices[~mask_max_value] = prediction.shape[0]
+            mask = torch.arange(prediction.shape[0]).view(-1, 1) >= mask_max_indices
+            prediction[mask] = self.vocab.label_to_id[PAD]
+            statistic = SubtokenStatistic().calculate_statistic(
+                labels, prediction, [self.vocab.label_to_id[t] for t in [PAD, UNK]],
+            )
+        return statistic
+
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
         log = {"train/loss": loss}
-        with torch.no_grad():
-            statistic = SubtokenStatistic().calculate_statistic(
-                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [PAD, UNK]],
-            )
+        statistic = self._calculate_metric(logits, batch.labels)
 
         log.update(statistic.calculate_metrics(group="train"))
         progress_bar = {"train/f1": log["train/f1"]}
@@ -87,15 +97,10 @@ class Code2Seq(BaseCodeModel):
         # [seq length; batch size; vocab size]
         logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
-        with torch.no_grad():
-            statistic = SubtokenStatistic().calculate_statistic(
-                batch.labels, logits.argmax(-1), [self.vocab.label_to_id[t] for t in [PAD, UNK]],
-            )
-
+        statistic = self._calculate_metric(logits, batch.labels)
         return {"val_loss": loss, "statistic": statistic}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         result = self.validation_step(batch, batch_idx)
-        result["test_loss"] = result["val_loss"]
-        del result["val_loss"]
+        result["test_loss"] = result.pop("val_loss")
         return result

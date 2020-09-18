@@ -75,7 +75,7 @@ class Code2Seq(BaseCodeModel):
             prediction = logits.argmax(-1)
             mask_max_value, mask_max_indices = torch.max(prediction == self.vocab.label_to_id[PAD], dim=0)
             mask_max_indices[~mask_max_value] = prediction.shape[0]
-            mask = torch.arange(prediction.shape[0]).view(-1, 1) >= mask_max_indices
+            mask = torch.arange(prediction.shape[0], device=self.device).view(-1, 1) >= mask_max_indices
             prediction[mask] = self.vocab.label_to_id[PAD]
             statistic = SubtokenStatistic().calculate_statistic(
                 labels, prediction, [self.vocab.label_to_id[t] for t in [PAD, UNK]],

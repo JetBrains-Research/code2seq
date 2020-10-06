@@ -35,6 +35,7 @@ class PathDecoder(nn.Module):
         )
 
         self.concat_layer = nn.Linear(config.decoder_size * 2, config.decoder_size, bias=False)
+        self.norm = nn.LayerNorm(config.decoder_size)
         self.projection_layer = nn.Linear(config.decoder_size, self.out_size, bias=False)
 
     def forward(
@@ -106,7 +107,9 @@ class PathDecoder(nn.Module):
         concat_input = torch.cat([rnn_output, context], dim=2).squeeze(1)
 
         # [batch size; decoder size]
-        concat = torch.tanh(self.concat_layer(concat_input))
+        concat = self.concat_layer(concat_input)
+        concat = self.norm(concat)
+        concat = torch.tanh(concat)
 
         # [batch size; vocab size]
         output = self.projection_layer(concat)

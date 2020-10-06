@@ -48,16 +48,18 @@ class Code2Seq(BaseCodeModel):
         :return: [1]
         """
         batch_size = labels.shape[-1]
-        # [n; num classes]
-        logits = logits.view(-1, logits.shape[-1])
-        # [n; 1]
-        labels = labels.view(-1, 1)
-        # [n; num classes]
-        log_p = F.log_softmax(logits, dim=-1)
-        # [n; 1]
-        y_log_p = torch.gather(log_p, 1, labels)
-        mask = labels != self.vocab.label_to_id[PAD]
-        loss = -y_log_p[mask].sum() / batch_size
+        # [batch size; vocab size; seq length]
+        _logits = logits.permute(1, 2, 0)
+        # [batch size; seq length]
+        _labels = labels.permute(1, 0)
+        # [batch size; seq length]
+        loss = F.cross_entropy(_logits, _labels, reduction="none")
+        # [batch size; seq length]
+        mask = _labels != self.vocab.label_to_id[PAD]
+        # [batch size; seq length]
+        loss = loss * mask
+        # [1]
+        loss = loss.sum() / batch_size
         return loss
 
     def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:

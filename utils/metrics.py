@@ -15,8 +15,8 @@ class SubtokenStatistic:
         self.false_positive += other_statistic.false_positive
         self.false_negative += other_statistic.false_negative
 
-    def calculate_metrics(self, group: str = None) -> Dict[str, int]:
-        precision, recall, f1 = 0, 0, 0
+    def calculate_metrics(self, group: str = None) -> Dict[str, float]:
+        precision, recall, f1 = 0.0, 0.0, 0.0
         if self.true_positive + self.false_positive > 0:
             precision = self.true_positive / (self.true_positive + self.false_positive)
         if self.true_positive + self.false_negative > 0:

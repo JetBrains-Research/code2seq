@@ -1,6 +1,6 @@
 from math import ceil
 from os.path import exists, join
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Union
 
 import numpy
 import torch
@@ -21,7 +21,7 @@ class PathContextDataset(IterableDataset):
         if not exists(join(path, self._description_filename)):
             raise ValueError(f"Can't find description file with name {self._description_filename}")
 
-        self._buffered_files_paths = []
+        self._buffered_files_paths: List[str] = []
         self._total_n_samples = 0
         with open(join(path, self._description_filename)) as desc_file:
             header = desc_file.readline()  # read header
@@ -34,11 +34,6 @@ class PathContextDataset(IterableDataset):
         self.max_context = max_context
         self.random_context = random_context
         self.shuffle = shuffle
-
-        # each worker use data from _cur_file_idx and until it reaches _end_file_idx
-        self._cur_file_idx = None
-        self._end_file_idx = None
-        self._cur_buffered_path_context = None
 
     def _prepare_buffer(self, file_idx: int) -> None:
         assert file_idx < len(self._buffered_files_paths)
@@ -58,14 +53,13 @@ class PathContextDataset(IterableDataset):
             per_worker = int(ceil(len(self._buffered_files_paths) / float(worker_info.num_workers)))
             self._cur_file_idx = per_worker * worker_id
             self._end_file_idx = min(self._cur_file_idx + per_worker, len(self._buffered_files_paths))
+        if self._cur_file_idx < self._end_file_idx:
+            self._prepare_buffer(self._cur_file_idx)
         return self
 
     def __next__(self) -> Tuple[Dict[str, numpy.ndarray], numpy.ndarray, int]:
-        if self._cur_buffered_path_context is None:
-            if self._cur_file_idx >= self._end_file_idx:
-                raise StopIteration()
-            else:
-                self._prepare_buffer(self._cur_file_idx)
+        if self._cur_file_idx >= self._end_file_idx:
+            raise StopIteration()
         if self._cur_sample_idx == len(self._order):
             self._cur_file_idx += 1
             if self._cur_file_idx >= self._end_file_idx:

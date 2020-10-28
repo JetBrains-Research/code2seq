@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from os.path import join
+from typing import Union
 
 import torch
 import wandb
@@ -12,6 +13,8 @@ from configs import (
     get_code2seq_test_config,
     get_code2class_test_config,
     get_code2class_default_config,
+    Code2SeqConfig,
+    Code2ClassConfig,
 )
 from dataset import Vocabulary
 from model import Code2Seq, Code2Class
@@ -27,13 +30,14 @@ def train(
     dataset_main_folder = join(DATA_FOLDER, dataset_name)
     vocab = Vocabulary.load(join(dataset_main_folder, "vocabulary.pkl"))
 
+    config: Union[Code2SeqConfig, Code2ClassConfig]
     if model_name == "code2seq":
-        config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
-        config = config_function(dataset_main_folder)
+        code2seq_config_function = get_code2seq_test_config if is_test else get_code2seq_default_config
+        config = code2seq_config_function(dataset_main_folder)
         model = Code2Seq(config, vocab, num_workers)
     elif model_name == "code2class":
-        config_function = get_code2class_test_config if is_test else get_code2class_default_config
-        config = config_function(dataset_main_folder)
+        code2class_config_function = get_code2class_test_config if is_test else get_code2class_default_config
+        config = code2class_config_function(dataset_main_folder)
         model = Code2Class(config, vocab, num_workers)
     else:
         raise ValueError(f"Model {model_name} is not supported")
@@ -43,7 +47,7 @@ def train(
     wandb_logger.watch(model)
     # define model checkpoint callback
     model_checkpoint_callback = ModelCheckpoint(
-        filepath=join(wandb.run.dir, "{epoch:02d}-{val_loss:.4f}"),
+        filepath=join(wandb_logger.experiment.dir, "{epoch:02d}-{val_loss:.4f}"),
         period=config.hyperparams.save_every_epoch,
         save_top_k=3,
     )

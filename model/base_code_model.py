@@ -28,6 +28,7 @@ class BaseCodeModel(LightningModule):
     # ===== OPTIMIZERS =====
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
+        optimizer: Optimizer
         if self.hyperparams.optimizer == "Momentum":
             # using the same momentum value as in original realization by Alon
             optimizer = SGD(

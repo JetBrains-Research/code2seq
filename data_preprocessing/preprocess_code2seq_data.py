@@ -79,8 +79,8 @@ def _convert_path_context_to_ids(
     )
 
 
-def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, int, str]):
-    lines, config, vocab, output_folder, buffer_id, holdout = convert_args
+def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Vocabulary, str, int]):
+    lines, config, vocab, output_folder, buffer_id = convert_args
     labels, from_tokens, path_types, to_tokens = [], [], [], []
     for line in lines:
         label, *path_contexts = line.split()

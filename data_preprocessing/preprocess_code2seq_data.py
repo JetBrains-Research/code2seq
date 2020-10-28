@@ -4,7 +4,7 @@ from collections import Counter
 from math import ceil
 from multiprocessing import Pool, cpu_count
 from os import path
-from typing import Tuple, List, Generator
+from typing import Tuple, List
 
 from tqdm import tqdm
 
@@ -13,35 +13,25 @@ from configs import (
     get_preprocessing_config_code2class_params,
     PreprocessingConfig,
 )
+from data_preprocessing.preprocessing_utils import (
+    DATA_FOLDER,
+    parse_token,
+    vocab_from_counters,
+    count_lines_in_file,
+    read_file_by_batch,
+    create_folder,
+    HOLDOUTS,
+)
 from dataset import Vocabulary, BufferedPathContext, ConvertParameters
-from utils.common import SOS, EOS, PAD, UNK, count_lines_in_file, create_folder, FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.common import UNK, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 
-DATA_FOLDER = "data"
 DESCRIPTION_FILE = "description.csv"
 BUFFERED_PATH_TEMPLATE = "buffered_paths_{}.pkl"
-SEPARATOR = "|"
 
 _config_switcher = {
     "code2class": get_preprocessing_config_code2class_params,
     "code2seq": get_preprocessing_config_code2seq_params,
 }
-
-
-def _vocab_from_counters(
-    config: PreprocessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
-) -> Vocabulary:
-    vocab = Vocabulary()
-    names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
-    vocab.add_from_counter("token_to_id", token_counter, config.subtoken_vocab_max_size, names_additional_tokens)
-    target_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_target else [PAD, UNK]
-    vocab.add_from_counter("label_to_id", target_counter, config.target_vocab_max_size, target_additional_tokens)
-    paths_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_path else [PAD, UNK]
-    vocab.add_from_counter("type_to_id", type_counter, -1, paths_additional_tokens)
-    return vocab
-
-
-def _parse_token(token: str, is_split: bool) -> List[str]:
-    return token.split(SEPARATOR) if is_split else [token]
 
 
 def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
@@ -52,16 +42,16 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
-            target_counter.update(_parse_token(label, config.split_target))
+            target_counter.update(parse_token(label, config.split_target))
             cur_tokens = []
             cur_types = []
             for path_context in path_contexts:
                 from_token, path_types, to_token = path_context.split(",")
-                cur_tokens += _parse_token(from_token, config.split_names) + _parse_token(to_token, config.split_names)
+                cur_tokens += parse_token(from_token, config.split_names) + parse_token(to_token, config.split_names)
                 cur_types += path_types.split("|")
             token_counter.update(cur_tokens)
             type_counter.update(cur_types)
-    return _vocab_from_counters(config, token_counter, target_counter, type_counter)
+    return vocab_from_counters(config, token_counter, target_counter, type_counter)
 
 
 def convert_vocabulary(config: PreprocessingConfig) -> Vocabulary:
@@ -69,7 +59,7 @@ def convert_vocabulary(config: PreprocessingConfig) -> Vocabulary:
         subtoken_to_count = Counter(pickle.load(dict_file))
         node_to_count = Counter(pickle.load(dict_file))
         target_to_count = Counter(pickle.load(dict_file))
-    return _vocab_from_counters(config, subtoken_to_count, target_to_count, node_to_count)
+    return vocab_from_counters(config, subtoken_to_count, target_to_count, node_to_count)
 
 
 def _convert_path_context_to_ids(
@@ -77,8 +67,8 @@ def _convert_path_context_to_ids(
 ) -> Tuple[List[int], List[int], List[int]]:
     from_token, path_types, to_token = path_context.split(",")
 
-    from_token = _parse_token(from_token, is_split)
-    to_token = _parse_token(to_token, is_split)
+    from_token = parse_token(from_token, is_split)
+    to_token = parse_token(to_token, is_split)
 
     token_unk = vocab.token_to_id[UNK]
     type_unk = vocab.type_to_id[UNK]
@@ -94,12 +84,13 @@ def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Voca
     labels, from_tokens, path_types, to_tokens = [], [], [], []
     for line in lines:
         label, *path_contexts = line.split()
-        label = _parse_token(label, config.split_target)
+        label = parse_token(label, config.split_target)
         labels.append([vocab.label_to_id.get(_l, vocab.label_to_id[UNK]) for _l in label])
         converted_context = [_convert_path_context_to_ids(config.split_names, pc, vocab) for pc in path_contexts]
-        from_tokens.append([cc[0] for cc in converted_context])
-        path_types.append([cc[1] for cc in converted_context])
-        to_tokens.append([cc[2] for cc in converted_context])
+        cur_ft, cur_pt, cur_tt = zip(*converted_context)
+        from_tokens.append(cur_ft)
+        path_types.append(cur_pt)
+        to_tokens.append(cur_tt)
 
     bpc = BufferedPathContext.create_from_lists(
         (labels, ConvertParameters(config.max_target_parts, config.wrap_target, vocab.label_to_id)),
@@ -117,17 +108,6 @@ def _convert_raw_buffer(convert_args: Tuple[List[str], PreprocessingConfig, Voca
     bpc.dump(path.join(output_folder, BUFFERED_PATH_TEMPLATE.format(buffer_id)))
 
 
-def _read_file_by_batch(filepath: str, batch_size: int) -> Generator[List[str], None, None]:
-    with open(filepath, "r") as file:
-        lines = []
-        for line in file:
-            lines.append(line.strip())
-            if len(lines) == batch_size:
-                yield lines
-                lines = []
-    yield lines
-
-
 def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingConfig, n_jobs: int):
     holdout_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.{holdout_name}.c2s")
     holdout_output_folder = path.join(DATA_FOLDER, config.dataset_name, holdout_name)
@@ -139,7 +119,7 @@ def convert_holdout(holdout_name: str, vocab: Vocabulary, config: PreprocessingC
             _convert_raw_buffer,
             (
                 (lines, config, vocab, holdout_output_folder, pos)
-                for pos, lines in enumerate(_read_file_by_batch(holdout_data_path, config.buffer_size))
+                for pos, lines in enumerate(read_file_by_batch(holdout_data_path, config.buffer_size))
             ),
         )
         n_buffers = ceil(count_lines_in_file(holdout_data_path) / config.buffer_size)
@@ -155,11 +135,14 @@ def preprocess(problem: str, data: str, is_vocab_collected: bool, n_jobs: int):
 
     vocab_path = path.join(DATA_FOLDER, config.dataset_name, "vocabulary.pkl")
     if path.exists(vocab_path):
+        print("Find vocabulary, so load it")
         vocab = Vocabulary.load(vocab_path)
     else:
+        print("Can't find vocabulary, so collect it")
         vocab = collect_vocabulary(config) if is_vocab_collected else convert_vocabulary(config)
         vocab.dump(vocab_path)
-    for holdout in ["train", "val", "test"]:
+    for holdout in HOLDOUTS:
+        print(f"converting {holdout} data")
         convert_holdout(holdout, vocab, config, n_jobs)
 
 

@@ -4,7 +4,7 @@ from typing import List, Dict
 import numpy
 from torch.utils.data import Dataset
 
-from configs import DataProcessingConfig
+from configs.parts import DataProcessingConfig
 from dataset.data_classes import PathContextSample
 from utils.common import Vocabulary, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 from utils.converting import list_to_wrapped_numpy, str_to_list
@@ -14,11 +14,19 @@ class PathContextDataset(Dataset):
 
     _separator = "|"
 
-    def __init__(self, data_path: str, vocabulary: Vocabulary, config: DataProcessingConfig, max_context: int):
+    def __init__(
+        self,
+        data_path: str,
+        vocabulary: Vocabulary,
+        config: DataProcessingConfig,
+        max_context: int,
+        random_context: bool,
+    ):
         assert exists(data_path), f"Can't find file with data: {data_path}"
         self._vocab = vocabulary
         self._config = config
         self._max_context = max_context
+        self._random_context = random_context
         self._data_path = data_path
         self._line_offsets = []
         cumulative_offset = 0
@@ -57,7 +65,9 @@ class PathContextDataset(Dataset):
 
         # choose random paths
         n_contexts = min(len(str_contexts), self._max_context)
-        context_indexes = numpy.random.choice(len(str_contexts), n_contexts, replace=False)
+        context_indexes = numpy.arange(n_contexts)
+        if self._random_context:
+            numpy.random.shuffle(context_indexes)
 
         # convert string label to wrapped numpy array
         list_label = str_to_list(str_label, self._vocab.label_to_id, self._config.split_target, self._separator)

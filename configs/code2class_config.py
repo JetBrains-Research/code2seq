@@ -39,19 +39,7 @@ class Code2ClassConfig:
 
 
 @dataclass(frozen=True)
-class Code2ClassTestConfig:
-    data_processing = DataProcessingConfig(
-        max_path_length=9,
-        max_name_parts=5,
-        max_target_parts=1,
-        wrap_name=False,
-        wrap_path=False,
-        wrap_target=False,
-        split_target=False,
-        split_names=True,
-        subtoken_vocab_max_size=190000,
-        target_vocab_max_size=27000,
-    )
+class Code2ClassTestConfig(Code2ClassConfig):
     hyper_parameters = ModelHyperParameters(
         n_epochs=5,
         patience=3,

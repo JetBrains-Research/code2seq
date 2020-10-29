@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 from configs import Code2SeqConfig, Code2ClassConfig
 from configs.parts import DataProcessingConfig
-from utils.common import DATA_FOLDER, VOCABULARY_NAME, Vocabulary, SOS, EOS, PAD, UNK
+from utils.common import DATA_FOLDER, VOCABULARY_NAME, SOS, EOS, PAD, UNK, TRAIN_HOLDOUT
+from utils.vocabulary import Vocabulary
 from utils.converting import parse_token
 from utils.filesystem import count_lines_in_file
 
@@ -17,9 +18,7 @@ from utils.filesystem import count_lines_in_file
 _config_switcher = {"code2class": Code2ClassConfig, "code2seq": Code2SeqConfig}
 
 
-def _counter_to_dict(
-    values: Counter[str], n_most_common: int = None, additional_values: List[str] = None
-) -> Dict[str, int]:
+def _counter_to_dict(values: Counter, n_most_common: int = None, additional_values: List[str] = None) -> Dict[str, int]:
     dict_values = []
     if additional_values is not None:
         dict_values += additional_values
@@ -39,11 +38,11 @@ def _counters_to_vocab(
     return Vocabulary(token_to_id=token_to_id, label_to_id=label_to_id, type_to_id=type_to_id)
 
 
-def collect_vocabulary(config: DataProcessingConfig) -> Vocabulary:
+def collect_vocabulary(config: DataProcessingConfig, dataset_name: str) -> Vocabulary:
     target_counter = Counter()
     token_counter = Counter()
     type_counter = Counter()
-    train_data_path = path.join(DATA_FOLDER, config.dataset_name, f"{config.dataset_name}.train.c2s")
+    train_data_path = path.join(DATA_FOLDER, dataset_name, f"{dataset_name}.{TRAIN_HOLDOUT}.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
@@ -67,25 +66,27 @@ def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: s
     return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count)
 
 
-def preprocess(problem: str, data: str, convert_path: str = None):
+def preprocess(problem: str, dataset_name: str, convert_path: str = None):
     if convert_path is not None and not exists(convert_path):
         raise ValueError(f"There is no file for converting: {convert_path}")
-    vocabulary_path = join(DATA_FOLDER, data, VOCABULARY_NAME)
+    vocabulary_path = join(DATA_FOLDER, dataset_name, VOCABULARY_NAME)
 
     if problem not in _config_switcher:
         raise ValueError(f"Unknown problem {problem}, specify one of: {_config_switcher.keys()}")
     config = _config_switcher[problem].data_processing
 
-    vocabulary = collect_vocabulary(config) if convert_path is None else convert_vocabulary(config, convert_path)
-    with open(vocabulary_path, "wb") as output_file:
-        pickle.dump(vocabulary, output_file)
+    if convert_path is None:
+        vocabulary = collect_vocabulary(config, dataset_name)
+    else:
+        vocabulary = convert_vocabulary(config, convert_path)
+    vocabulary.dump_vocabulary(vocabulary_path)
 
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("problem", type=str)
-    arg_parser.add_argument("data", type=str)
+    arg_parser.add_argument("dataset_name", type=str)
     arg_parser.add_argument("--convert", type=str, default=None)
     args = arg_parser.parse_args()
 
-    preprocess(args.problem, args.data, args.convert)
+    preprocess(args.problem, args.dataset_name, args.convert)

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from configs import Code2SeqConfig
 from dataset import PathContextBatch
 from model.modules import PathEncoder, PathDecoder
-from utils.common import PAD, SOS, UNK
+from utils.common import PAD, SOS, UNK, EOS
 from utils.vocabulary import Vocabulary
 from utils.metrics import SubtokenStatistic
 from .base_code_model import BaseCodeModel
@@ -85,7 +85,7 @@ class Code2Seq(BaseCodeModel):
             mask = torch.arange(prediction.shape[0], device=self.device).view(-1, 1) >= mask_max_indices
             prediction[mask] = self.vocab.label_to_id[PAD]
             statistic = SubtokenStatistic().calculate_statistic(
-                labels, prediction, [self.vocab.label_to_id[t] for t in [PAD, UNK]],
+                labels, prediction, [self.vocab.label_to_id[t] for t in [PAD, UNK, EOS, SOS]],
             )
         return statistic
 

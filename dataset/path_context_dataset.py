@@ -8,7 +8,7 @@ from configs.parts import DataProcessingConfig
 from dataset.data_classes import PathContextSample
 from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
 from utils.vocabulary import Vocabulary
-from utils.converting import list_to_wrapped_numpy, str_to_list
+from utils.converting import string_to_wrapped_numpy
 
 
 class PathContextDataset(Dataset):
@@ -38,9 +38,21 @@ class PathContextDataset(Dataset):
         self._n_samples = len(self._line_offsets)
 
         self._context_fields = [
-            (FROM_TOKEN, self._vocab.token_to_id, self._config.max_name_parts, self._config.wrap_name),
-            (PATH_TYPES, self._vocab.type_to_id, self._config.max_path_length, self._config.wrap_path),
-            (TO_TOKEN, self._vocab.token_to_id, self._config.max_name_parts, self._config.wrap_name),
+            (
+                FROM_TOKEN,
+                self._vocab.token_to_id,
+                self._config.split_names,
+                self._config.max_name_parts,
+                self._config.wrap_name,
+            ),
+            (PATH_TYPES, self._vocab.type_to_id, True, self._config.max_path_length, self._config.wrap_path),
+            (
+                TO_TOKEN,
+                self._vocab.token_to_id,
+                self._config.split_names,
+                self._config.max_name_parts,
+                self._config.wrap_name,
+            ),
         ]
 
     def __len__(self):
@@ -52,12 +64,13 @@ class PathContextDataset(Dataset):
             line = data_file.readline().strip()
         return line
 
-    def _context_to_list(self, context: str) -> Dict[str, List[int]]:
+    @staticmethod
+    def _split_context(context: str) -> Dict[str, str]:
         from_token, path_types, to_token = context.split(",")
         return {
-            FROM_TOKEN: str_to_list(from_token, self._vocab.token_to_id, self._config.split_names, self._separator),
-            PATH_TYPES: str_to_list(path_types, self._vocab.type_to_id, True, self._separator),
-            TO_TOKEN: str_to_list(to_token, self._vocab.token_to_id, self._config.split_names, self._separator),
+            FROM_TOKEN: from_token,
+            PATH_TYPES: path_types,
+            TO_TOKEN: to_token,
         }
 
     def __getitem__(self, index) -> PathContextSample:
@@ -71,19 +84,24 @@ class PathContextDataset(Dataset):
             numpy.random.shuffle(context_indexes)
 
         # convert string label to wrapped numpy array
-        list_label = str_to_list(str_label, self._vocab.label_to_id, self._config.split_target, self._separator)
-        wrapped_label = list_to_wrapped_numpy(
-            list_label, self._vocab.label_to_id, self._config.max_target_parts, self._config.wrap_target
+        wrapped_label = string_to_wrapped_numpy(
+            str_label,
+            self._vocab.label_to_id,
+            self._config.split_target,
+            self._config.max_target_parts,
+            self._config.wrap_target,
         )
 
         # convert each context to list of ints and then wrap into numpy array
         contexts = {}
-        for key, _, max_length, is_wrapped in self._context_fields:
+        for key, _, _, max_length, is_wrapped in self._context_fields:
             size = max_length + (1 if is_wrapped else 0)
             contexts[key] = numpy.empty((size, n_contexts), dtype=numpy.int32)
         for i, context_idx in enumerate(context_indexes):
-            list_context = self._context_to_list(str_contexts[context_idx])
-            for key, to_id, max_length, is_wrapped in self._context_fields:
-                contexts[key][:, [i]] = list_to_wrapped_numpy(list_context[key], to_id, max_length, is_wrapped)
+            splitted_context = self._split_context(str_contexts[context_idx])
+            for key, to_id, is_split, max_length, is_wrapped in self._context_fields:
+                contexts[key][:, [i]] = string_to_wrapped_numpy(
+                    splitted_context[key], to_id, is_split, max_length, is_wrapped
+                )
 
         return PathContextSample(contexts=contexts, label=wrapped_label, n_contexts=n_contexts)

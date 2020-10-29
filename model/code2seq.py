@@ -4,31 +4,35 @@ import torch
 import torch.nn.functional as F
 
 from configs import Code2SeqConfig
-from dataset import Vocabulary, PathContextBatch
+from dataset import PathContextBatch
 from model.modules import PathEncoder, PathDecoder
 from utils.common import PAD, SOS, UNK
+from utils.vocabulary import Vocabulary
 from utils.metrics import SubtokenStatistic
 from .base_code_model import BaseCodeModel
 
 
 class Code2Seq(BaseCodeModel):
-    def __init__(self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int):
-        super().__init__(config.hyperparams, vocab, num_workers)
+    def __init__(self, config: Code2SeqConfig, vocabulary: Vocabulary):
+        super().__init__(config.hyper_parameters, vocabulary)
+        self._config = config
         self.save_hyperparameters()
-        if SOS not in vocab.label_to_id:
-            vocab.label_to_id[SOS] = len(vocab.label_to_id)
-        encoder_config = config.encoder_config
-        decoder_config = config.decoder_config
+
+        if SOS not in vocabulary.label_to_id:
+            raise ValueError(f"Can't find SOS token in label to id vocabulary")
         self.encoder = PathEncoder(
-            encoder_config,
-            decoder_config.decoder_size,
-            len(vocab.token_to_id),
-            vocab.token_to_id[PAD],
-            len(vocab.type_to_id),
-            vocab.type_to_id[PAD],
+            self._config.encoder_config,
+            self._config.decoder_config.decoder_size,
+            len(vocabulary.token_to_id),
+            vocabulary.token_to_id[PAD],
+            len(vocabulary.type_to_id),
+            vocabulary.type_to_id[PAD],
         )
         self.decoder = PathDecoder(
-            decoder_config, len(vocab.label_to_id), vocab.label_to_id[SOS], vocab.label_to_id[PAD]
+            self._config.decoder_config,
+            len(vocabulary.label_to_id),
+            vocabulary.label_to_id[SOS],
+            vocabulary.label_to_id[PAD],
         )
 
     def forward(
@@ -62,7 +66,7 @@ class Code2Seq(BaseCodeModel):
         loss = loss.sum() / batch_size
         return loss
 
-    def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
+    def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str):
         with torch.no_grad():
             logs: Dict[str, Union[float, torch.Tensor]] = {
                 f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()
@@ -70,8 +74,7 @@ class Code2Seq(BaseCodeModel):
             logs.update(
                 SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group)
             )
-        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
-        return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
+            self.log_dict(logs)
 
     def _calculate_metric(self, logits: torch.Tensor, labels: torch.Tensor) -> SubtokenStatistic:
         with torch.no_grad():
@@ -86,20 +89,20 @@ class Code2Seq(BaseCodeModel):
             )
         return statistic
 
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> torch.Tensor:
+        logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
         log: Dict[str, Union[float, torch.Tensor]] = {"train/loss": loss}
         statistic = self._calculate_metric(logits, batch.labels)
 
         log.update(statistic.calculate_metrics(group="train"))
-        progress_bar = {"train/f1": log["train/f1"]}
+        self.log_dict(log)
 
-        return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
+        return loss
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
-        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
+        logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         statistic = self._calculate_metric(logits, batch.labels)
         return {"val_loss": loss, "statistic": statistic}

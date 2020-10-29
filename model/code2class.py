@@ -5,15 +5,16 @@ import torch.nn.functional as F
 from pytorch_lightning.metrics.functional import confusion_matrix
 
 from configs import Code2ClassConfig
-from dataset import Vocabulary, PathContextBatch
+from dataset import PathContextBatch
 from model.modules import PathEncoder, PathClassifier
 from utils.common import PAD
+from utils.vocabulary import Vocabulary
 from .base_code_model import BaseCodeModel
 
 
 class Code2Class(BaseCodeModel):
-    def __init__(self, config: Code2ClassConfig, vocab: Vocabulary, num_workers: int):
-        super().__init__(config.hyperparams, vocab, num_workers)
+    def __init__(self, config: Code2ClassConfig, vocab: Vocabulary):
+        super().__init__(config.hyper_parameters, vocab)
         self.save_hyperparameters()
         self.encoder = PathEncoder(
             config.encoder_config,
@@ -45,7 +46,7 @@ class Code2Class(BaseCodeModel):
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [batch size; num_classes]
-        logits = self(batch.context, batch.contexts_per_label)
+        logits = self(batch.contexts, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         log = {"train/loss": loss}
         with torch.no_grad():
@@ -57,7 +58,7 @@ class Code2Class(BaseCodeModel):
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [batch size; num_classes]
-        logits = self(batch.context, batch.contexts_per_label)
+        logits = self(batch.contexts, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         with torch.no_grad():
             conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))

@@ -3,7 +3,7 @@ from typing import List
 import torch
 from torch import nn
 
-from configs import ClassifierConfig
+from configs.parts import ClassifierConfig
 from utils.training import cut_encoded_contexts
 from .attention import LocalAttention
 

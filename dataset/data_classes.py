@@ -14,7 +14,7 @@ class PathContextSample:
 
 class PathContextBatch:
     def __init__(self, samples: List[PathContextSample]):
-        self.n_contexts = [_s.n_contexts for _s in samples]
+        self.contexts_per_label = [_s.n_contexts for _s in samples]
 
         tensor_labels = [torch.tensor(_s.label, dtype=torch.long) for _s in samples]
         self.labels = torch.cat(tensor_labels, dim=-1)
@@ -27,6 +27,9 @@ class PathContextBatch:
                 self.contexts[key].append(torch.tensor(value, dtype=torch.long))
         for key, tensor_list in self.contexts.items():
             self.contexts[key] = torch.cat(tensor_list, dim=-1)
+
+    def __len__(self) -> int:
+        return self.labels.shape[1]
 
     def pin_memory(self) -> "PathContextBatch":
         self.labels = self.labels.pin_memory()

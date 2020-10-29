@@ -6,7 +6,8 @@ from torch.utils.data import Dataset
 
 from configs.parts import DataProcessingConfig
 from dataset.data_classes import PathContextSample
-from utils.common import Vocabulary, FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.vocabulary import Vocabulary
 from utils.converting import list_to_wrapped_numpy, str_to_list
 
 

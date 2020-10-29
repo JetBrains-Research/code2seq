@@ -7,7 +7,8 @@ from torch.utils.data import DataLoader
 
 from configs.parts import DataProcessingConfig, ModelHyperParameters
 from dataset import PathContextDataset, PathContextSample, PathContextBatch
-from utils.common import TRAIN_HOLDOUT, TEST_HOLDOUT, VAL_HOLDOUT, VOCABULARY_NAME, load_vocabulary, DATA_FOLDER
+from utils.common import TRAIN_HOLDOUT, TEST_HOLDOUT, VAL_HOLDOUT, DATA_FOLDER
+from utils.vocabulary import Vocabulary
 
 
 class PathContextDataModule(LightningDataModule):
@@ -19,6 +20,7 @@ class PathContextDataModule(LightningDataModule):
     def __init__(
         self,
         dataset_name: str,
+        vocabulary: Vocabulary,
         data_params: DataProcessingConfig,
         model_params: ModelHyperParameters,
         num_workers: int = 0,
@@ -28,6 +30,7 @@ class PathContextDataModule(LightningDataModule):
         self._data_config = data_params
         self._hyper_params = model_params
         self._num_workers = num_workers
+        self._vocabulary = vocabulary
 
         self._dataset_dir = join(DATA_FOLDER, self._dataset_name)
         if not exists(self._dataset_dir):
@@ -35,7 +38,6 @@ class PathContextDataModule(LightningDataModule):
         self._train_data_file = join(self._dataset_dir, f"{self._dataset_name}.{TRAIN_HOLDOUT}.c2s")
         self._val_data_file = join(self._dataset_dir, f"{self._dataset_name}.{VAL_HOLDOUT}.c2s")
         self._test_data_file = join(self._dataset_dir, f"{self._dataset_name}.{TEST_HOLDOUT}.c2s")
-        self._vocabulary_file = join(self._dataset_dir, VOCABULARY_NAME)
 
     def prepare_data(self):
         if not exists(self._dataset_dir):
@@ -43,21 +45,20 @@ class PathContextDataModule(LightningDataModule):
         # TODO: download data from s3
 
     def setup(self, stage: Optional[str] = None):
-        vocabulary = load_vocabulary(self._vocabulary_file)
         if stage == "fit" or stage is None:
             self._train_dataset = PathContextDataset(
                 self._train_data_file,
-                vocabulary,
+                self._vocabulary,
                 self._data_config,
                 self._hyper_params.max_context,
                 self._hyper_params.random_context,
             )
             self._val_dataset = PathContextDataset(
-                self._val_data_file, vocabulary, self._data_config, self._hyper_params.max_context, False
+                self._val_data_file, self._vocabulary, self._data_config, self._hyper_params.max_context, False
             )
         else:
             self._test_dataset = PathContextDataset(
-                self._test_data_file, vocabulary, self._data_config, self._hyper_params.max_context, False
+                self._test_data_file, self._vocabulary, self._data_config, self._hyper_params.max_context, False
             )
 
     @staticmethod

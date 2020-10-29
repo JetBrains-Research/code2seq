@@ -89,16 +89,16 @@ class Code2Seq(BaseCodeModel):
             )
         return statistic
 
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> torch.Tensor:
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
+
         log: Dict[str, Union[float, torch.Tensor]] = {"train/loss": loss}
         statistic = self._calculate_metric(logits, batch.labels)
-
         log.update(statistic.calculate_metrics(group="train"))
         self.log_dict(log)
 
-        return loss
+        return {"loss": loss, "statistic": statistic}
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]

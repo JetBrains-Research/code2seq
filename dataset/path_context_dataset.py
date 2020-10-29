@@ -14,10 +14,11 @@ class PathContextDataset(Dataset):
 
     _separator = "|"
 
-    def __init__(self, data_path: str, vocabulary: Vocabulary, config: PreprocessingConfig):
+    def __init__(self, data_path: str, vocabulary: Vocabulary, config: PreprocessingConfig, max_context: int):
         assert exists(data_path), f"Can't find file with data: {data_path}"
         self._vocab = vocabulary
         self._config = config
+        self._max_context = max_context
         self._data_path = data_path
         self._line_offsets = []
         cumulative_offset = 0
@@ -53,7 +54,10 @@ class PathContextDataset(Dataset):
     def __getitem__(self, index) -> PathContextSample:
         raw_sample = self._read_line(index)
         str_label, *str_contexts = raw_sample.split()
-        n_contexts = len(str_contexts)
+
+        # choose random paths
+        n_contexts = min(len(str_contexts), self._max_context)
+        context_indexes = numpy.random.choice(len(str_contexts), n_contexts, replace=False)
 
         # convert string label to wrapped numpy array
         list_label = str_to_list(str_label, self._vocab.label_to_id, self._config.split_target, self._separator)
@@ -66,8 +70,8 @@ class PathContextDataset(Dataset):
         for key, _, max_length, is_wrapped in self._context_fields:
             size = max_length + (1 if is_wrapped else 0)
             contexts[key] = numpy.empty((size, n_contexts), dtype=numpy.int32)
-        for i, str_context in enumerate(str_contexts):
-            list_context = self._context_to_list(str_context)
+        for i, context_idx in enumerate(context_indexes):
+            list_context = self._context_to_list(str_contexts[context_idx])
             for key, to_id, max_length, is_wrapped in self._context_fields:
                 contexts[key][:, [i]] = list_to_wrapped_numpy(list_context[key], to_id, max_length, is_wrapped)
 

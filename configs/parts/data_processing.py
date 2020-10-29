@@ -2,11 +2,12 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class PreprocessingConfig:
-    """Config for preprocessing data. Max lengths don't include <SOS> and <EOS> tokens.
-    -1 stands for size."""
+class DataProcessingConfig:
+    """Config for processing data.
+    Max lengths don't include <SOS> and <EOS> tokens.
+    None stands for unlimited size.
+    """
 
-    dataset_name: str
     max_path_length: int
     max_name_parts: int
     max_target_parts: int
@@ -15,6 +16,6 @@ class PreprocessingConfig:
     wrap_target: bool
     split_target: bool
     split_names: bool
-    subtoken_vocab_max_size: int = -1
-    target_vocab_max_size: int = -1
+    subtoken_vocab_max_size: int = None
+    target_vocab_max_size: int = None
     buffer_size: int = 10_000

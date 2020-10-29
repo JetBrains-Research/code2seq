@@ -4,7 +4,7 @@ from typing import List, Dict
 import numpy
 from torch.utils.data import Dataset
 
-from configs import PreprocessingConfig
+from configs import DataProcessingConfig
 from dataset.data_classes import PathContextSample
 from utils.common import Vocabulary, FROM_TOKEN, TO_TOKEN, PATH_TYPES
 from utils.converting import list_to_wrapped_numpy, str_to_list
@@ -14,7 +14,7 @@ class PathContextDataset(Dataset):
 
     _separator = "|"
 
-    def __init__(self, data_path: str, vocabulary: Vocabulary, config: PreprocessingConfig, max_context: int):
+    def __init__(self, data_path: str, vocabulary: Vocabulary, config: DataProcessingConfig, max_context: int):
         assert exists(data_path), f"Can't find file with data: {data_path}"
         self._vocab = vocabulary
         self._config = config

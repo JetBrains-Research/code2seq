@@ -7,19 +7,14 @@ from typing import List, Dict
 
 from tqdm import tqdm
 
-from configs import (
-    get_preprocessing_config_code2seq_params,
-    get_preprocessing_config_code2class_params,
-    PreprocessingConfig,
-)
+from configs import Code2SeqConfig, Code2ClassConfig
+from configs.parts import DataProcessingConfig
 from utils.common import DATA_FOLDER, VOCABULARY_NAME, Vocabulary, SOS, EOS, PAD, UNK
 from utils.converting import parse_token
 from utils.filesystem import count_lines_in_file
 
-_config_switcher = {
-    "code2class": get_preprocessing_config_code2class_params,
-    "code2seq": get_preprocessing_config_code2seq_params,
-}
+
+_config_switcher = {"code2class": Code2ClassConfig, "code2seq": Code2SeqConfig}
 
 
 def _counter_to_dict(
@@ -33,7 +28,7 @@ def _counter_to_dict(
 
 
 def _counters_to_vocab(
-    config: PreprocessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
+    config: DataProcessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
 ) -> Vocabulary:
     names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
     token_to_id = _counter_to_dict(token_counter, config.subtoken_vocab_max_size, names_additional_tokens)
@@ -44,7 +39,7 @@ def _counters_to_vocab(
     return Vocabulary(token_to_id=token_to_id, label_to_id=label_to_id, type_to_id=type_to_id)
 
 
-def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
+def collect_vocabulary(config: DataProcessingConfig) -> Vocabulary:
     target_counter = Counter()
     token_counter = Counter()
     type_counter = Counter()
@@ -64,7 +59,7 @@ def collect_vocabulary(config: PreprocessingConfig) -> Vocabulary:
     return _counters_to_vocab(config, token_counter, target_counter, type_counter)
 
 
-def convert_vocabulary(config: PreprocessingConfig, original_vocabulary_path: str) -> Vocabulary:
+def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: str) -> Vocabulary:
     with open(original_vocabulary_path, "rb") as dict_file:
         subtoken_to_count = Counter(pickle.load(dict_file))
         node_to_count = Counter(pickle.load(dict_file))
@@ -77,7 +72,10 @@ def preprocess(problem: str, data: str, convert_path: str = None):
         raise ValueError(f"There is no file for converting: {convert_path}")
     vocabulary_path = join(DATA_FOLDER, data, VOCABULARY_NAME)
 
-    config = _config_switcher[problem](data)
+    if problem not in _config_switcher:
+        raise ValueError(f"Unknown problem {problem}, specify one of: {_config_switcher.keys()}")
+    config = _config_switcher[problem].data_processing
+
     vocabulary = collect_vocabulary(config) if convert_path is None else convert_vocabulary(config, convert_path)
     with open(vocabulary_path, "wb") as output_file:
         pickle.dump(vocabulary, output_file)

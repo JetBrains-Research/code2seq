@@ -8,13 +8,13 @@ from torch.optim import Adam, Optimizer, SGD
 from torch.optim.lr_scheduler import _LRScheduler, LambdaLR
 from torch.utils.data import DataLoader
 
-from configs import ModelHyperparameters
+from configs import ModelHyperParameters
 from dataset import Vocabulary, create_dataloader, PathContextBatch
 
 
 class BaseCodeModel(LightningModule):
     def __init__(
-        self, hyperparams: ModelHyperparameters, vocab: Vocabulary, num_workers: int = 0,
+        self, hyperparams: ModelHyperParameters, vocab: Vocabulary, num_workers: int = 0,
     ):
         super().__init__()
         self.hyperparams = hyperparams

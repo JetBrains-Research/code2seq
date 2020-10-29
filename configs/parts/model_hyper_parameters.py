@@ -2,11 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class ModelHyperparameters:
-    train_data_path: str
-    val_data_path: str
-    test_data_path: str
-
+class ModelHyperParameters:
     n_epochs: int
     patience: int  # early stopping
     batch_size: int

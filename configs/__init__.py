@@ -1,4 +1,4 @@
-from .parts import *
+import configs.parts
 from .code2seq import Code2SeqConfig, Code2SeqTestConfig
 from .code2class import Code2ClassConfig, Code2ClassTestConfig
 

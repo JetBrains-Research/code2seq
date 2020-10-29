@@ -4,7 +4,7 @@ from configs.parts import DataProcessingConfig, ModelHyperParameters, EncoderCon
 
 
 @dataclass(frozen=True)
-class Code2ClassConfig(dataclass):
+class Code2ClassConfig:
     data_processing = DataProcessingConfig(
         max_path_length=9,
         max_name_parts=5,
@@ -39,7 +39,7 @@ class Code2ClassConfig(dataclass):
 
 
 @dataclass(frozen=True)
-class Code2ClassTestConfig(dataclass):
+class Code2ClassTestConfig:
     data_processing = DataProcessingConfig(
         max_path_length=9,
         max_name_parts=5,

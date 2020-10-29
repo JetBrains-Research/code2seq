@@ -16,7 +16,7 @@ class BaseCodeModel(LightningModule):
         self.vocab = vocab
 
     @abstractmethod
-    def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
+    def _general_epoch_end(self, outputs: List[Dict], group: str) -> Dict:
         pass
 
     # ===== OPTIMIZERS =====
@@ -44,10 +44,10 @@ class BaseCodeModel(LightningModule):
     # ===== ON EPOCH END =====
 
     def training_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "loss", "train")
+        self._general_epoch_end(outputs, "train")
 
     def validation_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "val_loss", "val")
+        self._general_epoch_end(outputs, "val")
 
     def test_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "test_loss", "test")
+        self._general_epoch_end(outputs, "test")

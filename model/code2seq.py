@@ -66,10 +66,10 @@ class Code2Seq(BaseCodeModel):
         loss = loss.sum() / batch_size
         return loss
 
-    def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str):
+    def _general_epoch_end(self, outputs: List[Dict], group: str):
         with torch.no_grad():
             logs: Dict[str, Union[float, torch.Tensor]] = {
-                f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()
+                f"{group}/loss": torch.stack([out["loss"] for out in outputs]).mean()
             }
             logs.update(
                 SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group)
@@ -105,9 +105,7 @@ class Code2Seq(BaseCodeModel):
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         statistic = self._calculate_metric(logits, batch.labels)
-        return {"val_loss": loss, "statistic": statistic}
+        return {"loss": loss, "statistic": statistic}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        result = self.validation_step(batch, batch_idx)
-        result["test_loss"] = result.pop("val_loss")
-        return result
+        return self.validation_step(batch, batch_idx)

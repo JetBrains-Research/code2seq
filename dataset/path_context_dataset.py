@@ -1,5 +1,5 @@
 from os.path import exists
-from typing import List, Dict
+from typing import Dict
 
 import numpy
 from torch.utils.data import Dataset
@@ -7,8 +7,8 @@ from torch.utils.data import Dataset
 from configs.parts import DataProcessingConfig
 from dataset.data_classes import PathContextSample
 from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.converting import strings_to_wrapped_numpy
 from utils.vocabulary import Vocabulary
-from utils.converting import string_to_wrapped_numpy
 
 
 class PathContextDataset(Dataset):
@@ -84,8 +84,8 @@ class PathContextDataset(Dataset):
             numpy.random.shuffle(context_indexes)
 
         # convert string label to wrapped numpy array
-        wrapped_label = string_to_wrapped_numpy(
-            str_label,
+        wrapped_label = strings_to_wrapped_numpy(
+            [str_label],
             self._vocab.label_to_id,
             self._config.split_target,
             self._config.max_target_parts,
@@ -93,15 +93,10 @@ class PathContextDataset(Dataset):
         )
 
         # convert each context to list of ints and then wrap into numpy array
+        splitted_contexts = [self._split_context(str_contexts[i]) for i in context_indexes]
         contexts = {}
-        for key, _, _, max_length, is_wrapped in self._context_fields:
-            size = max_length + (1 if is_wrapped else 0)
-            contexts[key] = numpy.empty((size, n_contexts), dtype=numpy.int32)
-        for i, context_idx in enumerate(context_indexes):
-            splitted_context = self._split_context(str_contexts[context_idx])
-            for key, to_id, is_split, max_length, is_wrapped in self._context_fields:
-                contexts[key][:, [i]] = string_to_wrapped_numpy(
-                    splitted_context[key], to_id, is_split, max_length, is_wrapped
-                )
+        for key, to_id, is_split, max_length, is_wrapped in self._context_fields:
+            str_values = [_sc[key] for _sc in splitted_contexts]
+            contexts[key] = strings_to_wrapped_numpy(str_values, to_id, is_split, max_length, is_wrapped)
 
         return PathContextSample(contexts=contexts, label=wrapped_label, n_contexts=n_contexts)

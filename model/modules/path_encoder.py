@@ -27,10 +27,14 @@ class PathEncoder(nn.Module):
             dropout=config.rnn_dropout if config.rnn_num_layers > 1 else 0,
         )
 
-        concat_size = config.embedding_size * 2 + config.rnn_size * self.num_directions
+        concat_size = self._calculate_concat_size(config.embedding_size, config.rnn_size, self.num_directions)
         self.embedding_dropout = nn.Dropout(config.embedding_dropout)
         self.linear = nn.Linear(concat_size, out_size, bias=False)
         self.norm = nn.LayerNorm(out_size)
+
+    @staticmethod
+    def _calculate_concat_size(embedding_size: int, rnn_size: int, num_directions: int) -> int:
+        return embedding_size * 2 + rnn_size * num_directions
 
     def _token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
         return self.token_embedding(tokens).sum(0)

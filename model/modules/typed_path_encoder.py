@@ -24,6 +24,10 @@ class TypedPathEncoder(PathEncoder):
 
         self.type_embedding = nn.Embedding(n_types, config.embedding_size, padding_idx=type_pad_id)
 
+    @staticmethod
+    def _calculate_concat_size(embedding_size: int, rnn_size: int, num_directions: int) -> int:
+        return embedding_size * 4 + rnn_size * num_directions
+
     def _type_embedding(self, types: torch.Tensor) -> torch.Tensor:
         return self.type_embedding(types).sum(0)
 

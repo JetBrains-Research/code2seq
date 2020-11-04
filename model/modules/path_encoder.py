@@ -9,19 +9,13 @@ from utils.common import FROM_TOKEN, TO_TOKEN, PATH_NODES
 
 class PathEncoder(nn.Module):
     def __init__(
-        self,
-        config: EncoderConfig,
-        out_size: int,
-        n_subtokens: int,
-        subtoken_pad_id: int,
-        n_nodes: int,
-        node_pad_id: int,
+        self, config: EncoderConfig, out_size: int, n_tokens: int, token_pad_id: int, n_nodes: int, node_pad_id: int,
     ):
         super().__init__()
         self.node_pad_id = node_pad_id
         self.num_directions = 2 if config.use_bi_rnn else 1
 
-        self.subtoken_embedding = nn.Embedding(n_subtokens, config.embedding_size, padding_idx=subtoken_pad_id)
+        self.token_embedding = nn.Embedding(n_tokens, config.embedding_size, padding_idx=token_pad_id)
         self.node_embedding = nn.Embedding(n_nodes, config.embedding_size, padding_idx=node_pad_id)
 
         self.dropout_rnn = nn.Dropout(config.rnn_dropout)
@@ -39,7 +33,7 @@ class PathEncoder(nn.Module):
         self.norm = nn.LayerNorm(out_size)
 
     def _token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
-        return self.subtoken_embedding(tokens).sum(0)
+        return self.token_embedding(tokens).sum(0)
 
     def _path_nodes_embedding(self, path_nodes: torch.Tensor) -> torch.Tensor:
         # [max path length; total paths; embedding size]

@@ -31,35 +31,35 @@ def _counter_to_dict(values: Counter, n_most_common: int = None, additional_valu
 
 
 def _counters_to_vocab(
-    config: DataProcessingConfig, token_counter: Counter, target_counter: Counter, type_counter: Counter
+    config: DataProcessingConfig, token_counter: Counter, target_counter: Counter, node_counter: Counter
 ) -> Vocabulary:
     names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
     token_to_id = _counter_to_dict(token_counter, config.subtoken_vocab_max_size, names_additional_tokens)
     target_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_target else [PAD, UNK]
     label_to_id = _counter_to_dict(target_counter, config.target_vocab_max_size, target_additional_tokens)
     paths_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_path else [PAD, UNK]
-    type_to_id = _counter_to_dict(type_counter, None, paths_additional_tokens)
-    return Vocabulary(token_to_id=token_to_id, label_to_id=label_to_id, type_to_id=type_to_id)
+    node_to_id = _counter_to_dict(node_counter, None, paths_additional_tokens)
+    return Vocabulary(token_to_id=token_to_id, label_to_id=label_to_id, node_to_id=node_to_id)
 
 
 def collect_vocabulary(config: DataProcessingConfig, dataset_name: str) -> Vocabulary:
     target_counter: TypeCounter[str] = Counter()
     token_counter: TypeCounter[str] = Counter()
-    type_counter: TypeCounter[str] = Counter()
+    node_counter: TypeCounter[str] = Counter()
     train_data_path = path.join(DATA_FOLDER, dataset_name, f"{dataset_name}.{TRAIN_HOLDOUT}.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
             target_counter.update(parse_token(label, config.split_target))
             cur_tokens = []
-            cur_types = []
+            cur_nodes = []
             for path_context in path_contexts:
-                from_token, path_types, to_token = path_context.split(",")
+                from_token, path_nodes, to_token = path_context.split(",")
                 cur_tokens += parse_token(from_token, config.split_names) + parse_token(to_token, config.split_names)
-                cur_types += path_types.split("|")
+                cur_nodes += path_nodes.split("|")
             token_counter.update(cur_tokens)
-            type_counter.update(cur_types)
-    return _counters_to_vocab(config, token_counter, target_counter, type_counter)
+            node_counter.update(cur_nodes)
+    return _counters_to_vocab(config, token_counter, target_counter, node_counter)
 
 
 def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: str) -> Vocabulary:

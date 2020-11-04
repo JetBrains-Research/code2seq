@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from configs.parts import EncoderConfig
-from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.common import FROM_TOKEN, TO_TOKEN, PATH_NODES
 
 
 class PathEncoder(nn.Module):
@@ -48,7 +48,7 @@ class PathEncoder(nn.Module):
         encoded_to_tokens = self.subtoken_embedding(to_token).sum(0)
 
         # [max path length; total paths]
-        path_types = contexts[PATH_TYPES]
+        path_types = contexts[PATH_NODES]
         # [max path length; total paths; embedding size]
         path_types_embed = self.type_embedding(path_types)
 

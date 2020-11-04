@@ -29,8 +29,8 @@ class TestPathEncoder(TestCase):
             config.decoder_config.decoder_size,
             len(vocabulary.token_to_id),
             vocabulary.token_to_id[PAD],
-            len(vocabulary.type_to_id),
-            vocabulary.type_to_id[PAD],
+            len(vocabulary.node_to_id),
+            vocabulary.node_to_id[PAD],
         )
         output = model(batch.contexts)
 

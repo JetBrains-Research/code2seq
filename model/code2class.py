@@ -25,8 +25,8 @@ class Code2Class(LightningModule):
             self._config.classifier_config.classifier_input_size,
             len(vocabulary.token_to_id),
             vocabulary.token_to_id[PAD],
-            len(vocabulary.type_to_id),
-            vocabulary.type_to_id[PAD],
+            len(vocabulary.node_to_id),
+            vocabulary.node_to_id[PAD],
         )
         self.num_classes = len(vocabulary.label_to_id)
         self.classifier = PathClassifier(self._config.classifier_config, self.num_classes)

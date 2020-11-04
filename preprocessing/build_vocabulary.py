@@ -46,8 +46,16 @@ def _counters_to_vocab(
 
     vocabulary = Vocabulary(token_to_id, node_to_id, label_to_id)
     if len(type_counter) > 0:
-        vocabulary.type_to_id = _counter_to_dict(type_counter, None, [PAD, UNK])
+        vocabulary.type_to_id = _counter_to_dict(type_counter)
     return vocabulary
+
+
+def _convert_type(in_type: str) -> str:
+    if in_type == "<NULL>":
+        return PAD
+    elif in_type == "<UNKNOWN>":
+        return UNK
+    return in_type
 
 
 def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
@@ -66,8 +74,8 @@ def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_typ
             for path_context in path_contexts:
                 if with_types:
                     from_type, from_token, path_nodes, to_token, to_type = path_context.split(",")
-                    cur_types.append(from_type)
-                    cur_types.append(to_type)
+                    cur_types.append(_convert_type(from_type))
+                    cur_types.append(_convert_type(to_type))
                 else:
                     from_token, path_nodes, to_token = path_context.split(",")
                 cur_tokens += parse_token(from_token, config.split_names)

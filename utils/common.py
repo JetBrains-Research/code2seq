@@ -7,9 +7,11 @@ PAD = "<PAD>"
 UNK = "<UNK>"
 
 # path context keys
+FROM_TYPE = "from_type"
 FROM_TOKEN = "from_token"
 PATH_NODES = "path_nodes"
 TO_TOKEN = "to_token"
+TO_TYPE = "to_type"
 
 # vocabulary keys
 TOKEN_TO_ID = "token_to_id"

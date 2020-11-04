@@ -1,35 +1,46 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 
 import torch
 import torch.nn.functional as F
+from pytorch_lightning import LightningModule
+from torch.optim import Optimizer
+from torch.optim.lr_scheduler import _LRScheduler
 
 from configs import Code2SeqConfig
-from dataset import Vocabulary, PathContextBatch
+from dataset import PathContextBatch
 from model.modules import PathEncoder, PathDecoder
-from utils.common import PAD, SOS, UNK
+from utils.common import PAD, SOS, UNK, EOS
 from utils.metrics import SubtokenStatistic
-from .base_code_model import BaseCodeModel
+from utils.training import configure_optimizers_alon
+from utils.vocabulary import Vocabulary
 
 
-class Code2Seq(BaseCodeModel):
-    def __init__(self, config: Code2SeqConfig, vocab: Vocabulary, num_workers: int):
-        super().__init__(config.hyperparams, vocab, num_workers)
+class Code2Seq(LightningModule):
+    def __init__(self, config: Code2SeqConfig, vocabulary: Vocabulary):
+        super().__init__()
+        self._config = config
+        self._vocabulary = vocabulary
         self.save_hyperparameters()
-        if SOS not in vocab.label_to_id:
-            vocab.label_to_id[SOS] = len(vocab.label_to_id)
-        encoder_config = config.encoder_config
-        decoder_config = config.decoder_config
+
+        if SOS not in vocabulary.label_to_id:
+            raise ValueError(f"Can't find SOS token in label to id vocabulary")
         self.encoder = PathEncoder(
-            encoder_config,
-            decoder_config.decoder_size,
-            len(vocab.token_to_id),
-            vocab.token_to_id[PAD],
-            len(vocab.type_to_id),
-            vocab.type_to_id[PAD],
+            self._config.encoder_config,
+            self._config.decoder_config.decoder_size,
+            len(vocabulary.token_to_id),
+            vocabulary.token_to_id[PAD],
+            len(vocabulary.type_to_id),
+            vocabulary.type_to_id[PAD],
         )
         self.decoder = PathDecoder(
-            decoder_config, len(vocab.label_to_id), vocab.label_to_id[SOS], vocab.label_to_id[PAD]
+            self._config.decoder_config,
+            len(vocabulary.label_to_id),
+            vocabulary.label_to_id[SOS],
+            vocabulary.label_to_id[PAD],
         )
+
+    def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
+        return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())
 
     def forward(
         self,
@@ -55,56 +66,66 @@ class Code2Seq(BaseCodeModel):
         # [batch size; seq length]
         loss = F.cross_entropy(_logits, _labels, reduction="none")
         # [batch size; seq length]
-        mask = _labels != self.vocab.label_to_id[PAD]
+        mask = _labels != self._vocabulary.label_to_id[PAD]
         # [batch size; seq length]
         loss = loss * mask
         # [1]
         loss = loss.sum() / batch_size
         return loss
 
-    def _general_epoch_end(self, outputs: List[Dict], loss_key: str, group: str) -> Dict:
-        with torch.no_grad():
-            logs: Dict[str, Union[float, torch.Tensor]] = {
-                f"{group}/loss": torch.stack([out[loss_key] for out in outputs]).mean()
-            }
-            logs.update(
-                SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group)
-            )
-        progress_bar = {k: v for k, v in logs.items() if k in [f"{group}/loss", f"{group}/f1"]}
-        return {f"{group}_loss": logs[f"{group}/loss"], "log": logs, "progress_bar": progress_bar}
-
     def _calculate_metric(self, logits: torch.Tensor, labels: torch.Tensor) -> SubtokenStatistic:
         with torch.no_grad():
             # [seq length; batch size]
             prediction = logits.argmax(-1)
-            mask_max_value, mask_max_indices = torch.max(prediction == self.vocab.label_to_id[PAD], dim=0)
+            mask_max_value, mask_max_indices = torch.max(prediction == self._vocabulary.label_to_id[PAD], dim=0)
             mask_max_indices[~mask_max_value] = prediction.shape[0]
             mask = torch.arange(prediction.shape[0], device=self.device).view(-1, 1) >= mask_max_indices
-            prediction[mask] = self.vocab.label_to_id[PAD]
+            prediction[mask] = self._vocabulary.label_to_id[PAD]
             statistic = SubtokenStatistic().calculate_statistic(
-                labels, prediction, [self.vocab.label_to_id[t] for t in [PAD, UNK]],
+                labels, prediction, [self._vocabulary.label_to_id[t] for t in [PAD, UNK, EOS, SOS]],
             )
         return statistic
 
+    # ========== MODEL STEP ==========
+
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
+        logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
+
         log: Dict[str, Union[float, torch.Tensor]] = {"train/loss": loss}
         statistic = self._calculate_metric(logits, batch.labels)
-
         log.update(statistic.calculate_metrics(group="train"))
-        progress_bar = {"train/f1": log["train/f1"]}
+        self.log_dict(log)
 
-        return {"loss": loss, "log": log, "progress_bar": progress_bar, "statistic": statistic}
+        return {"loss": loss, "statistic": statistic}
 
     def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
         # [seq length; batch size; vocab size]
-        logits = self(batch.context, batch.contexts_per_label, batch.labels.shape[0])
+        logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         statistic = self._calculate_metric(logits, batch.labels)
-        return {"val_loss": loss, "statistic": statistic}
+        return {"loss": loss, "statistic": statistic}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
-        result = self.validation_step(batch, batch_idx)
-        result["test_loss"] = result.pop("val_loss")
-        return result
+        return self.validation_step(batch, batch_idx)
+
+    # ========== ON EPOCH END ==========
+
+    def _general_epoch_end(self, outputs: List[Dict], group: str):
+        with torch.no_grad():
+            logs: Dict[str, Union[float, torch.Tensor]] = {
+                f"{group}/loss": torch.stack([out["loss"] for out in outputs]).mean()
+            }
+            logs.update(
+                SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group)
+            )
+            self.log_dict(logs)
+
+    def training_epoch_end(self, outputs: List[Dict]):
+        self._general_epoch_end(outputs, "train")
+
+    def validation_epoch_end(self, outputs: List[Dict]):
+        self._general_epoch_end(outputs, "val")
+
+    def test_epoch_end(self, outputs: List[Dict]):
+        self._general_epoch_end(outputs, "test")

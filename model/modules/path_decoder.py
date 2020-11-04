@@ -3,7 +3,7 @@ from typing import List, Tuple
 import torch
 from torch import nn
 
-from configs import DecoderConfig
+from configs.parts import DecoderConfig
 from utils.training import cut_encoded_contexts
 from .attention import LuongAttention
 

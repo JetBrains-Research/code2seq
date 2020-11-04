@@ -1,30 +1,38 @@
 from os.path import join
 from unittest import TestCase
 
-from configs import EncoderConfig
-from dataset import BufferedPathContext
-from dataset.path_context_dataset import PathContextBatch
+from configs import Code2SeqTestConfig
+from dataset import PathContextDataset, PathContextBatch
 from model.modules import PathEncoder
-from tests.tools import get_path_to_test_data
-from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.common import VOCABULARY_NAME, PAD, TRAIN_HOLDOUT
+from utils.filesystem import get_path_to_test_data
+from utils.vocabulary import Vocabulary
 
 
 class TestPathEncoder(TestCase):
 
-    _test_data_path = join(get_path_to_test_data(), "train", "buffered_paths_0.pkl")
-    _hidden_size = 64
-    _batch_size = 128
+    _train_path = join(get_path_to_test_data(), f"java-test.{TRAIN_HOLDOUT}.c2s")
+    _vocabulary_path = join(get_path_to_test_data(), VOCABULARY_NAME)
 
     def test_forward(self):
-        config = EncoderConfig(self._hidden_size, self._hidden_size, True, 0.5, 1, 0.5)
+        config = Code2SeqTestConfig()
 
-        buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
-        batch = PathContextBatch([buffered_path_contexts[i] for i in range(self._batch_size)])
-        token_vocab_size = max(batch.context[FROM_TOKEN].max().item(), batch.context[TO_TOKEN].max().item())
-        type_vocab_size = batch.context[PATH_TYPES].max().item()
+        vocabulary = Vocabulary.load_vocabulary(self._vocabulary_path)
+        dataset = PathContextDataset(
+            self._train_path, vocabulary, config.data_processing, config.hyper_parameters.max_context, False
+        )
 
-        model = PathEncoder(config, self._hidden_size, token_vocab_size + 1, 0, type_vocab_size + 1, 0)
+        batch = PathContextBatch([dataset[i] for i in range(config.hyper_parameters.batch_size)])
 
-        out = model(batch.context)
-        number_of_paths = sum(batch.contexts_per_label)
-        self.assertTupleEqual((number_of_paths, self._hidden_size), out.shape)
+        model = PathEncoder(
+            config.encoder_config,
+            config.decoder_config.decoder_size,
+            len(vocabulary.token_to_id),
+            vocabulary.token_to_id[PAD],
+            len(vocabulary.type_to_id),
+            vocabulary.type_to_id[PAD],
+        )
+        output = model(batch.contexts)
+
+        true_shape = (sum(batch.contexts_per_label), config.decoder_config.decoder_size)
+        self.assertTupleEqual(true_shape, output.shape)

@@ -98,10 +98,10 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     if args.model == "code2seq":
-        _config = Code2SeqTestConfig() if args.test else Code2SeqConfig()
-        train_code2seq(_config, args.dataset_name, args.num_workers, args.test, args.resume)
+        _code2seq_config = Code2SeqTestConfig() if args.test else Code2SeqConfig()
+        train_code2seq(_code2seq_config, args.dataset_name, args.num_workers, args.test, args.resume)
     elif args.model == "code2class":
-        _config = Code2ClassTestConfig() if args.test else Code2ClassConfig()
-        train_code2class(_config, args.dataset_name, args.num_workers, args.test, args.resume)
+        _code2class_config = Code2ClassTestConfig() if args.test else Code2ClassConfig()
+        train_code2class(_code2class_config, args.dataset_name, args.num_workers, args.test, args.resume)
     else:
         print(f'Unknown model: {args.model}, try on of: "code2seq", "code2class"')

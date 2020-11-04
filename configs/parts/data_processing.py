@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,6 @@ class DataProcessingConfig:
     wrap_target: bool
     split_target: bool
     split_names: bool
-    subtoken_vocab_max_size: int = None
-    target_vocab_max_size: int = None
+    subtoken_vocab_max_size: Optional[int] = None
+    target_vocab_max_size: Optional[int] = None
     buffer_size: int = 10_000

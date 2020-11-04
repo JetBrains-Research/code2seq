@@ -26,8 +26,8 @@ def preprocess_csv(data_folder: str, dataset_name: str, holdout_name: str, is_sh
     path_contexts_path = path.join(dataset_path, f"path_contexts.{holdout_name}.csv")
     output_c2s_path = path.join(dataset_path, f"{dataset_name}.{holdout_name}.c2s")
 
-    id_to_paths = _get_id2value_from_csv(id_to_paths_data_path)
-    id_to_paths = {index: [n for n in nodes.split()] for index, nodes in id_to_paths.items()}
+    id_to_paths_stored = _get_id2value_from_csv(id_to_paths_data_path)
+    id_to_paths = {index: [n for n in nodes.split()] for index, nodes in id_to_paths_stored.items()}
 
     id_to_node_types = _get_id2value_from_csv(id_to_type_data_path)
     id_to_node_types = {index: node_type.rsplit(" ", maxsplit=1)[0] for index, node_type in id_to_node_types.items()}

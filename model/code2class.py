@@ -34,12 +34,12 @@ class Code2Class(LightningModule):
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())
 
-    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int]) -> torch.Tensor:
+    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int]) -> torch.Tensor:  # type: ignore
         return self.classifier(self.encoder(samples), paths_for_label)
 
     # ========== MODEL STEP ==========
 
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         # [batch size; num_classes]
         logits = self(batch.contexts, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
@@ -51,7 +51,7 @@ class Code2Class(LightningModule):
 
         return {"loss": loss, "confusion_matrix": conf_matrix}
 
-    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         # [batch size; num_classes]
         logits = self(batch.contexts, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
@@ -60,7 +60,7 @@ class Code2Class(LightningModule):
 
         return {"loss": loss, "confusion_matrix": conf_matrix}
 
-    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         return self.validation_step(batch, batch_idx)
 
     # ========== ON EPOCH END ==========

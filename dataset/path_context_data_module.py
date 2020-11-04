@@ -13,9 +13,9 @@ from utils.vocabulary import Vocabulary
 
 class PathContextDataModule(LightningDataModule):
 
-    _train_dataset = None
-    _val_dataset = None
-    _test_dataset = None
+    _train_dataset: PathContextDataset
+    _val_dataset: PathContextDataset
+    _test_dataset: PathContextDataset
 
     def __init__(
         self,
@@ -65,7 +65,7 @@ class PathContextDataModule(LightningDataModule):
     def collate_wrapper(batch: List[PathContextSample]) -> PathContextBatch:
         return PathContextBatch(batch)
 
-    def train_dataloader(self) -> DataLoader:
+    def train_dataloader(self, *args, **kwargs) -> DataLoader:
         return DataLoader(
             self._train_dataset,
             batch_size=self._hyper_params.batch_size,

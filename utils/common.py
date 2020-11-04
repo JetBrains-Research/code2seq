@@ -8,12 +8,12 @@ UNK = "<UNK>"
 
 # path context keys
 FROM_TOKEN = "from_token"
-PATH_TYPES = "path_types"
+PATH_NODES = "path_nodes"
 TO_TOKEN = "to_token"
 
 # vocabulary keys
 TOKEN_TO_ID = "token_to_id"
-TYPE_TO_ID = "type_to_id"
+NODE_TO_ID = "node_to_id"
 LABEL_TO_ID = "label_to_id"
 
 # dataset keys

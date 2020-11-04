@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 
 from configs.parts import DataProcessingConfig
 from dataset.data_classes import PathContextSample
-from utils.common import FROM_TOKEN, TO_TOKEN, PATH_TYPES
+from utils.common import FROM_TOKEN, TO_TOKEN, PATH_NODES
 from utils.converting import strings_to_wrapped_numpy
 from utils.vocabulary import Vocabulary
 
@@ -45,7 +45,7 @@ class PathContextDataset(Dataset):
                 self._config.max_name_parts,
                 self._config.wrap_name,
             ),
-            (PATH_TYPES, self._vocab.type_to_id, True, self._config.max_path_length, self._config.wrap_path),
+            (PATH_NODES, self._vocab.node_to_id, True, self._config.max_path_length, self._config.wrap_path),
             (
                 TO_TOKEN,
                 self._vocab.token_to_id,
@@ -66,10 +66,10 @@ class PathContextDataset(Dataset):
 
     @staticmethod
     def _split_context(context: str) -> Dict[str, str]:
-        from_token, path_types, to_token = context.split(",")
+        from_token, path_nodes, to_token = context.split(",")
         return {
             FROM_TOKEN: from_token,
-            PATH_TYPES: path_types,
+            PATH_NODES: path_nodes,
             TO_TOKEN: to_token,
         }
 

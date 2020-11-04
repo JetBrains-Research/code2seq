@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 import torch
 from torch import nn
@@ -14,15 +14,15 @@ class PathEncoder(nn.Module):
         out_size: int,
         n_subtokens: int,
         subtoken_pad_id: int,
-        n_types: int,
-        type_pad_id: int,
+        n_nodes: int,
+        node_pad_id: int,
     ):
         super().__init__()
-        self.type_pad_id = type_pad_id
+        self.node_pad_id = node_pad_id
         self.num_directions = 2 if config.use_bi_rnn else 1
 
         self.subtoken_embedding = nn.Embedding(n_subtokens, config.embedding_size, padding_idx=subtoken_pad_id)
-        self.type_embedding = nn.Embedding(n_types, config.embedding_size, padding_idx=type_pad_id)
+        self.node_embedding = nn.Embedding(n_nodes, config.embedding_size, padding_idx=node_pad_id)
 
         self.dropout_rnn = nn.Dropout(config.rnn_dropout)
         self.path_lstm = nn.LSTM(
@@ -38,37 +38,41 @@ class PathEncoder(nn.Module):
         self.linear = nn.Linear(concat_size, out_size, bias=False)
         self.norm = nn.LayerNorm(out_size)
 
-    def forward(self, contexts: Dict[str, torch.Tensor]) -> torch.Tensor:
-        # [max name parts; total paths]
-        from_token = contexts[FROM_TOKEN]
-        to_token = contexts[TO_TOKEN]
+    def _token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
+        return self.subtoken_embedding(tokens).sum(0)
 
-        # [total paths; embedding size]
-        encoded_from_tokens = self.subtoken_embedding(from_token).sum(0)
-        encoded_to_tokens = self.subtoken_embedding(to_token).sum(0)
-
-        # [max path length; total paths]
-        path_types = contexts[PATH_NODES]
+    def _path_nodes_embedding(self, path_nodes: torch.Tensor) -> torch.Tensor:
         # [max path length; total paths; embedding size]
-        path_types_embed = self.type_embedding(path_types)
+        path_nodes_embeddings = self.node_embedding(path_nodes)
 
         # create packed sequence (don't forget to set enforce sorted True for ONNX support)
         with torch.no_grad():
-            path_lengths = (path_types != self.type_pad_id).sum(0)
-        packed_path_types = nn.utils.rnn.pack_padded_sequence(path_types_embed, path_lengths, enforce_sorted=False)
+            path_lengths = (path_nodes != self.node_pad_id).sum(0)
+        packed_path_nodes = nn.utils.rnn.pack_padded_sequence(path_nodes_embeddings, path_lengths, enforce_sorted=False)
 
         # [num layers * num directions; total paths; rnn size]
-        _, (h_t, _) = self.path_lstm(packed_path_types)
+        _, (h_t, _) = self.path_lstm(packed_path_nodes)
         # [total_paths; rnn size * num directions]
         encoded_paths = h_t[-self.num_directions :].transpose(0, 1).reshape(h_t.shape[1], -1)
         encoded_paths = self.dropout_rnn(encoded_paths)
+        return encoded_paths
 
-        # [total_paths; 2 * embedding size + rnn size (*2)]
-        concat = torch.cat([encoded_from_tokens, encoded_paths, encoded_to_tokens], dim=-1)
+    def _concat_with_linear(self, encoded_contexts: List[torch.Tensor]) -> torch.Tensor:
+        # [total_paths; sum across all embeddings]
+        concat = torch.cat(encoded_contexts, dim=-1)
 
         # [total_paths; output size]
         concat = self.embedding_dropout(concat)
-        output = self.linear(concat)
-        output = self.norm(output)
-        output = torch.tanh(output)
+        return torch.tanh(self.norm(self.linear(concat)))
+
+    def forward(self, contexts: Dict[str, torch.Tensor]) -> torch.Tensor:
+        # [total paths; embedding size]
+        encoded_from_tokens = self._token_embedding(contexts[FROM_TOKEN])
+        encoded_to_tokens = self._token_embedding(contexts[TO_TOKEN])
+
+        # [total_paths; rnn size * num directions]
+        encoded_paths = self._path_nodes_embedding(contexts[PATH_NODES])
+
+        # [total_paths; output size]
+        output = self._concat_with_linear([encoded_from_tokens, encoded_paths, encoded_to_tokens])
         return output

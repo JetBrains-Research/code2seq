@@ -31,7 +31,11 @@ def _counter_to_dict(values: Counter, n_most_common: int = None, additional_valu
 
 
 def _counters_to_vocab(
-    config: DataProcessingConfig, token_counter: Counter, target_counter: Counter, node_counter: Counter
+    config: DataProcessingConfig,
+    token_counter: Counter,
+    target_counter: Counter,
+    node_counter: Counter,
+    type_counter: Counter,
 ) -> Vocabulary:
     names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
     token_to_id = _counter_to_dict(token_counter, config.subtoken_vocab_max_size, names_additional_tokens)
@@ -39,13 +43,18 @@ def _counters_to_vocab(
     label_to_id = _counter_to_dict(target_counter, config.target_vocab_max_size, target_additional_tokens)
     paths_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_path else [PAD, UNK]
     node_to_id = _counter_to_dict(node_counter, None, paths_additional_tokens)
-    return Vocabulary(token_to_id=token_to_id, label_to_id=label_to_id, node_to_id=node_to_id)
+
+    vocabulary = Vocabulary(token_to_id, node_to_id, label_to_id)
+    if len(type_counter) > 0:
+        vocabulary.type_to_id = _counter_to_dict(type_counter, None, [PAD, UNK])
+    return vocabulary
 
 
-def collect_vocabulary(config: DataProcessingConfig, dataset_name: str) -> Vocabulary:
+def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
     target_counter: TypeCounter[str] = Counter()
     token_counter: TypeCounter[str] = Counter()
     node_counter: TypeCounter[str] = Counter()
+    type_counter: TypeCounter[str] = Counter()
     train_data_path = path.join(DATA_FOLDER, dataset_name, f"{dataset_name}.{TRAIN_HOLDOUT}.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
@@ -53,13 +62,21 @@ def collect_vocabulary(config: DataProcessingConfig, dataset_name: str) -> Vocab
             target_counter.update(parse_token(label, config.split_target))
             cur_tokens = []
             cur_nodes = []
+            cur_types = []
             for path_context in path_contexts:
-                from_token, path_nodes, to_token = path_context.split(",")
-                cur_tokens += parse_token(from_token, config.split_names) + parse_token(to_token, config.split_names)
+                if with_types:
+                    from_type, from_token, path_nodes, to_token, to_type = path_context.split(",")
+                    cur_types.append(from_type)
+                    cur_types.append(to_type)
+                else:
+                    from_token, path_nodes, to_token = path_context.split(",")
+                cur_tokens += parse_token(from_token, config.split_names)
+                cur_tokens += parse_token(to_token, config.split_names)
                 cur_nodes += path_nodes.split("|")
             token_counter.update(cur_tokens)
             node_counter.update(cur_nodes)
-    return _counters_to_vocab(config, token_counter, target_counter, node_counter)
+            type_counter.update(cur_types)
+    return _counters_to_vocab(config, token_counter, target_counter, node_counter, type_counter)
 
 
 def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: str) -> Vocabulary:
@@ -70,7 +87,7 @@ def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: s
     return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count)
 
 
-def preprocess(problem: str, dataset_name: str, convert_path: str = None):
+def preprocess(problem: str, dataset_name: str, convert_path: str = None, with_types: bool = False):
     if convert_path is not None and not exists(convert_path):
         raise ValueError(f"There is no file for converting: {convert_path}")
     vocabulary_path = join(DATA_FOLDER, dataset_name, VOCABULARY_NAME)
@@ -80,7 +97,7 @@ def preprocess(problem: str, dataset_name: str, convert_path: str = None):
     config = _config_switcher[problem].data_processing
 
     if convert_path is None:
-        vocabulary = collect_vocabulary(config, dataset_name)
+        vocabulary = collect_vocabulary(config, dataset_name, with_types)
     else:
         vocabulary = convert_vocabulary(config, convert_path)
     vocabulary.dump_vocabulary(vocabulary_path)
@@ -91,6 +108,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("problem", type=str)
     arg_parser.add_argument("dataset_name", type=str)
     arg_parser.add_argument("--convert", type=str, default=None)
+    arg_parser.add_argument("--with-types", action="store_true")
     args = arg_parser.parse_args()
 
-    preprocess(args.problem, args.dataset_name, args.convert)
+    preprocess(args.problem, args.dataset_name, args.convert, args.with_types)

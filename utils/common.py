@@ -15,6 +15,7 @@ TO_TOKEN = "to_token"
 TOKEN_TO_ID = "token_to_id"
 NODE_TO_ID = "node_to_id"
 LABEL_TO_ID = "label_to_id"
+TYPE_TO_ID = "type_to_id"
 
 # dataset keys
 DATA_FOLDER = "data"

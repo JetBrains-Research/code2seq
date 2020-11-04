@@ -26,3 +26,6 @@ jobs:
     - name: Test with unittest
       run: |
         python -m unittest discover tests -v
+    - name: Check types with mypy
+      run: |
+        mypy . --ignore-missing-imports

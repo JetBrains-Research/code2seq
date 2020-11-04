@@ -42,7 +42,7 @@ class Code2Seq(LightningModule):
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())
 
-    def forward(
+    def forward(  # type: ignore
         self,
         samples: Dict[str, torch.Tensor],
         paths_for_label: List[int],
@@ -88,7 +88,7 @@ class Code2Seq(LightningModule):
 
     # ========== MODEL STEP ==========
 
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
 
@@ -99,14 +99,14 @@ class Code2Seq(LightningModule):
 
         return {"loss": loss, "statistic": statistic}
 
-    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         # [seq length; batch size; vocab size]
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
         statistic = self._calculate_metric(logits, batch.labels)
         return {"loss": loss, "statistic": statistic}
 
-    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:
+    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         return self.validation_step(batch, batch_idx)
 
     # ========== ON EPOCH END ==========
@@ -129,3 +129,9 @@ class Code2Seq(LightningModule):
 
     def test_epoch_end(self, outputs: List[Dict]):
         self._general_epoch_end(outputs, "test")
+
+    def get_config(self) -> Code2SeqConfig:
+        return self._config
+
+    def get_vocabulary(self) -> Vocabulary:
+        return self._vocabulary

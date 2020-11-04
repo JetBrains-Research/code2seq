@@ -3,7 +3,8 @@ from argparse import ArgumentParser
 from collections import Counter
 from os import path
 from os.path import join, exists
-from typing import List, Dict
+from typing import List, Dict, Union
+from typing import Counter as TypeCounter
 
 from tqdm import tqdm
 
@@ -15,7 +16,10 @@ from utils.converting import parse_token
 from utils.filesystem import count_lines_in_file
 
 
-_config_switcher = {"code2class": Code2ClassConfig, "code2seq": Code2SeqConfig}
+_config_switcher: Dict[str, Union[Code2ClassConfig, Code2SeqConfig]] = {
+    "code2class": Code2ClassConfig(),
+    "code2seq": Code2SeqConfig(),
+}
 
 
 def _counter_to_dict(values: Counter, n_most_common: int = None, additional_values: List[str] = None) -> Dict[str, int]:
@@ -39,9 +43,9 @@ def _counters_to_vocab(
 
 
 def collect_vocabulary(config: DataProcessingConfig, dataset_name: str) -> Vocabulary:
-    target_counter = Counter()
-    token_counter = Counter()
-    type_counter = Counter()
+    target_counter: TypeCounter[str] = Counter()
+    token_counter: TypeCounter[str] = Counter()
+    type_counter: TypeCounter[str] = Counter()
     train_data_path = path.join(DATA_FOLDER, dataset_name, f"{dataset_name}.{TRAIN_HOLDOUT}.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
@@ -60,9 +64,9 @@ def collect_vocabulary(config: DataProcessingConfig, dataset_name: str) -> Vocab
 
 def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: str) -> Vocabulary:
     with open(original_vocabulary_path, "rb") as dict_file:
-        subtoken_to_count = Counter(pickle.load(dict_file))
-        node_to_count = Counter(pickle.load(dict_file))
-        target_to_count = Counter(pickle.load(dict_file))
+        subtoken_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
+        node_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
+        target_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
     return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count)
 
 

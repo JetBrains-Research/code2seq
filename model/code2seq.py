@@ -24,20 +24,38 @@ class Code2Seq(LightningModule):
 
         if SOS not in vocabulary.label_to_id:
             raise ValueError(f"Can't find SOS token in label to id vocabulary")
-        self.encoder = PathEncoder(
+        self.encoder = self._get_encoder()
+        self.decoder = self._get_decoder()
+
+    @property
+    def config(self) -> Code2SeqConfig:
+        return self._config
+
+    @property
+    def vocabulary(self) -> Vocabulary:
+        return self._vocabulary
+
+    # ========== Create seq2seq modules ==========
+
+    def _get_encoder(self) -> PathEncoder:
+        return PathEncoder(
             self._config.encoder_config,
             self._config.decoder_config.decoder_size,
-            len(vocabulary.token_to_id),
-            vocabulary.token_to_id[PAD],
-            len(vocabulary.node_to_id),
-            vocabulary.node_to_id[PAD],
+            len(self._vocabulary.token_to_id),
+            self._vocabulary.token_to_id[PAD],
+            len(self._vocabulary.node_to_id),
+            self._vocabulary.node_to_id[PAD],
         )
-        self.decoder = PathDecoder(
+
+    def _get_decoder(self) -> PathDecoder:
+        return PathDecoder(
             self._config.decoder_config,
-            len(vocabulary.label_to_id),
-            vocabulary.label_to_id[SOS],
-            vocabulary.label_to_id[PAD],
+            len(self._vocabulary.label_to_id),
+            self._vocabulary.label_to_id[SOS],
+            self._vocabulary.label_to_id[PAD],
         )
+
+    # ========== Main PyTorch-Lightning hooks ==========
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())
@@ -86,7 +104,7 @@ class Code2Seq(LightningModule):
             )
         return statistic
 
-    # ========== MODEL STEP ==========
+    # ========== Model step ==========
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
@@ -109,7 +127,7 @@ class Code2Seq(LightningModule):
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
         return self.validation_step(batch, batch_idx)
 
-    # ========== ON EPOCH END ==========
+    # ========== On epoch end ==========
 
     def _general_epoch_end(self, outputs: List[Dict], group: str):
         with torch.no_grad():
@@ -129,9 +147,3 @@ class Code2Seq(LightningModule):
 
     def test_epoch_end(self, outputs: List[Dict]):
         self._general_epoch_end(outputs, "test")
-
-    def get_config(self) -> Code2SeqConfig:
-        return self._config
-
-    def get_vocabulary(self) -> Vocabulary:
-        return self._vocabulary

@@ -17,7 +17,7 @@ class TypedPathContextDataset(PathContextDataset):
     ):
         assert (
             vocabulary.type_to_id is not None
-        ), "You need to store type to id dict in vocabulary for typed path context"
+        ), "You need to store type to id dict in vocabulary for using typed path context dataset"
         super().__init__(data_path, vocabulary, config, max_context, random_context)
 
         self._context_fields += [

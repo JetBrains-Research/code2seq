@@ -92,7 +92,7 @@ def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: s
         subtoken_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
         node_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
         target_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
-    return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count)
+    return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count, Counter())
 
 
 def preprocess(problem: str, dataset_name: str, convert_path: str = None, with_types: bool = False):

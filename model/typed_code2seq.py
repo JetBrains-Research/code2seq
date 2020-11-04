@@ -7,12 +7,12 @@ from utils.vocabulary import Vocabulary
 
 class TypedCode2Seq(Code2Seq):
     def __init__(self, config: Code2SeqConfig, vocabulary: Vocabulary):
-        assert (
-            vocabulary.type_to_id is not None
-        ), "You need to store type to id dict in vocabulary for using typed code2seq"
         super().__init__(config, vocabulary)
 
     def _get_encoder(self) -> PathEncoder:
+        assert (
+            self._vocabulary.type_to_id is not None
+        ), "You need to store type to id dict in vocabulary for using typed code2seq"
         return TypedPathEncoder(
             self._config.encoder_config,
             self._config.decoder_config.decoder_size,

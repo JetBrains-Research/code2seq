@@ -3,31 +3,38 @@ from unittest import TestCase
 
 import torch
 
-from configs import DecoderConfig
-from dataset import BufferedPathContext
-from dataset.path_context_dataset import PathContextBatch
+from configs import Code2SeqTestConfig
+from dataset import PathContextDataset, PathContextBatch
 from model.modules import PathDecoder
-from tests.tools import get_path_to_test_data
+from utils.common import VOCABULARY_NAME, TRAIN_HOLDOUT
+from utils.filesystem import get_path_to_test_data
+from utils.vocabulary import Vocabulary
 
 
 class TestPathDecoder(TestCase):
 
-    _test_data_path = join(get_path_to_test_data(), "train", "buffered_paths_0.pkl")
-    _hidden_size = 64
-    _target_length = 10
-    _out_size = 128
+    _train_path = join(get_path_to_test_data(), f"java-test.{TRAIN_HOLDOUT}.c2s")
+    _vocabulary_path = join(get_path_to_test_data(), VOCABULARY_NAME)
 
     def test_forward(self):
-        config = DecoderConfig(self._hidden_size, self._hidden_size, 1, 0.5, 1)
+        config = Code2SeqTestConfig()
 
-        model = PathDecoder(config, self._out_size, 0, 0)
+        vocabulary = Vocabulary.load_vocabulary(self._vocabulary_path)
+        dataset = PathContextDataset(
+            self._train_path, vocabulary, config.data_processing, config.hyper_parameters.max_context, False
+        )
 
-        buffered_path_contexts = BufferedPathContext.load(self._test_data_path)
+        model = PathDecoder(config.decoder_config, len(vocabulary.label_to_id), 0, 0)
 
-        batch = PathContextBatch([buffered_path_contexts[i] for i in range(len(buffered_path_contexts))])
+        batch = PathContextBatch([dataset[i] for i in range(config.hyper_parameters.batch_size)])
         number_of_paths = sum(batch.contexts_per_label)
-        fake_encoder_input = torch.rand(number_of_paths, self._hidden_size)
 
-        output = model(fake_encoder_input, batch.contexts_per_label, self._target_length)
+        fake_encoder_output = torch.rand(number_of_paths, config.decoder_config.decoder_size)
+        output = model(fake_encoder_output, batch.contexts_per_label, config.data_processing.max_target_parts)
 
-        self.assertTupleEqual((self._target_length, len(batch.contexts_per_label), self._out_size), output.shape)
+        true_shape = (
+            config.data_processing.max_target_parts,
+            config.hyper_parameters.batch_size,
+            len(vocabulary.label_to_id),
+        )
+        self.assertTupleEqual(true_shape, output.shape)

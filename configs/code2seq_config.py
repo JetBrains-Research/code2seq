@@ -14,8 +14,8 @@ class Code2SeqConfig:
         wrap_target=True,
         split_target=True,
         split_names=True,
-        subtoken_vocab_max_size=190000,
-        target_vocab_max_size=27000,
+        subtoken_vocab_max_size=73904,
+        target_vocab_max_size=11316,
     )
     hyper_parameters = ModelHyperParameters(
         n_epochs=3000,

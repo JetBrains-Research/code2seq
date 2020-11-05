@@ -12,10 +12,10 @@ from utils.common import SEED
 def evaluate(checkpoint: str, data: str, batch_size: int = None):
     seed_everything(SEED)
     model = Code2Seq.load_from_checkpoint(checkpoint_path=checkpoint)
-    config = model.get_config()
+    config = model.config
     if batch_size is not None:
         config.hyper_parameters.test_batch_size = batch_size
-    vocabulary = model.get_vocabulary()
+    vocabulary = model.vocabulary
 
     data_module = PathContextDataModule(data, vocabulary, config.data_processing, config.hyper_parameters, cpu_count())
 

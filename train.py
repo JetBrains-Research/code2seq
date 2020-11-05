@@ -8,10 +8,13 @@ from pytorch_lightning.loggers import WandbLogger
 
 from configs import Code2SeqConfig, Code2ClassConfig, Code2SeqTestConfig, Code2ClassTestConfig
 from configs.parts import ModelHyperParameters
-from dataset import PathContextDataModule
-from model import Code2Seq, Code2Class
+from dataset import PathContextDataModule, TypedPathContextDataModule
+from model import Code2Seq, Code2Class, TypedCode2Seq
 from utils.common import SEED, DATA_FOLDER, VOCABULARY_NAME
 from utils.vocabulary import Vocabulary
+
+
+AVAILABLE_MODELS = ["code2seq", "code2class", "typed-code2seq"]
 
 
 def train(
@@ -88,10 +91,32 @@ def train_code2class(
     )
 
 
+def train_typed_code2seq(
+    config: Code2SeqConfig,
+    dataset_name: str,
+    num_workers: int = 0,
+    log_offline: bool = False,
+    resume_from_checkpoint: str = None,
+):
+    vocabulary = Vocabulary.load_vocabulary(join(DATA_FOLDER, dataset_name, VOCABULARY_NAME))
+    model = TypedCode2Seq(config, vocabulary)
+    data_module = TypedPathContextDataModule(
+        dataset_name, vocabulary, config.data_processing, config.hyper_parameters, num_workers
+    )
+    train(
+        model,
+        data_module,
+        config.hyper_parameters,
+        f"typed-code2seq-{dataset_name}",
+        log_offline,
+        resume_from_checkpoint,
+    )
+
+
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("dataset_name", type=str)
-    arg_parser.add_argument("model", choices=["code2seq", "code2class"])
+    arg_parser.add_argument("model", choices=AVAILABLE_MODELS)
     arg_parser.add_argument("--num_workers", type=int, default=0)
     arg_parser.add_argument("--test", action="store_true")
     arg_parser.add_argument("--resume", type=str, default=None)
@@ -103,5 +128,8 @@ if __name__ == "__main__":
     elif args.model == "code2class":
         _code2class_config = Code2ClassTestConfig() if args.test else Code2ClassConfig()
         train_code2class(_code2class_config, args.dataset_name, args.num_workers, args.test, args.resume)
+    elif args.model == "typed-code2seq":
+        _typed_code2seq_config = Code2SeqTestConfig() if args.test else Code2SeqConfig()
+        train_typed_code2seq(_typed_code2seq_config, args.dataset_name, args.num_workers, args.test, args.resume)
     else:
-        print(f'Unknown model: {args.model}, try on of: "code2seq", "code2class"')
+        print(f"Unknown model: {args.model}, try on of: {AVAILABLE_MODELS}")

@@ -45,7 +45,7 @@ class PathEncoder(nn.Module):
 
         # create packed sequence (don't forget to set enforce sorted True for ONNX support)
         with torch.no_grad():
-            path_lengths = (path_nodes != self.node_pad_id).sum(0)
+            path_lengths = (path_nodes != self.node_pad_id).sum(0).cpu()
         packed_path_nodes = nn.utils.rnn.pack_padded_sequence(path_nodes_embeddings, path_lengths, enforce_sorted=False)
 
         # [num layers * num directions; total paths; rnn size]

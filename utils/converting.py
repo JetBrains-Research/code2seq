@@ -5,7 +5,7 @@ import numpy
 from utils.common import UNK, PAD, SOS, EOS
 
 
-def parse_token(token: str, is_split: bool, separator: str = None) -> List[str]:
+def parse_token(token: str, is_split: bool, separator: str = "|") -> List[str]:
     return token.split(separator) if is_split else [token]
 
 

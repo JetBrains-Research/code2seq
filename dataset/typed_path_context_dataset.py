@@ -21,8 +21,20 @@ class TypedPathContextDataset(PathContextDataset):
         ), "You need to store type to id dict in vocabulary for using typed path context dataset"
 
         self._context_fields += [
-            (FROM_TYPE, self._vocab.type_to_id, False, 1, False),
-            (TO_TYPE, self._vocab.type_to_id, False, 1, False),
+            (
+                FROM_TYPE,
+                self._vocab.type_to_id,
+                self._config.split_names,
+                self._config.max_name_parts,
+                self._config.wrap_name,
+            ),
+            (
+                TO_TYPE,
+                self._vocab.type_to_id,
+                self._config.split_names,
+                self._config.max_name_parts,
+                self._config.wrap_name,
+            ),
         ]
 
     @staticmethod

@@ -50,14 +50,6 @@ def _counters_to_vocab(
     return vocabulary
 
 
-def _convert_type(in_type: str) -> str:
-    if in_type == "<NULL>":
-        return PAD
-    elif in_type == "<UNKNOWN>":
-        return UNK
-    return in_type
-
-
 def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
     target_counter: TypeCounter[str] = Counter()
     token_counter: TypeCounter[str] = Counter()
@@ -74,8 +66,8 @@ def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_typ
             for path_context in path_contexts:
                 if with_types:
                     from_type, from_token, path_nodes, to_token, to_type = path_context.split(",")
-                    cur_types.append(_convert_type(from_type))
-                    cur_types.append(_convert_type(to_type))
+                    cur_types += parse_token(from_type, config.split_names)
+                    cur_types += parse_token(to_type, config.split_names)
                 else:
                     from_token, path_nodes, to_token = path_context.split(",")
                 cur_tokens += parse_token(from_token, config.split_names)

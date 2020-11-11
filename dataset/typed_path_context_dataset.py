@@ -1,7 +1,8 @@
 from typing import Dict
 
-from configs.parts import DataProcessingConfig
+from configs.parts import TypedPathContextConfig
 from dataset import PathContextDataset
+from dataset.data_classes import ContextField
 from utils.common import FROM_TYPE, TO_TYPE, FROM_TOKEN, PATH_NODES, TO_TOKEN
 from utils.vocabulary import Vocabulary
 
@@ -11,30 +12,18 @@ class TypedPathContextDataset(PathContextDataset):
         self,
         data_path: str,
         vocabulary: Vocabulary,
-        config: DataProcessingConfig,
+        config: TypedPathContextConfig,
         max_context: int,
         random_context: bool,
     ):
         super().__init__(data_path, vocabulary, config, max_context, random_context)
         assert (
-            self._vocab.type_to_id is not None
+            vocabulary.type_to_id is not None
         ), "You need to store type to id dict in vocabulary for using typed path context dataset"
 
         self._context_fields += [
-            (
-                FROM_TYPE,
-                self._vocab.type_to_id,
-                self._config.split_names,
-                self._config.max_name_parts,
-                self._config.wrap_name,
-            ),
-            (
-                TO_TYPE,
-                self._vocab.type_to_id,
-                self._config.split_names,
-                self._config.max_name_parts,
-                self._config.wrap_name,
-            ),
+            ContextField(FROM_TYPE, vocabulary.type_to_id, config.type_description),
+            ContextField(TO_TYPE, vocabulary.type_to_id, config.type_description),
         ]
 
     @staticmethod

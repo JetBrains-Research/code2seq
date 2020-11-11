@@ -6,7 +6,14 @@ from pytorch_lightning import Trainer, seed_everything, LightningModule, Lightni
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 
-from configs import Code2SeqConfig, Code2ClassConfig, Code2SeqTestConfig, Code2ClassTestConfig
+from configs import (
+    Code2SeqConfig,
+    Code2ClassConfig,
+    Code2SeqTestConfig,
+    Code2ClassTestConfig,
+    TypedCode2SeqConfig,
+    TypedCode2SeqTestConfig,
+)
 from configs.parts import ModelHyperParameters
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
@@ -84,7 +91,7 @@ def train_code2class(
     vocabulary = Vocabulary.load_vocabulary(join(DATA_FOLDER, dataset_name, VOCABULARY_NAME))
     model = Code2Class(config, vocabulary)
     data_module = PathContextDataModule(
-        dataset_name, vocabulary, config.data_processing, config.hyper_parameters, num_workers
+        dataset_name, vocabulary, config.path_context_processing, config.hyper_parameters, num_workers
     )
     train(
         model, data_module, config.hyper_parameters, f"code2class-{dataset_name}", log_offline, resume_from_checkpoint
@@ -92,7 +99,7 @@ def train_code2class(
 
 
 def train_typed_code2seq(
-    config: Code2SeqConfig,
+    config: TypedCode2SeqConfig,
     dataset_name: str,
     num_workers: int = 0,
     log_offline: bool = False,
@@ -129,7 +136,7 @@ if __name__ == "__main__":
         _code2class_config = Code2ClassTestConfig() if args.test else Code2ClassConfig()
         train_code2class(_code2class_config, args.dataset_name, args.num_workers, args.test, args.resume)
     elif args.model == "typed-code2seq":
-        _typed_code2seq_config = Code2SeqTestConfig() if args.test else Code2SeqConfig()
+        _typed_code2seq_config = TypedCode2SeqTestConfig() if args.test else TypedCode2SeqConfig()
         train_typed_code2seq(_typed_code2seq_config, args.dataset_name, args.num_workers, args.test, args.resume)
     else:
         print(f"Unknown model: {args.model}, try on of: {AVAILABLE_MODELS}")

@@ -5,7 +5,7 @@ import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from configs.parts import DataProcessingConfig, ModelHyperParameters
+from configs.parts import PathContextConfig, ModelHyperParameters
 from dataset import PathContextDataset, PathContextSample, PathContextBatch
 from utils.common import TRAIN_HOLDOUT, TEST_HOLDOUT, VAL_HOLDOUT, DATA_FOLDER
 from utils.vocabulary import Vocabulary
@@ -21,7 +21,7 @@ class PathContextDataModule(LightningDataModule):
         self,
         dataset_name: str,
         vocabulary: Vocabulary,
-        data_params: DataProcessingConfig,
+        data_params: PathContextConfig,
         model_params: ModelHyperParameters,
         num_workers: int = 0,
     ):

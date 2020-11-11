@@ -9,7 +9,7 @@ from typing import Counter as TypeCounter
 from tqdm import tqdm
 
 from configs import Code2SeqConfig, Code2ClassConfig
-from configs.parts import DataProcessingConfig
+from configs.parts import PathContextConfig
 from utils.common import DATA_FOLDER, VOCABULARY_NAME, SOS, EOS, PAD, UNK, TRAIN_HOLDOUT
 from utils.vocabulary import Vocabulary
 from utils.converting import parse_token
@@ -31,16 +31,16 @@ def _counter_to_dict(values: Counter, n_most_common: int = None, additional_valu
 
 
 def _counters_to_vocab(
-    config: DataProcessingConfig,
+    config: PathContextConfig,
     token_counter: Counter,
     target_counter: Counter,
     node_counter: Counter,
     type_counter: Counter,
 ) -> Vocabulary:
     names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
-    token_to_id = _counter_to_dict(token_counter, config.subtoken_vocab_max_size, names_additional_tokens)
+    token_to_id = _counter_to_dict(token_counter, config.token_vocab_size, names_additional_tokens)
     target_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_target else [PAD, UNK]
-    label_to_id = _counter_to_dict(target_counter, config.target_vocab_max_size, target_additional_tokens)
+    label_to_id = _counter_to_dict(target_counter, config.target_vocab_size, target_additional_tokens)
     paths_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_path else [PAD, UNK]
     node_to_id = _counter_to_dict(node_counter, None, paths_additional_tokens)
 
@@ -50,7 +50,7 @@ def _counters_to_vocab(
     return vocabulary
 
 
-def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
+def collect_vocabulary(config: PathContextConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
     target_counter: TypeCounter[str] = Counter()
     token_counter: TypeCounter[str] = Counter()
     node_counter: TypeCounter[str] = Counter()
@@ -66,8 +66,8 @@ def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_typ
             for path_context in path_contexts:
                 if with_types:
                     from_type, from_token, path_nodes, to_token, to_type = path_context.split(",")
-                    cur_types += parse_token(from_type, config.split_names)
-                    cur_types += parse_token(to_type, config.split_names)
+                    cur_types += parse_token(from_type, False)
+                    cur_types += parse_token(to_type, False)
                 else:
                     from_token, path_nodes, to_token = path_context.split(",")
                 cur_tokens += parse_token(from_token, config.split_names)
@@ -79,7 +79,7 @@ def collect_vocabulary(config: DataProcessingConfig, dataset_name: str, with_typ
     return _counters_to_vocab(config, token_counter, target_counter, node_counter, type_counter)
 
 
-def convert_vocabulary(config: DataProcessingConfig, original_vocabulary_path: str) -> Vocabulary:
+def convert_vocabulary(config: PathContextConfig, original_vocabulary_path: str) -> Vocabulary:
     with open(original_vocabulary_path, "rb") as dict_file:
         subtoken_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
         node_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))

@@ -1,21 +1,14 @@
 from dataclasses import dataclass
 
-from configs.parts import DataProcessingConfig, ModelHyperParameters, EncoderConfig, DecoderConfig
+from configs.parts import PathContextConfig, ModelHyperParameters, EncoderConfig, DecoderConfig, ContextDescription
 
 
 @dataclass(frozen=True)
 class Code2SeqConfig:
-    data_processing = DataProcessingConfig(
-        max_path_length=9,
-        max_name_parts=5,
-        max_target_parts=7,
-        wrap_name=False,
-        wrap_path=False,
-        wrap_target=True,
-        split_target=True,
-        split_names=True,
-        subtoken_vocab_max_size=73904,
-        target_vocab_max_size=11316,
+    data_processing = PathContextConfig(
+        token_description=ContextDescription(max_parts=5, is_wrapped=False, is_splitted=True, vocab_size=190000),
+        path_description=ContextDescription(max_parts=9, is_wrapped=False, is_splitted=True,),
+        target_description=ContextDescription(max_parts=7, is_wrapped=False, is_splitted=True, vocab_size=27000),
     )
     hyper_parameters = ModelHyperParameters(
         n_epochs=3000,

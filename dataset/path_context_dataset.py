@@ -1,11 +1,11 @@
 from os.path import exists
-from typing import Dict
+from typing import Dict, List
 
 import numpy
 from torch.utils.data import Dataset
 
-from configs.parts import DataProcessingConfig
-from dataset.data_classes import PathContextSample
+from configs.parts import PathContextConfig
+from dataset.data_classes import PathContextSample, ContextField
 from utils.common import FROM_TOKEN, TO_TOKEN, PATH_NODES
 from utils.converting import strings_to_wrapped_numpy
 from utils.vocabulary import Vocabulary
@@ -16,16 +16,9 @@ class PathContextDataset(Dataset):
     _separator = "|"
 
     def __init__(
-        self,
-        data_path: str,
-        vocabulary: Vocabulary,
-        config: DataProcessingConfig,
-        max_context: int,
-        random_context: bool,
+        self, data_path: str, vocabulary: Vocabulary, config: PathContextConfig, max_context: int, random_context: bool,
     ):
         assert exists(data_path), f"Can't find file with data: {data_path}"
-        self._vocab = vocabulary
-        self._config = config
         self._max_context = max_context
         self._random_context = random_context
         self._data_path = data_path
@@ -37,22 +30,13 @@ class PathContextDataset(Dataset):
                 cumulative_offset += len(line.encode(data_file.encoding))
         self._n_samples = len(self._line_offsets)
 
-        self._context_fields = [
-            (
-                FROM_TOKEN,
-                self._vocab.token_to_id,
-                self._config.split_names,
-                self._config.max_name_parts,
-                self._config.wrap_name,
-            ),
-            (PATH_NODES, self._vocab.node_to_id, True, self._config.max_path_length, self._config.wrap_path),
-            (
-                TO_TOKEN,
-                self._vocab.token_to_id,
-                self._config.split_names,
-                self._config.max_name_parts,
-                self._config.wrap_name,
-            ),
+        self._target_vocabulary = vocabulary.label_to_id
+        self._target_description = config.target_description
+
+        self._context_fields: List[ContextField] = [
+            ContextField(FROM_TOKEN, vocabulary.token_to_id, config.token_description),
+            ContextField(PATH_NODES, vocabulary.node_to_id, config.path_description),
+            ContextField(TO_TOKEN, vocabulary.token_to_id, config.token_description),
         ]
 
     def __len__(self):
@@ -86,17 +70,20 @@ class PathContextDataset(Dataset):
         # convert string label to wrapped numpy array
         wrapped_label = strings_to_wrapped_numpy(
             [str_label],
-            self._vocab.label_to_id,
-            self._config.split_target,
-            self._config.max_target_parts,
-            self._config.wrap_target,
+            self._target_vocabulary,
+            self._target_description.is_splitted,
+            self._target_description.max_parts,
+            self._target_description.is_wrapped,
         )
 
         # convert each context to list of ints and then wrap into numpy array
         splitted_contexts = [self._split_context(str_contexts[i]) for i in context_indexes]
         contexts = {}
-        for key, to_id, is_split, max_length, is_wrapped in self._context_fields:
+        for context_field in self._context_fields:
+            key, to_id, desc = context_field.name, context_field.to_id, context_field.description
             str_values = [_sc[key] for _sc in splitted_contexts]
-            contexts[key] = strings_to_wrapped_numpy(str_values, to_id, is_split, max_length, is_wrapped)
+            contexts[key] = strings_to_wrapped_numpy(
+                str_values, to_id, desc.is_splitted, desc.max_parts, desc.is_wrapped
+            )
 
         return PathContextSample(contexts=contexts, label=wrapped_label, n_contexts=n_contexts)

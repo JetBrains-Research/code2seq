@@ -1,6 +1,6 @@
 from typing import Optional
 
-from configs.parts import DataProcessingConfig, ModelHyperParameters
+from configs.parts import TypedPathContextConfig, ModelHyperParameters
 from dataset import PathContextDataModule, TypedPathContextDataset
 from utils.vocabulary import Vocabulary
 
@@ -15,11 +15,12 @@ class TypedPathContextDataModule(PathContextDataModule):
         self,
         dataset_name: str,
         vocabulary: Vocabulary,
-        data_params: DataProcessingConfig,
+        data_params: TypedPathContextConfig,
         model_params: ModelHyperParameters,
         num_workers: int = 0,
     ):
         super().__init__(dataset_name, vocabulary, data_params, model_params, num_workers)
+        self._data_config = data_params
 
     def setup(self, stage: Optional[str] = None):
         if stage == "fit" or stage is None:

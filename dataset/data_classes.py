@@ -4,6 +4,15 @@ from typing import Dict, List
 import numpy
 import torch
 
+from configs.parts import ContextDescription
+
+
+@dataclass
+class ContextField:
+    name: str
+    to_id: Dict[str, int]
+    description: ContextDescription
+
 
 @dataclass
 class PathContextSample:

@@ -2,21 +2,20 @@ from typing import Dict, List, Union, Tuple
 
 import torch
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
-from configs import Code2SeqConfig
 from dataset import PathContextBatch
 from model.modules import PathEncoder, PathDecoder
-from utils.common import PAD, SOS, UNK, EOS
 from utils.metrics import SubtokenStatistic
 from utils.training import configure_optimizers_alon
-from utils.vocabulary import Vocabulary
+from utils.vocabulary import Vocabulary, SOS, PAD, UNK, EOS
 
 
 class Code2Seq(LightningModule):
-    def __init__(self, config: Code2SeqConfig, vocabulary: Vocabulary):
+    def __init__(self, config: DictConfig, vocabulary: Vocabulary):
         super().__init__()
         self._config = config
         self._vocabulary = vocabulary
@@ -28,7 +27,7 @@ class Code2Seq(LightningModule):
         self.decoder = self._get_decoder()
 
     @property
-    def config(self) -> Code2SeqConfig:
+    def config(self) -> DictConfig:
         return self._config
 
     @property
@@ -39,8 +38,8 @@ class Code2Seq(LightningModule):
 
     def _get_encoder(self) -> PathEncoder:
         return PathEncoder(
-            self._config.encoder_config,
-            self._config.decoder_config.decoder_size,
+            self._config.encoder,
+            self._config.decoder.decoder_size,
             len(self._vocabulary.token_to_id),
             self._vocabulary.token_to_id[PAD],
             len(self._vocabulary.node_to_id),
@@ -49,7 +48,7 @@ class Code2Seq(LightningModule):
 
     def _get_decoder(self) -> PathDecoder:
         return PathDecoder(
-            self._config.decoder_config,
+            self._config.decoder,
             len(self._vocabulary.label_to_id),
             self._vocabulary.label_to_id[SOS],
             self._vocabulary.label_to_id[PAD],

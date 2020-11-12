@@ -1,24 +1,22 @@
 from argparse import ArgumentParser
-from multiprocessing import cpu_count
 
 import torch
 from pytorch_lightning import Trainer, seed_everything
 
 from dataset import PathContextDataModule
 from model import Code2Seq
-from utils.common import SEED
 
 
 def evaluate(checkpoint: str, data: str, batch_size: int = None):
-    seed_everything(SEED)
     model = Code2Seq.load_from_checkpoint(checkpoint_path=checkpoint)
     config = model.config
+    vocabulary = model.vocabulary
     if batch_size is not None:
         config.hyper_parameters.test_batch_size = batch_size
-    vocabulary = model.vocabulary
 
-    data_module = PathContextDataModule(data, vocabulary, config.data_processing, config.hyper_parameters, cpu_count())
+    data_module = PathContextDataModule(config, vocabulary)
 
+    seed_everything(config.seed)
     gpu = 1 if torch.cuda.is_available() else None
     trainer = Trainer(gpus=gpu)
     trainer.test(model, datamodule=data_module)

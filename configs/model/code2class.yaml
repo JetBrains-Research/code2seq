@@ -1,0 +1,34 @@
+# @package _global_
+name: code2class
+
+dataset:
+  name: poj-104
+  target:
+    max_parts: 1
+    is_wrapped: false
+    is_splitted: false
+    vocabulary_size: 27000
+  token:
+    max_parts: 5
+    is_wrapped: false
+    is_splitted: true
+    vocabulary_size: 190000
+  path:
+    max_parts: 9
+    is_wrapped: false
+    is_splitted: true
+    vocabulary_size: null
+
+encoder:
+  embedding_size: 128
+  rnn_size: 128
+  use_bi_rnn: true
+  embedding_dropout: 0.25
+  rnn_num_layers: 1
+  rnn_dropout: 0.5
+
+classifier:
+  n_hidden_layers: 2
+  hidden_size: 128
+  classifier_input_size: 256
+  activation: relu

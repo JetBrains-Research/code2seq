@@ -1,32 +1,29 @@
 from os.path import join
 from unittest import TestCase
 
-from configs import Code2SeqTestConfig
+from hydra.experimental import initialize_config_dir, compose
+
 from dataset import PathContextDataset, PathContextBatch
 from model.modules import PathEncoder
-from utils.common import VOCABULARY_NAME, PAD, TRAIN_HOLDOUT
-from utils.filesystem import get_path_to_test_data
-from utils.vocabulary import Vocabulary
+from utils.filesystem import get_test_data_info, get_config_directory
+from utils.vocabulary import Vocabulary, PAD
 
 
 class TestPathEncoder(TestCase):
-
-    _train_path = join(get_path_to_test_data(), f"java-test.{TRAIN_HOLDOUT}.c2s")
-    _vocabulary_path = join(get_path_to_test_data(), VOCABULARY_NAME)
-
     def test_forward(self):
-        config = Code2SeqTestConfig()
+        with initialize_config_dir(config_dir=get_config_directory()):
+            data_folder, dataset_name = get_test_data_info()
+            config = compose("main", overrides=[f"data_folder={data_folder}", f"dataset.name={dataset_name}"])
 
-        vocabulary = Vocabulary.load_vocabulary(self._vocabulary_path)
-        dataset = PathContextDataset(
-            self._train_path, vocabulary, config.data_processing, config.hyper_parameters.max_context, False
-        )
-
+        dataset_folder = join(config.data_folder, config.dataset.name)
+        vocabulary = Vocabulary.load_vocabulary(join(dataset_folder, config.vocabulary_name))
+        data_file_path = join(dataset_folder, f"{config.dataset.name}.{config.train_holdout}.c2s")
+        dataset = PathContextDataset(data_file_path, config, vocabulary, False)
         batch = PathContextBatch([dataset[i] for i in range(config.hyper_parameters.batch_size)])
 
         model = PathEncoder(
-            config.encoder_config,
-            config.decoder_config.decoder_size,
+            config.encoder,
+            config.decoder.decoder_size,
             len(vocabulary.token_to_id),
             vocabulary.token_to_id[PAD],
             len(vocabulary.node_to_id),
@@ -34,5 +31,5 @@ class TestPathEncoder(TestCase):
         )
         output = model(batch.contexts)
 
-        true_shape = (sum(batch.contexts_per_label), config.decoder_config.decoder_size)
+        true_shape = (sum(batch.contexts_per_label), config.decoder.decoder_size)
         self.assertTupleEqual(true_shape, output.shape)

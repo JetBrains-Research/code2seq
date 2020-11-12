@@ -2,7 +2,7 @@ import subprocess
 from os import mkdir, getcwd
 from os.path import exists, split, join
 from shutil import rmtree
-from typing import Generator, List
+from typing import Generator, List, Tuple
 
 
 def create_folder(path: str, is_clean: bool = True) -> None:
@@ -30,8 +30,16 @@ def count_lines_in_file(file_path: str) -> int:
     return int(command_result.stdout.split()[0])
 
 
-def get_path_to_test_data() -> str:
+def get_test_data_info() -> Tuple[str, str]:
     cur_working_directory = getcwd()
     if split(cur_working_directory)[-1] != "tests":
         cur_working_directory = join(cur_working_directory, "tests")
-    return join(cur_working_directory, "resources", "java-test")
+    return join(cur_working_directory, "resources"), "java-test"
+
+
+def get_config_directory() -> str:
+    cur_working_directory = getcwd()
+    path, last_folder = split(cur_working_directory)
+    while last_folder != "code2seq":
+        path, last_folder = split(path)
+    return join(path, last_folder, "configs")

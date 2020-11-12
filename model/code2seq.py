@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 from dataset import PathContextBatch
 from model.modules import PathEncoder, PathDecoder
-from utils.metrics import SubtokenStatistic
+from utils.metrics import PredictionStatistic
 from utils.training import configure_optimizers_alon
 from utils.vocabulary import Vocabulary, SOS, PAD, UNK, EOS
 
@@ -20,6 +20,11 @@ class Code2Seq(LightningModule):
         self._config = config
         self._vocabulary = vocabulary
         self.save_hyperparameters()
+
+        self._metric_skip_tokens = [
+            vocabulary.label_to_id[i] for i in [PAD, UNK, EOS, SOS] if i in vocabulary.label_to_id
+        ]
+        self._label_pad_id = vocabulary.label_to_id[PAD]
 
         if SOS not in vocabulary.label_to_id:
             raise ValueError(f"Can't find SOS token in label to id vocabulary")
@@ -90,29 +95,22 @@ class Code2Seq(LightningModule):
         loss = loss.sum() / batch_size
         return loss
 
-    def _calculate_metric(self, logits: torch.Tensor, labels: torch.Tensor) -> SubtokenStatistic:
-        with torch.no_grad():
-            # [seq length; batch size]
-            prediction = logits.argmax(-1)
-            mask_max_value, mask_max_indices = torch.max(prediction == self._vocabulary.label_to_id[PAD], dim=0)
-            mask_max_indices[~mask_max_value] = prediction.shape[0]
-            mask = torch.arange(prediction.shape[0], device=self.device).view(-1, 1) >= mask_max_indices
-            prediction[mask] = self._vocabulary.label_to_id[PAD]
-            statistic = SubtokenStatistic().calculate_statistic(
-                labels, prediction, [self._vocabulary.label_to_id[t] for t in [PAD, UNK, EOS, SOS]],
-            )
-        return statistic
-
     # ========== Model step ==========
 
     def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
+        # [seq length; batch size; vocab size]
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
         loss = self._calculate_loss(logits, batch.labels)
+        prediction = logits.argmax(-1)
+
+        statistic = PredictionStatistic(True, self._label_pad_id, self._metric_skip_tokens)
+        batch_metric = statistic.update_statistic(batch.labels, prediction)
 
         log: Dict[str, Union[float, torch.Tensor]] = {"train/loss": loss}
-        statistic = self._calculate_metric(logits, batch.labels)
-        log.update(statistic.calculate_metrics(group="train"))
+        for key, value in batch_metric.items():
+            log[f"train/{key}"] = value
         self.log_dict(log)
+        self.log("f1", batch_metric["f1"], prog_bar=True, logger=False)
 
         return {"loss": loss, "statistic": statistic}
 
@@ -120,7 +118,11 @@ class Code2Seq(LightningModule):
         # [seq length; batch size; vocab size]
         logits = self(batch.contexts, batch.contexts_per_label, batch.labels.shape[0])
         loss = self._calculate_loss(logits, batch.labels)
-        statistic = self._calculate_metric(logits, batch.labels)
+        prediction = logits.argmax(-1)
+
+        statistic = PredictionStatistic(True, self._label_pad_id, self._metric_skip_tokens)
+        statistic.update_statistic(batch.labels, prediction)
+
         return {"loss": loss, "statistic": statistic}
 
     def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
@@ -128,21 +130,27 @@ class Code2Seq(LightningModule):
 
     # ========== On epoch end ==========
 
-    def _general_epoch_end(self, outputs: List[Dict], group: str):
+    def _shared_epoch_end(self, outputs: List[Dict], group: str):
         with torch.no_grad():
-            logs: Dict[str, Union[float, torch.Tensor]] = {
-                f"{group}/loss": torch.stack([out["loss"] for out in outputs]).mean()
-            }
-            logs.update(
-                SubtokenStatistic.union_statistics([out["statistic"] for out in outputs]).calculate_metrics(group)
+            mean_loss = torch.stack([out["loss"] for out in outputs]).mean().item()
+            statistic = PredictionStatistic.create_from_list([out["statistic"] for out in outputs])
+            epoch_metrics = statistic.get_metric()
+            log: Dict[str, Union[float, torch.Tensor]] = {f"{group}/loss": mean_loss}
+            for key, value in epoch_metrics.items():
+                log[f"{group}/{key}"] = value
+            self.log_dict(log)
+            print(
+                f"\nEpoch {group}.{self.current_epoch} done -- "
+                f"loss: {round(mean_loss, 2)}; f1: {round(epoch_metrics['f1'], 2)}; "
+                f"precision: {round(epoch_metrics['precision'], 2)}; recall: {round(epoch_metrics['recall'], 2)}"
             )
-            self.log_dict(logs)
+            self.log(f"{group}_loss", mean_loss)
 
     def training_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "train")
+        self._shared_epoch_end(outputs, "train")
 
     def validation_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "val")
+        self._shared_epoch_end(outputs, "val")
 
     def test_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "test")
+        self._shared_epoch_end(outputs, "test")

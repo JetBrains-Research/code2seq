@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import numpy
 
-from utils.common import UNK, PAD, SOS, EOS
+from utils.vocabulary import PAD, UNK, SOS, EOS
 
 
 def parse_token(token: str, is_split: bool, separator: str = "|") -> List[str]:

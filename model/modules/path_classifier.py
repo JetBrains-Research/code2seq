@@ -1,9 +1,9 @@
 from typing import List
 
 import torch
+from omegaconf import DictConfig
 from torch import nn
 
-from configs.parts import ClassifierConfig
 from utils.training import cut_encoded_contexts
 from .attention import LocalAttention
 
@@ -18,7 +18,7 @@ class PathClassifier(nn.Module):
             return self._activations[activation_name]
         raise KeyError(f"Activation {activation_name} is not supported")
 
-    def __init__(self, config: ClassifierConfig, out_size: int):
+    def __init__(self, config: DictConfig, out_size: int):
         super().__init__()
         self.out_size = out_size
         self.attention = LocalAttention(config.classifier_input_size)

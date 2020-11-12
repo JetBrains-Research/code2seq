@@ -2,26 +2,25 @@ from typing import Dict, List, Tuple
 
 import torch
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
 from pytorch_lightning.metrics.functional import confusion_matrix
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
-from configs import Code2ClassConfig
 from dataset import PathContextBatch
 from model.modules import PathEncoder, PathClassifier
-from utils.common import PAD
 from utils.training import configure_optimizers_alon
-from utils.vocabulary import Vocabulary
+from utils.vocabulary import Vocabulary, PAD
 
 
 class Code2Class(LightningModule):
-    def __init__(self, config: Code2ClassConfig, vocabulary: Vocabulary):
+    def __init__(self, config: DictConfig, vocabulary: Vocabulary):
         super().__init__()
         self._config = config
         self.save_hyperparameters()
         self.encoder = PathEncoder(
-            self._config.encoder_config,
+            self._config.encoder,
             self._config.classifier_config.classifier_input_size,
             len(vocabulary.token_to_id),
             vocabulary.token_to_id[PAD],
@@ -29,7 +28,7 @@ class Code2Class(LightningModule):
             vocabulary.node_to_id[PAD],
         )
         self.num_classes = len(vocabulary.label_to_id)
-        self.classifier = PathClassifier(self._config.classifier_config, self.num_classes)
+        self.classifier = PathClassifier(self._config.classifier, self.num_classes)
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())

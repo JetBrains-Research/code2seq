@@ -1,63 +1,72 @@
-from argparse import ArgumentParser
 from os.path import join
+from typing import Tuple
 
 import torch
-from pytorch_lightning import Trainer, seed_everything, LightningModule, LightningDataModule
+from hydra import main
+from omegaconf import DictConfig
+from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 
-from configs import (
-    Code2SeqConfig,
-    Code2ClassConfig,
-    Code2SeqTestConfig,
-    Code2ClassTestConfig,
-    TypedCode2SeqConfig,
-    TypedCode2SeqTestConfig,
-)
-from configs.parts import ModelHyperParameters
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
-from utils.common import SEED, DATA_FOLDER, VOCABULARY_NAME
 from utils.vocabulary import Vocabulary
 
 
-AVAILABLE_MODELS = ["code2seq", "code2class", "typed-code2seq"]
+def get_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[LightningModule, LightningDataModule]:
+    model = Code2Seq(config, vocabulary)
+    data_module = PathContextDataModule(config, vocabulary)
+    return model, data_module
 
 
-def train(
-    model: LightningModule,
-    data_module: LightningDataModule,
-    hyper_parameters: ModelHyperParameters,
-    wandb_project: str,
-    log_offline: bool = False,
-    resume_from_checkpoint: str = None,
-):
-    seed_everything(SEED)
+def get_code2class(config: DictConfig, vocabulary: Vocabulary) -> Tuple[LightningModule, LightningDataModule]:
+    model = Code2Class(config, vocabulary)
+    data_module = PathContextDataModule(config, vocabulary)
+    return model, data_module
+
+
+def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[LightningModule, LightningDataModule]:
+    model = TypedCode2Seq(config, vocabulary)
+    data_module = TypedPathContextDataModule(config, vocabulary)
+    return model, data_module
+
+
+@main(config_path="configs", config_name="train")
+def train(config: DictConfig):
+    known_models = {"code2seq": get_code2seq, "code2class": get_code2class, "typed_code2seq": get_typed_code2seq}
+    if config.name not in known_models:
+        print(f"Unknown model: {config.name}, try on of {known_models.keys()}")
+
+    vocabulary = Vocabulary.load_vocabulary(join(config.data_folder, config.dataset.name, config.vocabulary_name))
+    model, data_module = known_models[config.name](config, vocabulary)
+
+    seed_everything(config.seed)
 
     # define logger
-    wandb_logger = WandbLogger(project=wandb_project, log_model=True, offline=log_offline)
+    wandb_logger = WandbLogger(
+        project=f"{config.name}-{config.dataset.name}", log_model=True, offline=config.log_offline
+    )
     wandb_logger.watch(model)
     # define model checkpoint callback
     checkpoint_callback = ModelCheckpoint(
         filepath=join(wandb_logger.experiment.dir, "{epoch:02d}-{val_loss:.4f}"),
-        period=hyper_parameters.save_every_epoch,
+        period=config.hyper_parameters.save_every_epoch,
     )
     # define early stopping callback
     early_stopping_callback = EarlyStopping(
-        patience=hyper_parameters.patience, monitor="val/loss", verbose=True, mode="min"
+        patience=config.hyper_parameters.patience, monitor="val/loss", verbose=True, mode="min"
     )
     # use gpu if it exists
     gpu = 1 if torch.cuda.is_available() else None
     # define learning rate logger
-    lr_logger = LearningRateMonitor()
+    lr_logger = LearningRateMonitor(config.hyper_parameters.log_every_epoch)
     trainer = Trainer(
-        max_epochs=hyper_parameters.n_epochs,
-        gradient_clip_val=hyper_parameters.clip_norm,
+        max_epochs=config.hyper_parameters.n_epochs,
+        gradient_clip_val=config.hyper_parameters.clip_norm,
         deterministic=True,
-        check_val_every_n_epoch=hyper_parameters.val_every_epoch,
-        log_every_n_steps=hyper_parameters.log_every_epoch,
+        check_val_every_n_epoch=config.hyper_parameters.val_every_epoch,
+        log_every_n_steps=config.hyper_parameters.log_every_epoch,
         logger=wandb_logger,
-        resume_from_checkpoint=resume_from_checkpoint,
         gpus=gpu,
         callbacks=[lr_logger, early_stopping_callback, checkpoint_callback],
     )
@@ -66,77 +75,5 @@ def train(
     trainer.test()
 
 
-def train_code2seq(
-    config: Code2SeqConfig,
-    dataset_name: str,
-    num_workers: int = 0,
-    log_offline: bool = False,
-    resume_from_checkpoint: str = None,
-):
-    vocabulary = Vocabulary.load_vocabulary(join(DATA_FOLDER, dataset_name, VOCABULARY_NAME))
-    model = Code2Seq(config, vocabulary)
-    data_module = PathContextDataModule(
-        dataset_name, vocabulary, config.data_processing, config.hyper_parameters, num_workers
-    )
-    train(model, data_module, config.hyper_parameters, f"code2seq-{dataset_name}", log_offline, resume_from_checkpoint)
-
-
-def train_code2class(
-    config: Code2ClassConfig,
-    dataset_name: str,
-    num_workers: int = 0,
-    log_offline: bool = False,
-    resume_from_checkpoint: str = None,
-):
-    vocabulary = Vocabulary.load_vocabulary(join(DATA_FOLDER, dataset_name, VOCABULARY_NAME))
-    model = Code2Class(config, vocabulary)
-    data_module = PathContextDataModule(
-        dataset_name, vocabulary, config.path_context_processing, config.hyper_parameters, num_workers
-    )
-    train(
-        model, data_module, config.hyper_parameters, f"code2class-{dataset_name}", log_offline, resume_from_checkpoint
-    )
-
-
-def train_typed_code2seq(
-    config: TypedCode2SeqConfig,
-    dataset_name: str,
-    num_workers: int = 0,
-    log_offline: bool = False,
-    resume_from_checkpoint: str = None,
-):
-    vocabulary = Vocabulary.load_vocabulary(join(DATA_FOLDER, dataset_name, VOCABULARY_NAME))
-    model = TypedCode2Seq(config, vocabulary)
-    data_module = TypedPathContextDataModule(
-        dataset_name, vocabulary, config.data_processing, config.hyper_parameters, num_workers
-    )
-    train(
-        model,
-        data_module,
-        config.hyper_parameters,
-        f"typed-code2seq-{dataset_name}",
-        log_offline,
-        resume_from_checkpoint,
-    )
-
-
 if __name__ == "__main__":
-    arg_parser = ArgumentParser()
-    arg_parser.add_argument("dataset_name", type=str)
-    arg_parser.add_argument("model", choices=AVAILABLE_MODELS)
-    arg_parser.add_argument("--num_workers", type=int, default=0)
-    arg_parser.add_argument("--test", action="store_true")
-    arg_parser.add_argument("--resume", type=str, default=None)
-    args = arg_parser.parse_args()
-
-    if args.model == "code2seq":
-        _code2seq_config = Code2SeqTestConfig() if args.test else Code2SeqConfig()
-        train_code2seq(_code2seq_config, args.dataset_name, args.num_workers, args.test, args.resume)
-    elif args.model == "code2class":
-        _code2class_config = Code2ClassTestConfig() if args.test else Code2ClassConfig()
-        train_code2class(_code2class_config, args.dataset_name, args.num_workers, args.test, args.resume)
-    elif args.model == "typed-code2seq":
-        _typed_code2seq_config = TypedCode2SeqTestConfig() if args.test else TypedCode2SeqConfig()
-        train_typed_code2seq(_typed_code2seq_config, args.dataset_name, args.num_workers, args.test, args.resume)
-    else:
-        print(f"Unknown model: {args.model}, try on of: {AVAILABLE_MODELS}")
+    train()

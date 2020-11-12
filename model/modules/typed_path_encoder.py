@@ -1,17 +1,17 @@
 from typing import Dict
 
 import torch
+from omegaconf import DictConfig
 from torch import nn
 
-from configs.parts import EncoderConfig
+from dataset.data_classes import FROM_TOKEN, TO_TOKEN, FROM_TYPE, TO_TYPE, PATH_NODES
 from model.modules import PathEncoder
-from utils.common import FROM_TOKEN, TO_TOKEN, PATH_NODES, FROM_TYPE, TO_TYPE
 
 
 class TypedPathEncoder(PathEncoder):
     def __init__(
         self,
-        config: EncoderConfig,
+        config: DictConfig,
         out_size: int,
         n_tokens: int,
         token_pad_id: int,

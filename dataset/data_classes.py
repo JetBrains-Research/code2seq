@@ -4,14 +4,21 @@ from typing import Dict, List
 import numpy
 import torch
 
-from configs.parts import ContextDescription
+from omegaconf import DictConfig
+
+# path context keys
+FROM_TYPE = "from_type"
+FROM_TOKEN = "from_token"
+PATH_NODES = "path_nodes"
+TO_TOKEN = "to_token"
+TO_TYPE = "to_type"
 
 
 @dataclass
-class ContextField:
+class ContextPart:
     name: str
     to_id: Dict[str, int]
-    description: ContextDescription
+    parameters: DictConfig
 
 
 @dataclass

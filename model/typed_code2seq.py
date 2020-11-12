@@ -1,12 +1,12 @@
-from configs import Code2SeqConfig
+from omegaconf import DictConfig
+
 from model import Code2Seq
 from model.modules import TypedPathEncoder, PathEncoder
-from utils.common import PAD
-from utils.vocabulary import Vocabulary
+from utils.vocabulary import Vocabulary, PAD
 
 
 class TypedCode2Seq(Code2Seq):
-    def __init__(self, config: Code2SeqConfig, vocabulary: Vocabulary):
+    def __init__(self, config: DictConfig, vocabulary: Vocabulary):
         super().__init__(config, vocabulary)
 
     def _get_encoder(self) -> PathEncoder:

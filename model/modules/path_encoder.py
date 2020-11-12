@@ -1,15 +1,15 @@
 from typing import Dict, List
 
 import torch
+from omegaconf import DictConfig
 from torch import nn
 
-from configs.parts import EncoderConfig
-from utils.common import FROM_TOKEN, TO_TOKEN, PATH_NODES
+from dataset.data_classes import FROM_TOKEN, TO_TOKEN, PATH_NODES
 
 
 class PathEncoder(nn.Module):
     def __init__(
-        self, config: EncoderConfig, out_size: int, n_tokens: int, token_pad_id: int, n_nodes: int, node_pad_id: int,
+        self, config: DictConfig, out_size: int, n_tokens: int, token_pad_id: int, n_nodes: int, node_pad_id: int,
     ):
         super().__init__()
         self.node_pad_id = node_pad_id

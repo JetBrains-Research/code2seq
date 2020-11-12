@@ -1,9 +1,9 @@
 from typing import List, Tuple
 
 import torch
+from omegaconf import DictConfig
 from torch import nn
 
-from configs.parts import DecoderConfig
 from utils.training import cut_encoded_contexts
 from .attention import LuongAttention
 
@@ -13,7 +13,7 @@ class PathDecoder(nn.Module):
     _negative_value = -1e9
 
     def __init__(
-        self, config: DecoderConfig, out_size: int, sos_token: int, pad_token: int,
+        self, config: DictConfig, out_size: int, sos_token: int, pad_token: int,
     ):
         super().__init__()
         self.sos_token = sos_token

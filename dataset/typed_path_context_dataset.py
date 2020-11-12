@@ -1,29 +1,22 @@
 from typing import Dict
 
-from configs.parts import TypedPathContextConfig
+from omegaconf import DictConfig
+
 from dataset import PathContextDataset
-from dataset.data_classes import ContextField
-from utils.common import FROM_TYPE, TO_TYPE, FROM_TOKEN, PATH_NODES, TO_TOKEN
+from dataset.data_classes import ContextPart, FROM_TYPE, TO_TYPE, FROM_TOKEN, PATH_NODES, TO_TOKEN
 from utils.vocabulary import Vocabulary
 
 
 class TypedPathContextDataset(PathContextDataset):
-    def __init__(
-        self,
-        data_path: str,
-        vocabulary: Vocabulary,
-        config: TypedPathContextConfig,
-        max_context: int,
-        random_context: bool,
-    ):
-        super().__init__(data_path, vocabulary, config, max_context, random_context)
+    def __init__(self, data_file_path: str, config: DictConfig, vocabulary: Vocabulary, random_context: bool):
+        super().__init__(data_file_path, config, vocabulary, random_context)
         assert (
             vocabulary.type_to_id is not None
         ), "You need to store type to id dict in vocabulary for using typed path context dataset"
 
-        self._context_fields += [
-            ContextField(FROM_TYPE, vocabulary.type_to_id, config.type_description),
-            ContextField(TO_TYPE, vocabulary.type_to_id, config.type_description),
+        self._context_parts += [
+            ContextPart(FROM_TYPE, vocabulary.type_to_id, config.dataset.type),
+            ContextPart(TO_TYPE, vocabulary.type_to_id, config.dataset.type),
         ]
 
     @staticmethod

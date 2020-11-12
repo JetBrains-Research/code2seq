@@ -27,7 +27,8 @@ class Vocabulary:
 
     @staticmethod
     def load_vocabulary(vocabulary_path: str) -> "Vocabulary":
-        assert exists(vocabulary_path), f"Can't find file with data: {vocabulary_path}"
+        if not exists(vocabulary_path):
+            raise ValueError(f"Can't find vocabulary in: {vocabulary_path}")
         with open(vocabulary_path, "rb") as vocabulary_file:
             vocabulary_dicts = pickle.load(vocabulary_file)
         token_to_id = vocabulary_dicts[TOKEN_TO_ID]

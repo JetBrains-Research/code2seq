@@ -1,8 +1,10 @@
+import os
+import sys
 from os.path import join
 from typing import Tuple
 
 import torch
-from hydra import main
+from hydra.experimental import compose, initialize
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
@@ -31,12 +33,12 @@ def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[Ligh
     return model, data_module
 
 
-@main(config_path="configs", config_name="train")
 def train(config: DictConfig):
     known_models = {"code2seq": get_code2seq, "code2class": get_code2class, "typed_code2seq": get_typed_code2seq}
     if config.name not in known_models:
         print(f"Unknown model: {config.name}, try on of {known_models.keys()}")
 
+    print(os.getcwd())
     vocabulary = Vocabulary.load_vocabulary(join(config.data_folder, config.dataset.name, config.vocabulary_name))
     model, data_module = known_models[config.name](config, vocabulary)
 
@@ -59,7 +61,7 @@ def train(config: DictConfig):
     # use gpu if it exists
     gpu = 1 if torch.cuda.is_available() else None
     # define learning rate logger
-    lr_logger = LearningRateMonitor(config.hyper_parameters.log_every_epoch)
+    lr_logger = LearningRateMonitor("step")
     trainer = Trainer(
         max_epochs=config.hyper_parameters.n_epochs,
         gradient_clip_val=config.hyper_parameters.clip_norm,
@@ -76,4 +78,6 @@ def train(config: DictConfig):
 
 
 if __name__ == "__main__":
-    train()
+    with initialize("configs"):
+        _config = compose("train", overrides=sys.argv[1:])
+        train(_config)

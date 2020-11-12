@@ -1,10 +1,9 @@
-import os
-import sys
 from os.path import join
+from sys import argv
 from typing import Tuple
 
 import torch
-from hydra.experimental import compose, initialize
+from hydra.experimental import compose, initialize_config_dir
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
@@ -12,6 +11,7 @@ from pytorch_lightning.loggers import WandbLogger
 
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
+from utils.filesystem import get_config_directory
 from utils.vocabulary import Vocabulary
 
 
@@ -76,6 +76,6 @@ def train(config: DictConfig):
 
 
 if __name__ == "__main__":
-    with initialize("configs"):
-        _config = compose("train", overrides=sys.argv[1:])
+    with initialize_config_dir(get_config_directory()):
+        _config = compose("main", overrides=argv[1:])
         train(_config)

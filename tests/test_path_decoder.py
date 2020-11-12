@@ -2,38 +2,34 @@ from os.path import join
 from unittest import TestCase
 
 import torch
+from hydra.experimental import compose, initialize_config_dir
 
-from configs import Code2SeqTestConfig
 from dataset import PathContextDataset, PathContextBatch
 from model.modules import PathDecoder
-from utils.common import VOCABULARY_NAME, TRAIN_HOLDOUT
-from utils.filesystem import get_path_to_test_data
+from utils.filesystem import get_test_data_info, get_config_directory
 from utils.vocabulary import Vocabulary
 
 
 class TestPathDecoder(TestCase):
-
-    _train_path = join(get_path_to_test_data(), f"java-test.{TRAIN_HOLDOUT}.c2s")
-    _vocabulary_path = join(get_path_to_test_data(), VOCABULARY_NAME)
-
     def test_forward(self):
-        config = Code2SeqTestConfig()
+        with initialize_config_dir(config_dir=get_config_directory()):
+            data_folder, dataset_name = get_test_data_info()
+            config = compose("main", overrides=[f"data_folder={data_folder}", f"dataset.name={dataset_name}"])
 
-        vocabulary = Vocabulary.load_vocabulary(self._vocabulary_path)
-        dataset = PathContextDataset(
-            self._train_path, vocabulary, config.data_processing, config.hyper_parameters.max_context, False
-        )
-
-        model = PathDecoder(config.decoder_config, len(vocabulary.label_to_id), 0, 0)
-
+        dataset_folder = join(config.data_folder, config.dataset.name)
+        vocabulary = Vocabulary.load_vocabulary(join(dataset_folder, config.vocabulary_name))
+        data_file_path = join(dataset_folder, f"{config.dataset.name}.{config.train_holdout}.c2s")
+        dataset = PathContextDataset(data_file_path, config, vocabulary, False)
         batch = PathContextBatch([dataset[i] for i in range(config.hyper_parameters.batch_size)])
         number_of_paths = sum(batch.contexts_per_label)
 
-        fake_encoder_output = torch.rand(number_of_paths, config.decoder_config.decoder_size)
-        output = model(fake_encoder_output, batch.contexts_per_label, config.data_processing.max_target_parts)
+        model = PathDecoder(config.decoder, len(vocabulary.label_to_id), 0, 0)
+
+        fake_encoder_output = torch.rand(number_of_paths, config.decoder.decoder_size)
+        output = model(fake_encoder_output, batch.contexts_per_label, config.dataset.target.max_parts)
 
         true_shape = (
-            config.data_processing.max_target_parts,
+            config.dataset.target.max_parts,
             config.hyper_parameters.batch_size,
             len(vocabulary.label_to_id),
         )

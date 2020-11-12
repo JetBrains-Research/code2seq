@@ -38,7 +38,6 @@ def train(config: DictConfig):
     if config.name not in known_models:
         print(f"Unknown model: {config.name}, try on of {known_models.keys()}")
 
-    print(os.getcwd())
     vocabulary = Vocabulary.load_vocabulary(join(config.data_folder, config.dataset.name, config.vocabulary_name))
     model, data_module = known_models[config.name](config, vocabulary)
 
@@ -51,8 +50,7 @@ def train(config: DictConfig):
     wandb_logger.watch(model)
     # define model checkpoint callback
     checkpoint_callback = ModelCheckpoint(
-        filepath=join(wandb_logger.experiment.dir, "{epoch:02d}-{val_loss:.4f}"),
-        period=config.hyper_parameters.save_every_epoch,
+        filepath=join(wandb_logger.experiment.dir, "{epoch:02d}-{val_loss:.4f}"), period=config.save_every_epoch,
     )
     # define early stopping callback
     early_stopping_callback = EarlyStopping(
@@ -66,8 +64,8 @@ def train(config: DictConfig):
         max_epochs=config.hyper_parameters.n_epochs,
         gradient_clip_val=config.hyper_parameters.clip_norm,
         deterministic=True,
-        check_val_every_n_epoch=config.hyper_parameters.val_every_epoch,
-        log_every_n_steps=config.hyper_parameters.log_every_epoch,
+        check_val_every_n_epoch=config.val_every_epoch,
+        log_every_n_steps=config.log_every_epoch,
         logger=wandb_logger,
         gpus=gpu,
         callbacks=[lr_logger, early_stopping_callback, checkpoint_callback],

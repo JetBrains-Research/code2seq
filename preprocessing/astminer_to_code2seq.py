@@ -5,8 +5,6 @@ from typing import Dict
 import numpy
 from tqdm import tqdm
 
-from train import DATA_FOLDER, SEED
-from utils.common import HOLDOUTS
 from utils.filesystem import count_lines_in_file
 from random import shuffle, seed
 
@@ -57,9 +55,9 @@ if __name__ == "__main__":
     arg_parser.add_argument("data", type=str)
     arg_parser.add_argument("--shuffle", action="store_true")
     args = arg_parser.parse_args()
-    data_path = path.join(DATA_FOLDER, args.data)
+    data_path = path.join("data", args.data)
 
-    seed(SEED)
-    for holdout in HOLDOUTS:
+    seed(7)
+    for holdout in ["train", "val", "test"]:
         print(f"preprocessing {holdout} data")
-        preprocess_csv(DATA_FOLDER, args.data, holdout, args.shuffle)
+        preprocess_csv("data", args.data, holdout, args.shuffle)

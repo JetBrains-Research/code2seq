@@ -12,3 +12,7 @@ vocabulary_name: vocabulary.pkl
 train_holdout: train
 val_holdout: val
 test_holdout: test
+
+save_every_epoch: 1
+val_every_epoch: 1
+log_every_epoch: 10

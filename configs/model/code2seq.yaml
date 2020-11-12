@@ -35,9 +35,6 @@ hyper_parameters:
   weight_decay: 0
   decay_gamma: 0.95
 
-  save_every_epoch: 1
-  val_every_epoch: 1
-  log_every_epoch: 10
 
 encoder:
   embedding_size: 128

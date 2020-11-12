@@ -19,22 +19,6 @@ dataset:
     is_splitted: true
     vocabulary_size: null
 
-hyper_parameters:
-  n_epochs: 3000
-  patience: 10
-  batch_size: 512
-  test_batch_size: 512
-  clip_norm: 5
-  max_context: 200
-  random_context: true
-  shuffle_data: true
-
-  optimizer: "Momentum"
-  nesterov: true
-  learning_rate: 0.01
-  weight_decay: 0
-  decay_gamma: 0.95
-
 encoder:
   embedding_size: 128
   rnn_size: 128

@@ -13,6 +13,7 @@ from pytorch_lightning.loggers import WandbLogger
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
 from utils.callback import UploadCheckpointCallback, PrintEpochResultCallback
+from utils.common import print_config
 from utils.filesystem import get_config_directory
 from utils.vocabulary import Vocabulary
 
@@ -47,6 +48,8 @@ def train(config: DictConfig):
     known_models = {"code2seq": get_code2seq, "code2class": get_code2class, "typed_code2seq": get_typed_code2seq}
     if config.name not in known_models:
         print(f"Unknown model: {config.name}, try on of {known_models.keys()}")
+
+    print_config(config)
 
     vocabulary = Vocabulary.load_vocabulary(join(config.data_folder, config.dataset.name, config.vocabulary_name))
     model, data_module = known_models[config.name](config, vocabulary)
@@ -84,6 +87,7 @@ def train(config: DictConfig):
         log_every_n_steps=config.log_every_epoch,
         logger=wandb_logger,
         gpus=gpu,
+        progress_bar_refresh_rate=config.progress_bar_refresh_rate,
         callbacks=[
             lr_logger,
             early_stopping_callback,

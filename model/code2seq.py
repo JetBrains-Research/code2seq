@@ -139,11 +139,6 @@ class Code2Seq(LightningModule):
             for key, value in epoch_metrics.items():
                 log[f"{group}/{key}"] = value
             self.log_dict(log)
-            print(
-                f"\nEpoch {group}.{self.current_epoch} done -- "
-                f"loss: {round(mean_loss, 2)}; f1: {round(epoch_metrics['f1'], 2)}; "
-                f"precision: {round(epoch_metrics['precision'], 2)}; recall: {round(epoch_metrics['recall'], 2)}"
-            )
             self.log(f"{group}_loss", mean_loss)
 
     def training_epoch_end(self, outputs: List[Dict]):

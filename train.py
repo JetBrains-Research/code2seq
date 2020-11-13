@@ -1,5 +1,3 @@
-import logging
-from logging import getLogger, WARNING, ERROR
 from os.path import join
 from sys import argv
 from typing import Tuple
@@ -14,7 +12,7 @@ from pytorch_lightning.loggers import WandbLogger
 
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
-from utils.callback import UploadCheckpointCallback
+from utils.callback import UploadCheckpointCallback, PrintEpochResultCallback
 from utils.filesystem import get_config_directory
 from utils.vocabulary import Vocabulary
 
@@ -72,6 +70,8 @@ def train(config: DictConfig):
     early_stopping_callback = EarlyStopping(
         patience=config.hyper_parameters.patience, monitor="val_loss", verbose=True, mode="min"
     )
+    # define callback for printing intermediate result
+    print_epoch_result_callback = PrintEpochResultCallback("train", "val")
     # use gpu if it exists
     gpu = 1 if torch.cuda.is_available() else None
     # define learning rate logger
@@ -84,7 +84,13 @@ def train(config: DictConfig):
         log_every_n_steps=config.log_every_epoch,
         logger=wandb_logger,
         gpus=gpu,
-        callbacks=[lr_logger, early_stopping_callback, checkpoint_callback, upload_checkpoint_callback],
+        callbacks=[
+            lr_logger,
+            early_stopping_callback,
+            checkpoint_callback,
+            upload_checkpoint_callback,
+            print_epoch_result_callback,
+        ],
     )
 
     trainer.fit(model=model, datamodule=data_module)

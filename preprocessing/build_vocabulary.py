@@ -1,25 +1,17 @@
 import pickle
-from argparse import ArgumentParser
 from collections import Counter
 from os import path
 from os.path import join, exists
-from typing import List, Dict, Union
 from typing import Counter as TypeCounter
+from typing import List, Dict
 
+from hydra import main as hydra_main
+from omegaconf import DictConfig
 from tqdm import tqdm
 
-from configs import Code2SeqConfig, Code2ClassConfig
-from configs.parts import PathContextConfig
-from utils.common import DATA_FOLDER, VOCABULARY_NAME, SOS, EOS, PAD, UNK, TRAIN_HOLDOUT
-from utils.vocabulary import Vocabulary
 from utils.converting import parse_token
-from utils.filesystem import count_lines_in_file
-
-
-_config_switcher: Dict[str, Union[Code2ClassConfig, Code2SeqConfig]] = {
-    "code2class": Code2ClassConfig(),
-    "code2seq": Code2SeqConfig(),
-}
+from utils.filesystem import count_lines_in_file, get_config_directory
+from utils.vocabulary import Vocabulary, SOS, EOS, PAD, UNK
 
 
 def _counter_to_dict(values: Counter, n_most_common: int = None, additional_values: List[str] = None) -> Dict[str, int]:
@@ -31,11 +23,7 @@ def _counter_to_dict(values: Counter, n_most_common: int = None, additional_valu
 
 
 def _counters_to_vocab(
-    config: PathContextConfig,
-    token_counter: Counter,
-    target_counter: Counter,
-    node_counter: Counter,
-    type_counter: Counter,
+    config: DictConfig, token_counter: Counter, target_counter: Counter, node_counter: Counter, type_counter: Counter,
 ) -> Vocabulary:
     names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
     token_to_id = _counter_to_dict(token_counter, config.token_vocab_size, names_additional_tokens)
@@ -50,12 +38,12 @@ def _counters_to_vocab(
     return vocabulary
 
 
-def collect_vocabulary(config: PathContextConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
+def collect_vocabulary(config: DictConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
     target_counter: TypeCounter[str] = Counter()
     token_counter: TypeCounter[str] = Counter()
     node_counter: TypeCounter[str] = Counter()
     type_counter: TypeCounter[str] = Counter()
-    train_data_path = path.join(DATA_FOLDER, dataset_name, f"{dataset_name}.{TRAIN_HOLDOUT}.c2s")
+    train_data_path = path.join(config.data_folder, dataset_name, f"{dataset_name}.{config.train_holdout}.c2s")
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
@@ -79,7 +67,7 @@ def collect_vocabulary(config: PathContextConfig, dataset_name: str, with_types:
     return _counters_to_vocab(config, token_counter, target_counter, node_counter, type_counter)
 
 
-def convert_vocabulary(config: PathContextConfig, original_vocabulary_path: str) -> Vocabulary:
+def convert_vocabulary(config: DictConfig, original_vocabulary_path: str) -> Vocabulary:
     with open(original_vocabulary_path, "rb") as dict_file:
         subtoken_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
         node_to_count: TypeCounter[str] = Counter(pickle.load(dict_file))
@@ -87,28 +75,11 @@ def convert_vocabulary(config: PathContextConfig, original_vocabulary_path: str)
     return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count, Counter())
 
 
-def preprocess(problem: str, dataset_name: str, convert_path: str = None, with_types: bool = False):
-    if convert_path is not None and not exists(convert_path):
-        raise ValueError(f"There is no file for converting: {convert_path}")
-    vocabulary_path = join(DATA_FOLDER, dataset_name, VOCABULARY_NAME)
-
-    if problem not in _config_switcher:
-        raise ValueError(f"Unknown problem {problem}, specify one of: {_config_switcher.keys()}")
-    config = _config_switcher[problem].data_processing
-
-    if convert_path is None:
-        vocabulary = collect_vocabulary(config, dataset_name, with_types)
-    else:
-        vocabulary = convert_vocabulary(config, convert_path)
-    vocabulary.dump_vocabulary(vocabulary_path)
+@hydra_main(config_path=get_config_directory(), config_name="main")
+def preprocess(config: DictConfig):
+    # TODO: build vocabulary if needed. Move logic to data modules.
+    pass
 
 
 if __name__ == "__main__":
-    arg_parser = ArgumentParser()
-    arg_parser.add_argument("problem", type=str)
-    arg_parser.add_argument("dataset_name", type=str)
-    arg_parser.add_argument("--convert", type=str, default=None)
-    arg_parser.add_argument("--with-types", action="store_true")
-    args = arg_parser.parse_args()
-
-    preprocess(args.problem, args.dataset_name, args.convert, args.with_types)
+    preprocess()

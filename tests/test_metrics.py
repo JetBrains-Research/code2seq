@@ -50,8 +50,8 @@ class TestPredictionStatistic(TestCase):
         self.assertEqual(statistic._false_negative, 4)
 
     def test_calculate_statistic_equal_tensors(self):
-        gt_subtokens = torch.tensor([[1, 2, 3, 4, 5, 0, -1]])
-        pred_subtokens = torch.tensor([[1, 2, 3, 4, 5, 0, -1]])
+        gt_subtokens = torch.tensor([1, 2, 3, 4, 5, 0, -1]).view(-1, 1)
+        pred_subtokens = torch.tensor([1, 2, 3, 4, 5, 0, -1]).view(-1, 1)
         skip = [-1, 0]
 
         statistic = PredictionStatistic(False, skip_tokens=skip)
@@ -60,3 +60,14 @@ class TestPredictionStatistic(TestCase):
         self.assertEqual(statistic._true_positive, 5)
         self.assertEqual(statistic._false_positive, 0)
         self.assertEqual(statistic._false_negative, 0)
+
+    def test_calculate_statistic_with_masking(self):
+        gt_subtokens = torch.tensor([1, 2, 3, 6, 7, 8, 0, 0, 0]).view(-1, 1)
+        pred_subtokens = torch.tensor([1, 2, 3, 4, 5, 0, 6, 7, 8]).view(-1, 1)
+
+        statistic = PredictionStatistic(True, 0, [0])
+        statistic.update_statistic(gt_subtokens, pred_subtokens)
+
+        self.assertEqual(statistic._true_positive, 3)
+        self.assertEqual(statistic._false_positive, 2)
+        self.assertEqual(statistic._false_negative, 3)

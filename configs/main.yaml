@@ -16,6 +16,7 @@ test_holdout: test
 save_every_epoch: 1
 val_every_epoch: 1
 log_every_epoch: 10
+progress_bar_refresh_rate: 1
 
 hyper_parameters:
   n_epochs: 3000

@@ -5,33 +5,34 @@ import torch
 from utils.metrics import PredictionStatistic
 
 
-class TestSubtokenStatistic(TestCase):
-    def test_update(self):
-        st_stat = PredictionStatistic(1, 2, 3)
-        st_stat_other = PredictionStatistic(4, 5, 6)
-        st_stat.update(st_stat_other)
+class TestPredictionStatistic(TestCase):
+    @staticmethod
+    def _create_statistic_with_values(tp: int, fp: int, fn: int) -> PredictionStatistic:
+        statistic = PredictionStatistic(False)
+        statistic._true_positive = tp
+        statistic._false_positive = fp
+        statistic._false_negative = fn
+        return statistic
 
-        self.assertEqual(st_stat.true_positive, 5)
-        self.assertEqual(st_stat.false_positive, 7)
-        self.assertEqual(st_stat.false_negative, 9)
+    def test_update(self):
+        stat1 = self._create_statistic_with_values(1, 2, 3)
+        stat2 = self._create_statistic_with_values(4, 5, 6)
+        union = PredictionStatistic.create_from_list([stat1, stat2])
+
+        self.assertEqual(union._true_positive, 5)
+        self.assertEqual(union._false_positive, 7)
+        self.assertEqual(union._false_negative, 9)
 
     def test_calculate_metrics(self):
-        st_stat = PredictionStatistic(3, 7, 2)
-        metrics = st_stat.get_metric()
+        stat = self._create_statistic_with_values(3, 7, 2)
+        metrics = stat.get_metric()
         true_metrics = {"precision": 0.3, "recall": 0.6, "f1": 0.4}
 
         self.assertDictEqual(metrics, true_metrics)
 
-    def test_calculate_metrics_with_group(self):
-        st_stat = PredictionStatistic(3, 7, 2)
-        metrics = st_stat.get_metric(group="train")
-        true_metrics = {"train/precision": 0.3, "train/recall": 0.6, "train/f1": 0.4}
-
-        self.assertDictEqual(metrics, true_metrics)
-
     def test_calculate_zero_metrics(self):
-        st_stat = PredictionStatistic(0, 0, 0)
-        metrics = st_stat.get_metric()
+        stat = self._create_statistic_with_values(0, 0, 0)
+        metrics = stat.get_metric()
         true_metrics = {"precision": 0, "recall": 0, "f1": 0}
 
         self.assertDictEqual(metrics, true_metrics)
@@ -41,19 +42,21 @@ class TestSubtokenStatistic(TestCase):
         pred_subtokens = torch.tensor([[2, 4, 1, 0], [4, 5, 2, 0], [1, 6, 3, 0], [5, -1, -1, -1]])
         skip = [-1, 0]
 
-        st_stat = PredictionStatistic.update_statistic(gt_subtokens, pred_subtokens, skip)
+        statistic = PredictionStatistic(False, skip_tokens=skip)
+        statistic.update_statistic(gt_subtokens, pred_subtokens)
 
-        self.assertEqual(st_stat.true_positive, 3)
-        self.assertEqual(st_stat.false_positive, 7)
-        self.assertEqual(st_stat.false_negative, 4)
+        self.assertEqual(statistic._true_positive, 3)
+        self.assertEqual(statistic._false_positive, 7)
+        self.assertEqual(statistic._false_negative, 4)
 
     def test_calculate_statistic_equal_tensors(self):
         gt_subtokens = torch.tensor([[1, 2, 3, 4, 5, 0, -1]])
         pred_subtokens = torch.tensor([[1, 2, 3, 4, 5, 0, -1]])
         skip = [-1, 0]
 
-        st_stat = PredictionStatistic.update_statistic(gt_subtokens, pred_subtokens, skip)
+        statistic = PredictionStatistic(False, skip_tokens=skip)
+        statistic.update_statistic(gt_subtokens, pred_subtokens)
 
-        self.assertEqual(st_stat.true_positive, 5)
-        self.assertEqual(st_stat.false_positive, 0)
-        self.assertEqual(st_stat.false_negative, 0)
+        self.assertEqual(statistic._true_positive, 5)
+        self.assertEqual(statistic._false_positive, 0)
+        self.assertEqual(statistic._false_negative, 0)

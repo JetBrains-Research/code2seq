@@ -45,7 +45,7 @@ def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[Ligh
 
 def train(config: DictConfig):
     filter_warnings()
-    known_models = {"code2seq": get_code2seq, "code2class": get_code2class, "typed_code2seq": get_typed_code2seq}
+    known_models = {"code2seq": get_code2seq, "code2class": get_code2class, "typed-code2seq": get_typed_code2seq}
     if config.name not in known_models:
         print(f"Unknown model: {config.name}, try on of {known_models.keys()}")
 

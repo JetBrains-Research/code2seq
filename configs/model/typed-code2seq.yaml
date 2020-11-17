@@ -1,5 +1,5 @@
 # @package _global_
-name: typed_code2seq
+name: typed-code2seq
 
 dataset:
   name: java-small-psi

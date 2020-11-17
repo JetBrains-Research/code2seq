@@ -2,10 +2,11 @@ import pickle
 from collections import Counter
 from os import path
 from os.path import join, exists
+from sys import argv
 from typing import Counter as TypeCounter
 from typing import List, Dict
 
-from hydra import main as hydra_main
+from hydra.experimental import initialize_config_dir, compose
 from omegaconf import DictConfig
 from tqdm import tqdm
 
@@ -23,48 +24,49 @@ def _counter_to_dict(values: Counter, n_most_common: int = None, additional_valu
 
 
 def _counters_to_vocab(
-    config: DictConfig, token_counter: Counter, target_counter: Counter, node_counter: Counter, type_counter: Counter,
+    dataset_config: DictConfig,
+    token_counter: Counter,
+    target_counter: Counter,
+    node_counter: Counter,
+    type_counter: Counter,
 ) -> Vocabulary:
-    names_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_name else [PAD, UNK]
-    token_to_id = _counter_to_dict(token_counter, config.token_vocab_size, names_additional_tokens)
-    target_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_target else [PAD, UNK]
-    label_to_id = _counter_to_dict(target_counter, config.target_vocab_size, target_additional_tokens)
-    paths_additional_tokens = [SOS, EOS, PAD, UNK] if config.wrap_path else [PAD, UNK]
-    node_to_id = _counter_to_dict(node_counter, None, paths_additional_tokens)
+    additional_tokens = [SOS, EOS, PAD, UNK] if dataset_config.token.is_wrapped else [PAD, UNK]
+    token_to_id = _counter_to_dict(token_counter, dataset_config.token.vocabulary_size, additional_tokens)
+    additional_targets = [SOS, EOS, PAD, UNK] if dataset_config.target.is_wrapped else [PAD, UNK]
+    label_to_id = _counter_to_dict(target_counter, dataset_config.target.vocabulary_size, additional_targets)
+    additional_nodes = [SOS, EOS, PAD, UNK] if dataset_config.node.is_wrapped else [PAD, UNK]
+    node_to_id = _counter_to_dict(node_counter, dataset_config.node.vocabulary_size, additional_nodes)
 
     vocabulary = Vocabulary(token_to_id, node_to_id, label_to_id)
     if len(type_counter) > 0:
-        vocabulary.type_to_id = _counter_to_dict(type_counter)
+        additional_types = [SOS, EOS, PAD, UNK] if dataset_config.type.is_wrapped else [PAD, UNK]
+        vocabulary.type_to_id = _counter_to_dict(type_counter, dataset_config.type.vocabulary_size, additional_types)
     return vocabulary
 
 
-def collect_vocabulary(config: DictConfig, dataset_name: str, with_types: bool = False) -> Vocabulary:
+def collect_vocabulary(config: DictConfig, dataset_directory: str) -> Vocabulary:
     target_counter: TypeCounter[str] = Counter()
     token_counter: TypeCounter[str] = Counter()
     node_counter: TypeCounter[str] = Counter()
     type_counter: TypeCounter[str] = Counter()
-    train_data_path = path.join(config.data_folder, dataset_name, f"{dataset_name}.{config.train_holdout}.c2s")
+    dataset_config = config.dataset
+    train_data_path = path.join(dataset_directory, f"{dataset_config.name}.{config.train_holdout}.c2s")
+    with_types = "type" in dataset_config
     with open(train_data_path, "r") as train_file:
         for line in tqdm(train_file, total=count_lines_in_file(train_data_path)):
             label, *path_contexts = line.split()
-            target_counter.update(parse_token(label, config.split_target))
-            cur_tokens = []
-            cur_nodes = []
-            cur_types = []
+            target_counter.update(parse_token(label, False))
             for path_context in path_contexts:
                 if with_types:
                     from_type, from_token, path_nodes, to_token, to_type = path_context.split(",")
-                    cur_types += parse_token(from_type, False)
-                    cur_types += parse_token(to_type, False)
+                    type_counter.update(parse_token(from_type, dataset_config.type.is_splitted))
+                    type_counter.update(parse_token(to_type, dataset_config.type.is_splitted))
                 else:
                     from_token, path_nodes, to_token = path_context.split(",")
-                cur_tokens += parse_token(from_token, config.split_names)
-                cur_tokens += parse_token(to_token, config.split_names)
-                cur_nodes += path_nodes.split("|")
-            token_counter.update(cur_tokens)
-            node_counter.update(cur_nodes)
-            type_counter.update(cur_types)
-    return _counters_to_vocab(config, token_counter, target_counter, node_counter, type_counter)
+                token_counter.update(parse_token(from_token, dataset_config.token.is_splitted))
+                token_counter.update(parse_token(to_token, dataset_config.token.is_splitted))
+                node_counter.update(path_nodes.split("|"))
+    return _counters_to_vocab(dataset_config, token_counter, target_counter, node_counter, type_counter)
 
 
 def convert_vocabulary(config: DictConfig, original_vocabulary_path: str) -> Vocabulary:
@@ -75,11 +77,17 @@ def convert_vocabulary(config: DictConfig, original_vocabulary_path: str) -> Voc
     return _counters_to_vocab(config, subtoken_to_count, target_to_count, node_to_count, Counter())
 
 
-@hydra_main(config_path=get_config_directory(), config_name="main")
 def preprocess(config: DictConfig):
-    # TODO: build vocabulary if needed. Move logic to data modules.
-    pass
+    dataset_directory = join(config.data_folder, config.dataset.name)
+    possible_dict = join(dataset_directory, f"{config.dataset.name}.dict.c2s")
+    if exists(possible_dict):
+        vocabulary = convert_vocabulary(config, possible_dict)
+    else:
+        vocabulary = collect_vocabulary(config, dataset_directory)
+    vocabulary.dump_vocabulary(join(dataset_directory, "vocabulary.pkl"))
 
 
 if __name__ == "__main__":
-    preprocess()
+    with initialize_config_dir(get_config_directory()):
+        _config = compose("main", overrides=argv[1:])
+        preprocess(_config)

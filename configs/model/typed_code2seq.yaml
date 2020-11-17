@@ -2,17 +2,17 @@
 name: typed_code2seq
 
 dataset:
-  name: java-small
+  name: java-small-psi
   target:
     max_parts: 7
     is_wrapped: true
     is_splitted: true
-    vocabulary_size: 27000
+    vocabulary_size: 11316
   token:
     max_parts: 5
     is_wrapped: false
     is_splitted: true
-    vocabulary_size: 190000
+    vocabulary_size: 73904
   path:
     max_parts: 9
     is_wrapped: false

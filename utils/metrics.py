@@ -30,6 +30,7 @@ class PredictionStatistic:
     def _mask_tensor_after_pad(self, prediction: torch.Tensor) -> torch.Tensor:
         assert self._pad_id is not None
         mask_max_value, mask_max_indices = torch.max(prediction == self._pad_id, dim=0)
+        mask_max_indices[~mask_max_value] = prediction.shape[0]  # if no pad token use len+1 position
         mask = torch.arange(prediction.shape[0], device=prediction.device).view(-1, 1) >= mask_max_indices
         prediction[mask] = self._pad_id
         return prediction

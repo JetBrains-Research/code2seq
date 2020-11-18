@@ -63,7 +63,7 @@ class TestPredictionStatistic(TestCase):
 
     def test_calculate_statistic_with_masking(self):
         gt_subtokens = torch.tensor([1, 2, 3, 6, 7, 8, 0, 0, 0]).view(-1, 1)
-        pred_subtokens = torch.tensor([1, 2, 3, 4, 5, 0, 6, 7, 8]).view(-1, 1)
+        pred_subtokens = torch.tensor([1, 2, 3, 4, 5, 0, 6, 0, 8]).view(-1, 1)
 
         statistic = PredictionStatistic(True, 0, [0])
         statistic.update_statistic(gt_subtokens, pred_subtokens)
@@ -71,3 +71,14 @@ class TestPredictionStatistic(TestCase):
         self.assertEqual(statistic._true_positive, 3)
         self.assertEqual(statistic._false_positive, 2)
         self.assertEqual(statistic._false_negative, 3)
+
+    def test_calculate_statistic_with_masking_long_sequence(self):
+        gt_subtokens = torch.tensor([1, 2, 3, 6, 7, 8, 0, 0, 0]).view(-1, 1)
+        pred_subtokens = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8]).view(-1, 1)
+
+        statistic = PredictionStatistic(True, 0, [0])
+        statistic.update_statistic(gt_subtokens, pred_subtokens)
+
+        self.assertEqual(statistic._true_positive, 6)
+        self.assertEqual(statistic._false_positive, 2)
+        self.assertEqual(statistic._false_negative, 0)

@@ -48,6 +48,7 @@ class PathEncoder(nn.Module):
             first_pad_pos[~is_contain_pad_id] = path_nodes.shape[0]  # if no pad token use len+1 position
             sorted_path_lengths, sort_indices = torch.sort(first_pad_pos, descending=True)
             _, reverse_sort_indices = torch.sort(sort_indices)
+            sorted_path_lengths = sorted_path_lengths.to(torch.device("cpu"))
         path_nodes_embeddings = path_nodes_embeddings[:, sort_indices]
 
         packed_path_nodes = nn.utils.rnn.pack_padded_sequence(path_nodes_embeddings, sorted_path_lengths)

@@ -43,16 +43,22 @@ class PathEncoder(nn.Module):
         # [max path length; total paths; embedding size]
         path_nodes_embeddings = self.node_embedding(path_nodes)
 
-        # create packed sequence (don't forget to set enforce sorted True for ONNX support)
         with torch.no_grad():
-            path_lengths = (path_nodes != self.node_pad_id).sum(0).cpu()
-        packed_path_nodes = nn.utils.rnn.pack_padded_sequence(path_nodes_embeddings, path_lengths, enforce_sorted=False)
+            is_contain_pad_id, first_pad_pos = torch.max(path_nodes == self.node_pad_id, dim=0)
+            first_pad_pos[~is_contain_pad_id] = path_nodes.shape[0]  # if no pad token use len+1 position
+            sorted_path_lengths, sort_indices = torch.sort(first_pad_pos, descending=True)
+            _, reverse_sort_indices = torch.sort(sort_indices)
+        path_nodes_embeddings = path_nodes_embeddings[:, sort_indices]
+
+        packed_path_nodes = nn.utils.rnn.pack_padded_sequence(path_nodes_embeddings, sorted_path_lengths)
 
         # [num layers * num directions; total paths; rnn size]
         _, (h_t, _) = self.path_lstm(packed_path_nodes)
         # [total_paths; rnn size * num directions]
         encoded_paths = h_t[-self.num_directions :].transpose(0, 1).reshape(h_t.shape[1], -1)
         encoded_paths = self.dropout_rnn(encoded_paths)
+
+        encoded_paths = encoded_paths[reverse_sort_indices]
         return encoded_paths
 
     def _concat_with_linear(self, encoded_contexts: List[torch.Tensor]) -> torch.Tensor:

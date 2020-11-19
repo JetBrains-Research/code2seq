@@ -7,7 +7,7 @@ from dataset import PathContextDataModule
 from model import Code2Seq
 
 
-def evaluate(checkpoint: str, data_folder: str = None, batch_size: int = None):
+def test(checkpoint: str, data_folder: str = None, batch_size: int = None):
     model = Code2Seq.load_from_checkpoint(checkpoint_path=checkpoint)
     config = model.config
     vocabulary = model.vocabulary
@@ -32,4 +32,4 @@ if __name__ == "__main__":
 
     args = arg_parser.parse_args()
 
-    evaluate(args.checkpoint, args.data_folder, args.batch_size)
+    test(args.checkpoint, args.data_folder, args.batch_size)

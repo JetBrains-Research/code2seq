@@ -18,6 +18,9 @@ def _counter_to_dict(values: Counter, n_most_common: int = None, additional_valu
     dict_values = []
     if additional_values is not None:
         dict_values += additional_values
+        for value in additional_values:
+            if value in values:
+                del values[value]
     dict_values += list(zip(*values.most_common(n_most_common)))[0]
     return {value: i for i, value in enumerate(dict_values)}
 

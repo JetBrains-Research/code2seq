@@ -1,10 +1,8 @@
+from argparse import ArgumentParser
 from os.path import join
-from sys import argv
 from typing import Tuple
-from warnings import filterwarnings
 
 import torch
-from hydra.experimental import compose, initialize_config_dir
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
@@ -13,16 +11,8 @@ from pytorch_lightning.loggers import WandbLogger
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
 from utils.callback import UploadCheckpointCallback, PrintEpochResultCallback
-from utils.common import print_config
-from utils.filesystem import get_config_directory
+from utils.common import print_config, filter_warnings, get_config
 from utils.vocabulary import Vocabulary
-
-
-def filter_warnings():
-    # "The dataloader does not have many workers which may be a bottleneck."
-    filterwarnings("ignore", category=UserWarning, module="pytorch_lightning.utilities.distributed", lineno=45)
-    # "Please also save or load the state of the optimizer when saving or loading the scheduler."
-    filterwarnings("ignore", category=UserWarning, module="torch.optim.lr_scheduler", lineno=216)
 
 
 def get_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[LightningModule, LightningDataModule]:
@@ -43,18 +33,17 @@ def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[Ligh
     return model, data_module
 
 
-def train(config: DictConfig):
+def train(config: DictConfig, resume_from_checkpoint: str = None):
     filter_warnings()
+    print_config(config)
+    seed_everything(config.seed)
+
     known_models = {"code2seq": get_code2seq, "code2class": get_code2class, "typed-code2seq": get_typed_code2seq}
     if config.name not in known_models:
         print(f"Unknown model: {config.name}, try on of {known_models.keys()}")
 
-    print_config(config)
-
     vocabulary = Vocabulary.load_vocabulary(join(config.data_folder, config.dataset.name, config.vocabulary_name))
     model, data_module = known_models[config.name](config, vocabulary)
-
-    seed_everything(config.seed)
 
     # define logger
     wandb_logger = WandbLogger(
@@ -95,6 +84,7 @@ def train(config: DictConfig):
             upload_checkpoint_callback,
             print_epoch_result_callback,
         ],
+        resume_from_checkpoint=resume_from_checkpoint,
     )
 
     trainer.fit(model=model, datamodule=data_module)
@@ -102,6 +92,12 @@ def train(config: DictConfig):
 
 
 if __name__ == "__main__":
-    with initialize_config_dir(get_config_directory()):
-        _config = compose("main", overrides=argv[1:])
-        train(_config)
+    arg_parser = ArgumentParser()
+    arg_parser.add_argument("model", type=str)
+    arg_parser.add_argument("--dataset", type=str, default=None)
+    arg_parser.add_argument("--offline", action="store_true")
+    arg_parser.add_argument("--resume", type=str, default=None)
+    args = arg_parser.parse_args()
+
+    _config = get_config(args.model, args.dataset, log_offline=args.offline)
+    train(_config, args.resume)

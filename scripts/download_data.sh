@@ -9,7 +9,7 @@ LOAD_SPLITTED=false
 DATA_DIR=./data
 POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
 CODEFORCES_DOWNLOAD_SCRIPT=./scripts/download_codeforces.sh
-ASTMINER_PATH=../astminer/build/shadow/lib-0.5.jar
+ASTMINER_PATH=../astminer/build/shadow/lib-0.*.jar
 SPLIT_SCRIPT=./scripts/split_dataset.sh
 
 function is_int(){
@@ -24,10 +24,10 @@ while (( "$#" )); do
     -h|--help)
       echo "options:"
       echo "-h, --help                     show brief help"
-      echo "-d, --dataset=NAME             specify dataset name, available: java-small, java-med, java-large, poj_104"
-      echo "--train-part=VAL               specify a percentage of dataset used as train set"
-      echo "--test-part=VAL                specify a percentage of dataset used as test set"
-      echo "--val-part=VAL                 specify a percentage of dataset used as validation set"
+      echo "-d, --dataset NAME             specify dataset name, available: java-small, java-med, java-large, poj_104"
+      echo "--train-part VAL               specify a percentage of dataset used as train set"
+      echo "--test-part VAL                specify a percentage of dataset used as test set"
+      echo "--val-part VAL                 specify a percentage of dataset used as validation set"
       echo "--dev                          pass it if developer mode should be used, default false"
       echo "--load-splitted                pass it if splitted dataset needs to be loaded, available only for poj_104, default false"
       exit 0

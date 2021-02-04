@@ -68,9 +68,9 @@ then
   rm -rf "$DATA_PATH"_parsed
 fi
 mkdir "$DATA_PATH"_parsed
-java -jar -Xmx200g "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/train --output "$DATA_PATH"_parsed/train --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
-java -jar -Xmx200g "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/test --output "$DATA_PATH"_parsed/test --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
-java -jar -Xmx200g "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/val --output "$DATA_PATH"_parsed/val --maxH 8 --maxW 2 --granularity file --folder-label --split-tokens
+java -jar -Xmx200g "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/train --output "$DATA_PATH"_parsed/train --maxL 8 --maxW 2 --granularity file --folder-label --split-tokens
+java -jar -Xmx200g "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/test --output "$DATA_PATH"_parsed/test --maxL 8 --maxW 2 --granularity file --folder-label --split-tokens
+java -jar -Xmx200g "$ASTMINER_PATH" code2vec --lang cpp --project "$DATA_PATH"/val --output "$DATA_PATH"_parsed/val --maxL 8 --maxW 2 --granularity file --folder-label --split-tokens
 for folder in $(find "$DATA_PATH"_parsed/*/cpp -type d)
 do
   for file in "$folder"/*

@@ -2,7 +2,7 @@
 name: code2class
 
 dataset:
-  name: poj-104
+  name: poj_104
   target:
     max_parts: 1
     is_wrapped: false

@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -21,7 +21,7 @@ class Code2Class(LightningModule):
         self.save_hyperparameters()
         self.encoder = PathEncoder(
             self._config.encoder,
-            self._config.classifier_config.classifier_input_size,
+            self._config.classifier.classifier_input_size,
             len(vocabulary.token_to_id),
             vocabulary.token_to_id[PAD],
             len(vocabulary.node_to_id),
@@ -66,7 +66,8 @@ class Code2Class(LightningModule):
 
     def _general_epoch_end(self, outputs: List[Dict], group: str):
         with torch.no_grad():
-            logs = {f"{group}/loss": torch.stack([out["loss"] for out in outputs]).mean()}
+            mean_loss = torch.stack([out["loss"] for out in outputs]).mean().item()
+            log: Dict[str, Union[float, torch.Tensor]] = {f"{group}/loss": mean_loss}
             accumulated_conf_matrix = torch.zeros(
                 self.num_classes, self.num_classes, requires_grad=False, device=self.device
             )
@@ -74,8 +75,9 @@ class Code2Class(LightningModule):
                 _conf_matrix = out["confusion_matrix"]
                 max_class_index, _ = _conf_matrix.shape
                 accumulated_conf_matrix[:max_class_index, :max_class_index] += _conf_matrix
-            logs[f"{group}/accuracy"] = accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()
-            self.log_dict(logs)
+            log[f"{group}/accuracy"] = (accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()).item()
+            self.log_dict(log)
+            self.log(f"{group}_loss", mean_loss)
 
     def training_epoch_end(self, outputs: List[Dict]):
         self._general_epoch_end(outputs, "train")

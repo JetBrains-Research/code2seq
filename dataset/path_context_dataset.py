@@ -1,5 +1,5 @@
 from os.path import exists
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy
 from omegaconf import DictConfig
@@ -55,9 +55,13 @@ class PathContextDataset(Dataset):
             TO_TOKEN: to_token,
         }
 
-    def __getitem__(self, index) -> PathContextSample:
+    def __getitem__(self, index) -> Optional[PathContextSample]:
         raw_sample = self._read_line(index)
         str_label, *str_contexts = raw_sample.split()
+        if str_label == "" or len(str_contexts) == 0:
+            with open("bad_samples.log", "wa") as f_out:
+                f_out.write(raw_sample + "\n")
+            return None
 
         # choose random paths
         n_contexts = min(len(str_contexts), self._hyper_parameters.max_context)

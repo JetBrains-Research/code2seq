@@ -30,6 +30,7 @@ class PathContextSample:
 
 class PathContextBatch:
     def __init__(self, samples: List[PathContextSample]):
+        samples = [s for s in samples if s is not None]
         self.contexts_per_label = [_s.n_contexts for _s in samples]
 
         torch_labels = numpy.hstack([_s.label for _s in samples])

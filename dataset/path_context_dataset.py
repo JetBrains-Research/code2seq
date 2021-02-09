@@ -59,7 +59,7 @@ class PathContextDataset(Dataset):
         raw_sample = self._read_line(index)
         str_label, *str_contexts = raw_sample.split()
         if str_label == "" or len(str_contexts) == 0:
-            with open("bad_samples.log", "wa") as f_out:
+            with open("bad_samples.log", "a") as f_out:
                 f_out.write(raw_sample + "\n")
             return None
 

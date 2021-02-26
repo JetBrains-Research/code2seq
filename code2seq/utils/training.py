@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import _LRScheduler, LambdaLR
 def configure_optimizers_alon(
     hyper_parameters: DictConfig, parameters: Iterable[torch.Tensor]
 ) -> Tuple[List[Optimizer], List[_LRScheduler]]:
-    """ Create optimizers like in original Alon work
+    """Create optimizers like in original Alon work
     https://github.com/tech-srl/code2seq/blob/a01076ef649d298e5f90ac2ce1f6a42f4ff49cc2/model.py#L386-L397
     :param hyper_parameters: hyper parameters
     :param parameters: model parameters for optimization

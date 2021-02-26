@@ -13,7 +13,11 @@ class PathDecoder(nn.Module):
     _negative_value = -1e9
 
     def __init__(
-        self, config: DictConfig, out_size: int, sos_token: int, pad_token: int,
+        self,
+        config: DictConfig,
+        out_size: int,
+        sos_token: int,
+        pad_token: int,
     ):
         super().__init__()
         self.sos_token = sos_token

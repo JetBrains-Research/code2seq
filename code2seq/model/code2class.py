@@ -44,7 +44,7 @@ class Code2Class(LightningModule):
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         log = {"train/loss": loss}
         with torch.no_grad():
-            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))
+            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0), self.num_classes)
             log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
         self.log_dict(log)
 
@@ -55,7 +55,7 @@ class Code2Class(LightningModule):
         logits = self(batch.contexts, batch.contexts_per_label)
         loss = F.cross_entropy(logits, batch.labels.squeeze(0))
         with torch.no_grad():
-            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0))
+            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0), self.num_classes)
 
         return {"loss": loss, "confusion_matrix": conf_matrix}
 

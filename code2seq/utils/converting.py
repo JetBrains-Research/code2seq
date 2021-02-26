@@ -36,7 +36,7 @@ def strings_to_wrapped_numpy(
         raise ValueError(f"Pass SOS and EOS tokens for wrapping list of tokens")
 
     size = max_length + (1 if is_wrapped else 0)
-    wrapped_numpy = numpy.full((size, len(values)), pad_token, dtype=numpy.long)
+    wrapped_numpy = numpy.full((size, len(values)), pad_token, dtype=numpy.int32)
 
     start_index = 0
     if is_wrapped:

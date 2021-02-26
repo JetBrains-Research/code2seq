@@ -70,6 +70,9 @@ class PathContextDataModule(LightningDataModule):
             pin_memory=True,
         )
 
-    def transfer_batch_to_device(self, batch: PathContextBatch, device: torch.device) -> PathContextBatch:
-        batch.move_to_device(device)
+    def transfer_batch_to_device(
+        self, batch: PathContextBatch, device: Optional[torch.device] = None
+    ) -> PathContextBatch:
+        if device is not None:
+            batch.move_to_device(device)
         return batch

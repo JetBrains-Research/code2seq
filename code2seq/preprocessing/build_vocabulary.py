@@ -1,16 +1,15 @@
 import pickle
 from collections import Counter
 from os.path import join, exists
-from sys import argv
 from typing import Counter as TypeCounter, Any
 from typing import List, Dict
 
-from hydra.experimental import initialize_config_dir, compose
+import hydra
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from code2seq.utils.converting import parse_token
-from code2seq.utils.filesystem import count_lines_in_file, get_config_directory
+from code2seq.utils.filesystem import count_lines_in_file
 from code2seq.utils.vocabulary import Vocabulary, SOS, EOS, PAD, UNK
 
 
@@ -78,6 +77,7 @@ def convert_vocabulary(config: Dict, original_vocabulary_path: str) -> Vocabular
     return _counters_to_vocab(config, counters)
 
 
+@hydra.main(config_path="../configs", config_name="code2seq")
 def preprocess(config: DictConfig):
     dataset_directory = join(config.data_folder, config.dataset.name)
     possible_dict = join(dataset_directory, f"{config.dataset.name}.dict.c2s")
@@ -93,6 +93,4 @@ def preprocess(config: DictConfig):
 
 
 if __name__ == "__main__":
-    with initialize_config_dir(get_config_directory()):
-        _config = compose("main", overrides=argv[1:])
-        preprocess(_config)
+    preprocess()

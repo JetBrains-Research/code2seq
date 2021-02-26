@@ -1,10 +1,7 @@
-from typing import Dict, List, Any
+from typing import Dict, List
 from warnings import filterwarnings
 
-from hydra.experimental import initialize_config_dir, compose
 from omegaconf import DictConfig
-
-from code2seq.utils.filesystem import get_config_directory
 
 
 def print_table(data: Dict[str, List[str]]):
@@ -43,25 +40,3 @@ def filter_warnings():
     # "Please also save or load the state of the optimizer when saving or loading the scheduler."
     filterwarnings("ignore", category=UserWarning, module="torch.optim.lr_scheduler", lineno=216)  # save
     filterwarnings("ignore", category=UserWarning, module="torch.optim.lr_scheduler", lineno=234)  # load
-
-
-def get_config(
-    model: str,
-    dataset: str = None,
-    log_offline: bool = False,
-    pb_refresh_rate: int = 1,
-    additional_params: Dict[str, Any] = None,
-) -> DictConfig:
-    overrides = [
-        f"model={model}",
-        f"log_offline={log_offline}",
-        f"progress_bar_refresh_rate={pb_refresh_rate}",
-    ]
-    if dataset is not None:
-        overrides.append(f"dataset.name={dataset}")
-    if additional_params is not None:
-        for key, value in additional_params.items():
-            overrides.append(f"{key}={value}")
-    with initialize_config_dir(get_config_directory()):
-        config = compose("main", overrides=overrides)
-    return config

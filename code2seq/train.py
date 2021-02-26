@@ -1,7 +1,7 @@
-from argparse import ArgumentParser
 from os.path import join
 from typing import Tuple
 
+import hydra
 import torch
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
@@ -11,7 +11,7 @@ from pytorch_lightning.loggers import WandbLogger
 from dataset import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
 from utils.callback import UploadCheckpointCallback, PrintEpochResultCallback
-from utils.common import print_config, filter_warnings, get_config
+from utils.common import print_config, filter_warnings
 from utils.vocabulary import Vocabulary
 
 
@@ -33,7 +33,8 @@ def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[Ligh
     return model, data_module
 
 
-def train(config: DictConfig, resume_from_checkpoint: str = None):
+@hydra.main(config_path="configs", config_name="code2seq-java-small")
+def train(config: DictConfig):
     filter_warnings()
     print_config(config)
     seed_everything(config.seed)
@@ -84,7 +85,7 @@ def train(config: DictConfig, resume_from_checkpoint: str = None):
             upload_checkpoint_callback,
             print_epoch_result_callback,
         ],
-        resume_from_checkpoint=resume_from_checkpoint,
+        resume_from_checkpoint=config.resume_from_checkpoint,
     )
 
     trainer.fit(model=model, datamodule=data_module)
@@ -92,12 +93,4 @@ def train(config: DictConfig, resume_from_checkpoint: str = None):
 
 
 if __name__ == "__main__":
-    arg_parser = ArgumentParser()
-    arg_parser.add_argument("model", type=str)
-    arg_parser.add_argument("--dataset", type=str, default=None)
-    arg_parser.add_argument("--offline", action="store_true")
-    arg_parser.add_argument("--resume", type=str, default=None)
-    args = arg_parser.parse_args()
-
-    _config = get_config(args.model, args.dataset, log_offline=args.offline)
-    train(_config, args.resume)
+    train()

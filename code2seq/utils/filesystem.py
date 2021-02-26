@@ -35,11 +35,3 @@ def get_test_data_info() -> Tuple[str, str]:
     if split(cur_working_directory)[-1] != "tests":
         cur_working_directory = join(cur_working_directory, "tests")
     return join(cur_working_directory, "resources"), "java-test"
-
-
-def get_config_directory() -> str:
-    cur_working_directory = getcwd()
-    path, last_folder = split(cur_working_directory)
-    while last_folder != "code2seq":
-        path, last_folder = split(path)
-    return join(path, last_folder, "configs")

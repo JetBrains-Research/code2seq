@@ -4,17 +4,16 @@ from unittest import TestCase
 import torch
 from hydra.experimental import compose, initialize_config_dir
 
-from dataset import PathContextDataset, PathContextBatch
-from model.modules import PathDecoder
-from utils.filesystem import get_test_data_info, get_config_directory
-from utils.vocabulary import Vocabulary
+from code2seq.dataset import PathContextDataset, PathContextBatch
+from code2seq.model.modules import PathDecoder
+from code2seq.utils.filesystem import get_test_resources_dir
+from code2seq.utils.vocabulary import Vocabulary
 
 
 class TestPathDecoder(TestCase):
     def test_forward(self):
-        with initialize_config_dir(config_dir=get_config_directory()):
-            data_folder, dataset_name = get_test_data_info()
-            config = compose("main", overrides=[f"data_folder={data_folder}", f"dataset.name={dataset_name}"])
+        with initialize_config_dir(config_dir=get_test_resources_dir()):
+            config = compose("code2seq-test", overrides=[f"data_folder={get_test_resources_dir()}"])
 
         dataset_folder = join(config.data_folder, config.dataset.name)
         vocabulary = Vocabulary.load_vocabulary(join(dataset_folder, config.vocabulary_name))

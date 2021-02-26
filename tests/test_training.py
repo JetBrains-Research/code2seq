@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import torch
 
-from utils.training import cut_encoded_contexts
+from code2seq.utils.training import cut_encoded_contexts
 
 
 class TestTrainingUtils(TestCase):

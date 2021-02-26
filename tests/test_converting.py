@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.converting import parse_token
+from code2seq.utils.converting import parse_token
 
 
 class Test(TestCase):

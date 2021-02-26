@@ -9,9 +9,9 @@ from hydra.experimental import initialize_config_dir, compose
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
-from utils.converting import parse_token
-from utils.filesystem import count_lines_in_file, get_config_directory
-from utils.vocabulary import Vocabulary, SOS, EOS, PAD, UNK
+from code2seq.utils.converting import parse_token
+from code2seq.utils.filesystem import count_lines_in_file, get_config_directory
+from code2seq.utils.vocabulary import Vocabulary, SOS, EOS, PAD, UNK
 
 
 def _counter_to_dict(values: Counter, n_most_common: int = None, additional_values: List[str] = None) -> Dict[str, int]:

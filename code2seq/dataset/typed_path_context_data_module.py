@@ -1,8 +1,8 @@
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 
-from dataset import PathContextDataModule, TypedPathContextDataset
-from utils.vocabulary import Vocabulary
+from code2seq.dataset import PathContextDataModule, TypedPathContextDataset
+from code2seq.utils.vocabulary import Vocabulary
 
 
 class TypedPathContextDataModule(PathContextDataModule):

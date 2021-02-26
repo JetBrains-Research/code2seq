@@ -4,7 +4,7 @@ import torch
 from omegaconf import DictConfig
 from torch import nn
 
-from utils.training import cut_encoded_contexts
+from code2seq.utils.training import cut_encoded_contexts
 from .attention import LocalAttention
 
 

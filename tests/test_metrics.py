@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import torch
 
-from utils.metrics import PredictionStatistic
+from code2seq.utils.metrics import PredictionStatistic
 
 
 class TestPredictionStatistic(TestCase):

@@ -5,9 +5,9 @@ import numpy
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 
-from dataset.data_classes import PathContextSample, FROM_TOKEN, PATH_NODES, TO_TOKEN, ContextPart
-from utils.converting import strings_to_wrapped_numpy
-from utils.vocabulary import Vocabulary
+from code2seq.dataset.data_classes import PathContextSample, FROM_TOKEN, PATH_NODES, TO_TOKEN, ContextPart
+from code2seq.utils.converting import strings_to_wrapped_numpy
+from code2seq.utils.vocabulary import Vocabulary
 
 
 class PathContextDataset(Dataset):

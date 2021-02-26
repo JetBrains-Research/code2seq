@@ -3,10 +3,10 @@ from unittest import TestCase
 
 from hydra.experimental import initialize_config_dir, compose
 
-from dataset import PathContextDataset, PathContextBatch
-from model.modules import PathEncoder
-from utils.filesystem import get_test_data_info, get_config_directory
-from utils.vocabulary import Vocabulary, PAD
+from code2seq.dataset import PathContextDataset, PathContextBatch
+from code2seq.model.modules import PathEncoder
+from code2seq.utils.filesystem import get_test_data_info, get_config_directory
+from code2seq.utils.vocabulary import Vocabulary, PAD
 
 
 class TestPathEncoder(TestCase):

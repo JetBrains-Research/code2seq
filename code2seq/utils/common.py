@@ -4,7 +4,7 @@ from warnings import filterwarnings
 from hydra.experimental import initialize_config_dir, compose
 from omegaconf import DictConfig
 
-from utils.filesystem import get_config_directory
+from code2seq.utils.filesystem import get_config_directory
 
 
 def print_table(data: Dict[str, List[str]]):

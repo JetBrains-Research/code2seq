@@ -1,8 +1,8 @@
 from omegaconf import DictConfig
 
-from model import Code2Seq
-from model.modules import TypedPathEncoder, PathEncoder
-from utils.vocabulary import Vocabulary, PAD
+from code2seq.model import Code2Seq
+from code2seq.model.modules import TypedPathEncoder, PathEncoder
+from code2seq.utils.vocabulary import Vocabulary, PAD
 
 
 class TypedCode2Seq(Code2Seq):

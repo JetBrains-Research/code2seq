@@ -6,8 +6,8 @@ from omegaconf import DictConfig
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-from dataset import PathContextDataset, PathContextSample, PathContextBatch
-from utils.vocabulary import Vocabulary
+from code2seq.dataset import PathContextDataset, PathContextSample, PathContextBatch
+from code2seq.utils.vocabulary import Vocabulary
 
 
 class PathContextDataModule(LightningDataModule):

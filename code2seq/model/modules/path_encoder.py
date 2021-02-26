@@ -4,7 +4,7 @@ import torch
 from omegaconf import DictConfig
 from torch import nn
 
-from dataset.data_classes import FROM_TOKEN, TO_TOKEN, PATH_NODES
+from code2seq.dataset.data_classes import FROM_TOKEN, TO_TOKEN, PATH_NODES
 
 
 class PathEncoder(nn.Module):

@@ -4,7 +4,7 @@ from typing import List, Dict
 from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.loggers import WandbLogger
 
-from utils.common import print_table
+from code2seq.utils.common import print_table
 
 
 class UploadCheckpointCallback(Callback):

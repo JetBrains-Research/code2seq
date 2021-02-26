@@ -5,7 +5,7 @@ from typing import Dict
 import numpy
 from tqdm import tqdm
 
-from utils.filesystem import count_lines_in_file
+from code2seq.utils.filesystem import count_lines_in_file
 from random import shuffle, seed
 
 

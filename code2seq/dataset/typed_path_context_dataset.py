@@ -2,9 +2,9 @@ from typing import Dict
 
 from omegaconf import DictConfig
 
-from dataset import PathContextDataset
-from dataset.data_classes import ContextPart, FROM_TYPE, TO_TYPE, FROM_TOKEN, PATH_NODES, TO_TOKEN
-from utils.vocabulary import Vocabulary
+from code2seq.dataset import PathContextDataset
+from code2seq.dataset.data_classes import ContextPart, FROM_TYPE, TO_TYPE, FROM_TOKEN, PATH_NODES, TO_TOKEN
+from code2seq.utils.vocabulary import Vocabulary
 
 
 class TypedPathContextDataset(PathContextDataset):

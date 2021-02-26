@@ -4,8 +4,8 @@ import torch
 from omegaconf import DictConfig
 from torch import nn
 
-from dataset.data_classes import FROM_TOKEN, TO_TOKEN, FROM_TYPE, TO_TYPE, PATH_NODES
-from model.modules import PathEncoder
+from code2seq.dataset.data_classes import FROM_TOKEN, TO_TOKEN, FROM_TYPE, TO_TYPE, PATH_NODES
+from code2seq.model.modules import PathEncoder
 
 
 class TypedPathEncoder(PathEncoder):

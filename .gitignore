@@ -11,3 +11,6 @@ data/
 wandb/
 notebooks/
 outputs/
+
+code2seq.egg-info/
+dist/

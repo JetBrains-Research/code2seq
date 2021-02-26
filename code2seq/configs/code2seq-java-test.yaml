@@ -8,7 +8,7 @@ hydra:
 name: code2seq
 
 seed: 7
-num_workers: 2
+num_workers: 0
 log_offline: false
 
 resume_from_checkpoint: null

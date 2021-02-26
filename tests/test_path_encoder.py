@@ -1,16 +1,17 @@
 from os.path import join
 from unittest import TestCase
 
-from hydra.experimental import compose, initialize
+from hydra.experimental import compose, initialize_config_dir
 
 from code2seq.dataset import PathContextDataset, PathContextBatch
 from code2seq.model.modules import PathEncoder
+from code2seq.utils.filesystem import get_test_resources_dir
 from code2seq.utils.vocabulary import Vocabulary, PAD
 
 
 class TestPathEncoder(TestCase):
     def test_forward(self):
-        with initialize(config_path="resources"):
+        with initialize_config_dir(config_dir=get_test_resources_dir()):
             config = compose("code2seq-test")
 
         dataset_folder = join(config.data_folder, config.dataset.name)

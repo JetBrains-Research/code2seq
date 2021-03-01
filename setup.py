@@ -8,9 +8,6 @@ with open("README.md") as readme_file:
 with open("requirements.txt") as requirements_file:
     install_requires = [line.strip() for line in requirements_file]
 
-with open("LICENSE") as license_file:
-    license_txt = license_file.read()
-
 setup_args = dict(
     name="code2seq",
     version=VERSION,
@@ -18,7 +15,7 @@ setup_args = dict(
     long_description_content_type="text/markdown",
     long_description=readme,
     install_requires=install_requires,
-    license=license_txt,
+    license="MIT",
     packages=find_packages(),
     author="Egor Spirin",
     author_email="spirin.egor@gmail.com",

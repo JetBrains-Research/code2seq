@@ -7,47 +7,41 @@
 
 PyTorch's implementation of code2seq model.
 
-## Configuration
+## Installation
 
-Use `yaml` files from [config](code2seq/configs) directory to configure all processes.
-`model` option is used to define model, for now repository supports:
-- code2seq
-- typed-code2seq
-- code2class
-
-`data_folder` stands for the path to the folder with dataset.
-For checkpoints with predefined config, users can specify data folder by argument in corresponding script.
-
-## Data
-
-Code2seq implementation supports the same data format as the original [model](https://github.com/tech-srl/code2seq).
-The only one different is storing vocabulary. To recollect vocabulary use
+You can easily install model through the PIP:
 ```shell
-PYTHONPATH='.' python preprocessing/build_vocabulary.py
+pip install code2seq
 ```
 
-## Train model
+## Usage
 
-To train model use `train.py` script
-```shell
-python train.py model
+Minimal code example to run the model:
+```python
+from os.path import join
+
+import hydra
+from code2seq.dataset import PathContextDataModule
+from code2seq.model import Code2Seq
+from code2seq.utils.vocabulary import Vocabulary
+from omegaconf import DictConfig
+from pytorch_lightning import Trainer
+
+
+@hydra.main(config_path="configs")
+def train(config: DictConfig):
+    vocabulary_path = join(config.data_folder, config.dataset.name, config.vocabulary_name)
+    vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
+    model = Code2Seq(config, vocabulary)
+    data_module = PathContextDataModule(config, vocabulary)
+
+    trainer = Trainer(max_epochs=config.hyper_parameters.n_epochs)
+    trainer.fit(model, datamodule=data_module)
+
+
+if __name__ == "__main__":
+    train()
 ```
-Use [`main.yaml`](code2seq/configs/main.yaml) to set up hyper-parameters.
-Use corresponding configuration from [`configs/model`](code2seq/configs/model) to set up dataset.
 
-To resume training from saved checkpoint use `--resume` argument
-```shell
-python train.py model --resume checkpoint.ckpt
-```
-
-## Evaluate model
-
-To evaluate trained model use `test.py` script
-```shell
-python test.py checkpoint.py
-```
-
-To specify the folder with data (in case on evaluating on different from training machine) use `--data-folder` argument
-```shell
-python test.py checkpoint.py --data-folder path
-```
+Navigate to [code2seq/configs](code2seq/configs) to see examples of configs.
+If you had any questions then feel free to open the issue.

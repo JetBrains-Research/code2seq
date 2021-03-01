@@ -2,13 +2,13 @@ from setuptools import setup, find_packages
 
 VERSION = "0.0.1"
 
-with open("README.md", "r") as readme_file:
+with open("README.md") as readme_file:
     readme = readme_file.read()
 
-with open("requirements.txt", "r") as requirements_file:
+with open("requirements.txt") as requirements_file:
     install_requires = [line.strip() for line in requirements_file]
 
-with open("LICENSE", "r") as license_file:
+with open("LICENSE") as license_file:
     license_txt = license_file.read()
 
 setup_args = dict(

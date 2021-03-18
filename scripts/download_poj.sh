@@ -92,5 +92,4 @@ do
   done
   rm -rf "$(dirname "$folder")"
 done
-mv "$DATA_PATH" "$DATA_PATH"_pure_files
-mv "$DATA_PATH"_parsed "$DATA_PATH"
+mv "$DATA_PATH"_parsed/* "$DATA_PATH"

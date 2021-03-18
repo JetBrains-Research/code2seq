@@ -8,6 +8,7 @@ DEV=false
 LOAD_SPLITTED=false
 DATA_DIR=./data
 CURRENT_DIR=$(dirname "$0")
+echo "$CURRENT_DIR"
 POJ_DOWNLOAD_SCRIPT="$CURRENT_DIR"/scripts/download_poj.sh
 CODEFORCES_DOWNLOAD_SCRIPT="$CURRENT_DIR"/scripts/download_codeforces.sh
 ASTMINER_PATH="$CURRENT_DIR"/../astminer/build/shadow/lib-0.*.jar

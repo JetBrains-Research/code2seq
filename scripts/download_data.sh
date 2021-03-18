@@ -1,19 +1,18 @@
 #!/bin/bash
 # Run script from code2seq dir using command:
 #    sh scripts/download_data.sh
+# Before running this script install code2seq via pip
 TRAIN_SPLIT_PART=60
 VAL_SPLIT_PART=20
 TEST_SPLIT_PART=20
 DEV=false
 LOAD_SPLITTED=false
 DATA_DIR=./data
-ech "$0"
-echo "$(readlink -f $0)"
-ls
-POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
-CODEFORCES_DOWNLOAD_SCRIPT=./scripts/download_codeforces.sh
-ASTMINER_PATH=../astminer/build/shadow/lib-0.*.jar
-SPLIT_SCRIPT=./scripts/split_dataset.sh
+POJ_DOWNLOAD_SCRIPT=download_poj.sh
+CODEFORCES_DOWNLOAD_SCRIPT=download_codeforces.sh
+SPLIT_SCRIPT=split_dataset.sh
+ASTMINER_SOURCE=../astminer
+ASTMINER_BINARY=build/shadow/lib-0.*.jar
 
 function is_int(){
   if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then
@@ -28,6 +27,7 @@ while (( "$#" )); do
       echo "options:"
       echo "-h, --help                     show brief help"
       echo "-d, --dataset NAME             specify dataset name, available: java-small, java-med, java-large, poj_104"
+      echo "--astminer                     the path to astminer"
       echo "--train-part VAL               specify a percentage of dataset used as train set"
       echo "--test-part VAL                specify a percentage of dataset used as test set"
       echo "--val-part VAL                 specify a percentage of dataset used as validation set"
@@ -41,6 +41,15 @@ while (( "$#" )); do
         shift 2
       else
         echo "Specify dataset name"
+        exit 1
+      fi
+      ;;
+    --astminer*)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        ASTMINER_SOURCE=$2
+        shift 2
+      else
+        echo "Specify astminer path"
         exit 1
       fi
       ;;
@@ -88,6 +97,7 @@ while (( "$#" )); do
   esac
 done
 
+ASTMINER_PATH=${ASTMINER_PATH}/${ASTMINER_BINARY}
 DATA_PATH=${DATA_DIR}/${DATASET_NAME}
 
 if [ ! -d $DATA_DIR ]

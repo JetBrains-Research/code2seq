@@ -15,7 +15,12 @@ setup_args = dict(
     long_description_content_type="text/markdown",
     long_description=readme,
     install_requires=install_requires,
-    scripts=["scripts/download_data.sh"],
+    scripts=[
+        "scripts/download_data.sh",
+        "scripts/split_dataset.sh",
+        "scripts/download_poj.sh",
+        "scripts/download_codeforces.sh",
+    ],
     license="MIT",
     packages=find_packages(),
     author="Egor Spirin",

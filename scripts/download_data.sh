@@ -7,11 +7,11 @@ TEST_SPLIT_PART=20
 DEV=false
 LOAD_SPLITTED=false
 DATA_DIR=./data
-echo "$(pwd)"
-POJ_DOWNLOAD_SCRIPT="$(pwd)"/scripts/download_poj.sh
-CODEFORCES_DOWNLOAD_SCRIPT="$(pwd)"/scripts/download_codeforces.sh
-ASTMINER_PATH="$(pwd)"/../astminer/build/shadow/lib-0.*.jar
-SPLIT_SCRIPT="$(pwd)"/scripts/split_dataset.sh
+CURRENT_DIR=$(dirname "$0")
+POJ_DOWNLOAD_SCRIPT="$CURRENT_DIR"/scripts/download_poj.sh
+CODEFORCES_DOWNLOAD_SCRIPT="$CURRENT_DIR"/scripts/download_codeforces.sh
+ASTMINER_PATH="$CURRENT_DIR"/../astminer/build/shadow/lib-0.*.jar
+SPLIT_SCRIPT="$CURRENT_DIR"/scripts/split_dataset.sh
 
 function is_int(){
   if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then

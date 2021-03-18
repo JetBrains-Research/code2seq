@@ -7,10 +7,10 @@ TEST_SPLIT_PART=20
 DEV=false
 LOAD_SPLITTED=false
 DATA_DIR=./data
-POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
-CODEFORCES_DOWNLOAD_SCRIPT=./scripts/download_codeforces.sh
-ASTMINER_PATH=../astminer/build/shadow/lib-0.*.jar
-SPLIT_SCRIPT=./scripts/split_dataset.sh
+POJ_DOWNLOAD_SCRIPT=$pwd/scripts/download_poj.sh
+CODEFORCES_DOWNLOAD_SCRIPT=$pwd/scripts/download_codeforces.sh
+ASTMINER_PATH=$pwd/../astminer/build/shadow/lib-0.*.jar
+SPLIT_SCRIPT=$pwd/scripts/split_dataset.sh
 
 function is_int(){
   if [[ ! "$1" =~ ^[+-]?[0-9]+$ ]]; then

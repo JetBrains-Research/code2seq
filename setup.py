@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -15,6 +15,7 @@ setup_args = dict(
     long_description_content_type="text/markdown",
     long_description=readme,
     install_requires=install_requires,
+    scripts=["scripts/download_data.sh"],
     license="MIT",
     packages=find_packages(),
     author="Egor Spirin",

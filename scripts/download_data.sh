@@ -7,6 +7,7 @@ TEST_SPLIT_PART=20
 DEV=false
 LOAD_SPLITTED=false
 DATA_DIR=./data
+echo "Hi"
 POJ_DOWNLOAD_SCRIPT=$pwd/scripts/download_poj.sh
 CODEFORCES_DOWNLOAD_SCRIPT=$pwd/scripts/download_codeforces.sh
 ASTMINER_PATH=$pwd/../astminer/build/shadow/lib-0.*.jar

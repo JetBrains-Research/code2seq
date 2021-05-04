@@ -27,7 +27,10 @@ class Code2Class(LightningModule):
             len(vocabulary.node_to_id),
             vocabulary.node_to_id[PAD],
         )
-        self.num_classes = len(vocabulary.label_to_id)
+        if self._config.classifier.num_classes is not None:
+            self.num_classes = self._config.classifier.num_classes
+        else:
+            self.num_classes = len(vocabulary.label_to_id)
         self.classifier = PathClassifier(self._config.classifier, self.num_classes)
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:

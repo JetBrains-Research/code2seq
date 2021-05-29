@@ -10,7 +10,10 @@ from random import shuffle, seed
 
 
 def _get_id2value_from_csv(path_: str) -> Dict[str, str]:
-    return dict(numpy.genfromtxt(path_, delimiter=",", dtype=(str, str))[1:])
+    with open(path_, "r") as f:
+        lines = f.read().strip().split("\n")[1:]
+        lines = [line.split(",", maxsplit=1) for line in lines]
+        return {k: v for k, v in lines}
 
 
 def preprocess_csv(data_folder: str, dataset_name: str, holdout_name: str, is_shuffled: bool):

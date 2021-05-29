@@ -9,7 +9,7 @@ LOAD_SPLITTED=false
 DATA_DIR=./data
 POJ_DOWNLOAD_SCRIPT=./scripts/download_poj.sh
 CODEFORCES_DOWNLOAD_SCRIPT=./scripts/download_codeforces.sh
-ASTMINER_PATH=../astminer/build/shadow/lib-0.*.jar
+ASTMINER_PATH=../astminer/build/shadow/astminer.jar
 SPLIT_SCRIPT=./scripts/split_dataset.sh
 
 function is_int(){

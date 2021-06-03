@@ -2,11 +2,23 @@ from argparse import ArgumentParser
 from os import path, remove
 from typing import Dict
 
-import numpy
 from tqdm import tqdm
+from string import whitespace
 
 from code2seq.utils.filesystem import count_lines_in_file
 from random import shuffle, seed
+
+COMMA_SYMBOL = "COMMA"
+SPACE_SYMBOL = "SPACE"
+VERTICAL_LINE_SYMBOL = "VERTICAL_LINE"
+
+
+def _process_token(token: str) -> str:
+    token = token.replace(",", COMMA_SYMBOL)
+    token = token.replace("|", VERTICAL_LINE_SYMBOL)
+    for space in whitespace:
+        token = token.replace(space, SPACE_SYMBOL)
+    return token
 
 
 def _get_id2value_from_csv(path_: str) -> Dict[str, str]:
@@ -34,6 +46,7 @@ def preprocess_csv(data_folder: str, dataset_name: str, holdout_name: str, is_sh
     id_to_node_types = {index: node_type.rsplit(" ", maxsplit=1)[0] for index, node_type in id_to_node_types.items()}
 
     id_to_tokens = _get_id2value_from_csv(id_to_token_data_path)
+    id_to_tokens = {k: _process_token(v) for k, v in id_to_tokens.items()}
 
     if path.exists(output_c2s_path):
         remove(output_c2s_path)

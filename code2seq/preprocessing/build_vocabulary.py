@@ -77,7 +77,7 @@ def convert_vocabulary(config: Dict, original_vocabulary_path: str) -> Vocabular
     return _counters_to_vocab(config, counters)
 
 
-@hydra.main(config_path="../configs", config_name="code2class-poj104")
+@hydra.main(config_path="../configs", config_name="code2seq")
 def preprocess(config: DictConfig):
     dataset_directory = join(config.data_folder, config.dataset.name)
     possible_dict = join(dataset_directory, f"{config.dataset.name}.dict.c2s")

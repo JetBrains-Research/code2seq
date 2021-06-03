@@ -10,12 +10,10 @@ from random import shuffle, seed
 
 COMMA_SYMBOL = "COMMA"
 SPACE_SYMBOL = "SPACE"
-VERTICAL_LINE_SYMBOL = "VERTICAL_LINE"
 
 
 def _process_token(token: str) -> str:
     token = token.replace(",", COMMA_SYMBOL)
-    token = token.replace("|", VERTICAL_LINE_SYMBOL)
     for space in whitespace:
         token = token.replace(space, SPACE_SYMBOL)
     return token

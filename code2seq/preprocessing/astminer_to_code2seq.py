@@ -1,12 +1,12 @@
 from argparse import ArgumentParser
 from os import path, remove
+from random import shuffle, seed
+from string import whitespace
 from typing import Dict
 
 from tqdm import tqdm
-from string import whitespace
 
 from code2seq.utils.filesystem import count_lines_in_file
-from random import shuffle, seed
 
 COMMA_SYMBOL = "COMMA"
 SPACE_SYMBOL = "SPACE"

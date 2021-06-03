@@ -11,6 +11,8 @@ seed: 7
 num_workers: 2
 log_offline: false
 
+resume_from_checkpoint: null
+
 # data keys
 data_folder: /permanent-data
 vocabulary_name: vocabulary.pkl

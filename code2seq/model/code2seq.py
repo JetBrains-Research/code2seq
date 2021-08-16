@@ -7,11 +7,11 @@ from pytorch_lightning import LightningModule
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
-from code2seq.dataset import PathContextBatch
+from code2seq.data import PathContextBatch
 from code2seq.model.modules import PathEncoder, PathDecoder
 from code2seq.utils.metrics import PredictionStatistic
 from code2seq.utils.training import configure_optimizers_alon
-from code2seq.utils.vocabulary import Vocabulary, SOS, PAD, UNK, EOS
+from code2seq.data.vocabulary import Vocabulary, SOS, PAD, UNK, EOS
 
 
 class Code2Seq(LightningModule):

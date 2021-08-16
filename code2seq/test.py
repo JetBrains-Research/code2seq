@@ -5,9 +5,9 @@ import torch
 from omegaconf import DictConfig
 from pytorch_lightning import Trainer, seed_everything
 
-from dataset import PathContextDataModule, TypedPathContextDataModule
+from data import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
-from utils.vocabulary import Vocabulary
+from code2seq.data.vocabulary import Vocabulary
 
 
 def load_code2seq(

@@ -2,7 +2,7 @@ from omegaconf import DictConfig
 
 from code2seq.model import Code2Seq
 from code2seq.model.modules import TypedPathEncoder, PathEncoder
-from code2seq.utils.vocabulary import Vocabulary, PAD
+from code2seq.data.vocabulary import Vocabulary, PAD
 
 
 class TypedCode2Seq(Code2Seq):

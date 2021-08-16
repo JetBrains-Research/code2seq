@@ -26,10 +26,10 @@ def print_config(config: DictConfig):
         if column not in config:
             continue
         config_data[column] = [f"{k}: {v}" for k, v in config[column].items()]
-    config_data["dataset"] = [f"name: {config.dataset.name}"]
+    config_data["data"] = [f"name: {config.dataset.name}"]
     for key, val in config.dataset.items():
         if isinstance(val, DictConfig):
-            config_data["dataset"] += [f"{key}.{k}: {v}" for k, v in val.items()]
+            config_data["data"] += [f"{key}.{k}: {v}" for k, v in val.items()]
 
     print_table(config_data)
 

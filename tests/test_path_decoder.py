@@ -4,10 +4,10 @@ from unittest import TestCase
 import torch
 from hydra.experimental import compose, initialize_config_dir
 
-from code2seq.dataset import PathContextDataset, PathContextBatch
+from code2seq.data import PathContextDataset, PathContextBatch
 from code2seq.model.modules import PathDecoder
 from code2seq.utils.filesystem import get_test_resources_dir
-from code2seq.utils.vocabulary import Vocabulary
+from code2seq.data.vocabulary import Vocabulary
 
 
 class TestPathDecoder(TestCase):

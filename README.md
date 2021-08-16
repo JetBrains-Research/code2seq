@@ -21,9 +21,9 @@ Minimal code example to run the model:
 from os.path import join
 
 import hydra
-from code2seq.dataset import PathContextDataModule
+from code2seq.data import PathContextDataModule
 from code2seq.model import Code2Seq
-from code2seq.utils.vocabulary import Vocabulary
+from code2seq.data.vocabulary import Vocabulary
 from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 
@@ -43,5 +43,5 @@ if __name__ == "__main__":
     train()
 ```
 
-Navigate to [code2seq/configs](code2seq/configs) to see examples of configs.
+Navigate to [code2seq/configs](configs) to see examples of configs.
 If you had any questions then feel free to open the issue.

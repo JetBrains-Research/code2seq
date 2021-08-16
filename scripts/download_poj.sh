@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script - download codeforces dataset from s3
+# Script - download poj-104 dataset from s3
 # options:
 # $1              specify a percentage of dataset used as train set
 # $2              specify a percentage of dataset used as test set

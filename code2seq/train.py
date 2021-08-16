@@ -8,11 +8,11 @@ from pytorch_lightning import seed_everything, Trainer, LightningModule, Lightni
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 
-from dataset import PathContextDataModule, TypedPathContextDataModule
+from data import PathContextDataModule, TypedPathContextDataModule
 from model import Code2Seq, Code2Class, TypedCode2Seq
 from utils.callback import UploadCheckpointCallback, PrintEpochResultCallback
 from utils.common import print_config, filter_warnings
-from utils.vocabulary import Vocabulary
+from code2seq.data.vocabulary import Vocabulary
 
 
 def get_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[LightningModule, LightningDataModule]:
@@ -33,7 +33,7 @@ def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[Ligh
     return model, data_module
 
 
-@hydra.main(config_path="configs", config_name="code2seq-java-small")
+@hydra.main(config_path="../configs", config_name="code2seq-java-small")
 def train(config: DictConfig):
     filter_warnings()
     print_config(config)

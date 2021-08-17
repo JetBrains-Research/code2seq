@@ -1,4 +1,5 @@
 from os.path import exists
+from random import shuffle
 from typing import Dict, List, Optional
 
 import torch
@@ -44,11 +45,11 @@ class PathContextDataset(Dataset):
         # Choose paths for current data sample
         n_contexts = min(len(raw_path_contexts), self._config.max_context)
         if self._random_context:
-            raw_path_contexts.shuffle()
+            shuffle(raw_path_contexts)
         raw_path_contexts = raw_path_contexts[:n_contexts]
 
         # Tokenize label
-        label = self._get_label(raw_label)
+        label = self._tokenize_label(raw_label)
 
         # Tokenize paths
         try:
@@ -60,15 +61,15 @@ class PathContextDataset(Dataset):
 
         return LabeledPathContext(label, paths)
 
-    def _get_label(self, raw_label: str) -> torch.Tensor:
-        label = torch.full((self._config.max_label_parts + 1, 1), self._vocab.label_to_id[self._vocab.PAD])
-        label[0, 0] = self._vocab.label_to_id[self._vocab.SOS]
+    def _tokenize_label(self, raw_label: str) -> torch.Tensor:
+        label = torch.full((self._config.max_label_parts + 1,), self._vocab.label_to_id[self._vocab.PAD])
+        label[0] = self._vocab.label_to_id[self._vocab.SOS]
         sublabels = raw_label.split(self._separator)[: self._config.max_label_parts]
-        label[1 : len(sublabels) + 1, 0] = torch.tensor(
+        label[1 : len(sublabels) + 1] = torch.tensor(
             [self._vocab.label_to_id.get(sl, self._label_unk) for sl in sublabels]
         )
         if len(sublabels) < self._config.max_label_parts:
-            label[len(sublabels) + 1, 0] = self._vocab.label_to_id[self._vocab.EOS]
+            label[len(sublabels) + 1] = self._vocab.label_to_id[self._vocab.EOS]
         return label
 
     def _tokenize_token(self, token: str, vocab: Dict[str, int], max_parts: Optional[int]) -> torch.Tensor:
@@ -84,6 +85,6 @@ class PathContextDataset(Dataset):
     def _get_path(self, raw_path: List[str]) -> Path:
         return Path(
             from_token=self._tokenize_token(raw_path[0], self._vocab.token_to_id, self._config.max_token_parts),
-            path_node=self._tokenize_token(raw_path[1], self._vocab.node_to_id, None),
+            path_node=self._tokenize_token(raw_path[1], self._vocab.node_to_id, self._config.path_length),
             to_token=self._tokenize_token(raw_path[2], self._vocab.token_to_id, self._config.max_token_parts),
         )

@@ -23,3 +23,9 @@ class TypedPathContextDataModule(PathContextDataModule):
 
     def _create_dataset(self, holdout_file: str, random_context: bool) -> TypedPathContextDataset:
         return TypedPathContextDataset(holdout_file, self._config, self._vocabulary, random_context)
+
+    @property
+    def vocabulary(self) -> TypedVocabulary:
+        if self._vocabulary is None:
+            raise RuntimeError(f"Setup data module for initializing vocabulary")
+        return self._vocabulary

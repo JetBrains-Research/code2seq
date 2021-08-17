@@ -8,7 +8,8 @@ from omegaconf import DictConfig
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from code2seq.data import PathContextDataset, LabeledPathContext, BatchedLabeledPathContext
+from code2seq.data.path_context import LabeledPathContext, BatchedLabeledPathContext
+from code2seq.data.path_context_dataset import PathContextDataset
 from code2seq.data.vocabulary import Vocabulary
 
 
@@ -42,7 +43,7 @@ class PathContextDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         if not exists(join(self._data_dir, Vocabulary.vocab_filename)):
             print("Can't find vocabulary, collect it from train holdout")
-            build_from_scratch(join(self._data_dir, f"{self._train}.jsonl"), Vocabulary)
+            build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), Vocabulary)
         vocabulary_path = join(self._data_dir, Vocabulary.vocab_filename)
         self._vocabulary = Vocabulary(vocabulary_path, self._config.max_labels, self._config.max_tokens)
 
@@ -57,7 +58,7 @@ class PathContextDataModule(LightningDataModule):
         if self._vocabulary is None:
             raise RuntimeError(f"Setup vocabulary before creating data loaders")
 
-        holdout_file = join(self._data_dir, f"{holdout}.jsonl")
+        holdout_file = join(self._data_dir, f"{holdout}.c2s")
         random_context = self._config.random_context if holdout == self._train else False
         dataset = self._create_dataset(holdout_file, random_context)
 

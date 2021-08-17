@@ -17,6 +17,7 @@ pip install code2seq
 ## Usage
 
 Minimal code example to run the model:
+
 ```python
 from os.path import join
 
@@ -28,7 +29,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 
 
-@hydra.main(config_path="configs")
+@hydra.main(config_path="config")
 def train(config: DictConfig):
     vocabulary_path = join(config.data_folder, config.dataset.name, config.vocabulary_name)
     vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
@@ -43,5 +44,5 @@ if __name__ == "__main__":
     train()
 ```
 
-Navigate to [code2seq/configs](configs) to see examples of configs.
+Navigate to [code2seq/configs](config) to see examples of configs.
 If you had any questions then feel free to open the issue.

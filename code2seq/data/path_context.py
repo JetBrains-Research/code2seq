@@ -21,17 +21,17 @@ class BatchedLabeledPathContext:
     def __init__(self, samples: List[Optional[LabeledPathContext]]):
         samples = [s for s in samples if s is not None]
 
-        # [batch size; max label parts]
-        self.labels = torch.cat([s.label for s in samples], dim=1)
+        # [max label parts; batch size]
+        self.labels = torch.cat([s.label.unsqueeze(1) for s in samples], dim=1)
         # [batch size]
-        self.contexts_per_label = [len(s.path_contexts) for s in samples]
+        self.contexts_per_label = torch.tensor([len(s.path_contexts) for s in samples])
 
-        # [paths in batch; max token parts]
-        self.from_token = torch.cat([path.from_token for s in samples for path in s.path_contexts], dim=1)
-        # [paths in batch; path length]
-        self.path_node = torch.cat([path.path_node for s in samples for path in s.path_contexts], dim=1)
-        # [paths in batch; max token parts]
-        self.to_token = torch.cat([path.to_token for s in samples for path in s.path_contexts], dim=1)
+        # [max token parts; n contexts]
+        self.from_token = torch.cat([path.from_token.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        # [path length; n contexts]
+        self.path_nodes = torch.cat([path.path_node.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        # [max token parts; n contexts]
+        self.to_token = torch.cat([path.to_token.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
 
     def __len__(self) -> int:
         return len(self.contexts_per_label)
@@ -65,7 +65,7 @@ class LabeledTypedPathContext(LabeledPathContext):
 class BatchedLabeledTypedPathContext(BatchedLabeledPathContext):
     def __init__(self, samples: List[Optional[LabeledTypedPathContext]]):
         super().__init__(samples)
-        # [paths in batch; max type parts]
-        self.from_type = torch.cat([path.from_type for s in samples for path in s.path_contexts], dim=1)
-        # [paths in batch; max type parts]
-        self.to_type = torch.cat([path.to_type for s in samples for path in s.path_contexts], dim=1)
+        # [max type parts; n contexts]
+        self.from_type = torch.cat([path.from_type.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        # [max type parts; n contexts]
+        self.to_type = torch.cat([path.to_type.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)

@@ -7,8 +7,8 @@ from commode_utils.filesystem import get_lines_offsets, get_line_by_offset
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 
-from code2seq.data.path_context import LabeledPathContext, Path
-from code2seq.data.vocabulary import Vocabulary
+from src.data.path_context import LabeledPathContext, Path
+from src.data.vocabulary import Vocabulary
 
 
 class PathContextDataset(Dataset):

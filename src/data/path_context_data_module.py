@@ -8,9 +8,9 @@ from omegaconf import DictConfig
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from code2seq.data.path_context import LabeledPathContext, BatchedLabeledPathContext
-from code2seq.data.path_context_dataset import PathContextDataset
-from code2seq.data.vocabulary import Vocabulary
+from src.data.path_context import LabeledPathContext, BatchedLabeledPathContext
+from src.data.path_context_dataset import PathContextDataset
+from src.data.vocabulary import Vocabulary
 
 
 class PathContextDataModule(LightningDataModule):

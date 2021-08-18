@@ -24,13 +24,13 @@ class PathEncoder(nn.Module):
         self.dropout_rnn = nn.Dropout(config.encoder_dropout)
         self.path_lstm = nn.LSTM(
             config.embedding_size,
-            config.rnn_size,
+            config.encoder_rnn_size,
             num_layers=config.rnn_num_layers,
             bidirectional=config.use_bi_rnn,
             dropout=config.encoder_dropout if config.rnn_num_layers > 1 else 0,
         )
 
-        concat_size = self._calculate_concat_size(config.embedding_size, config.rnn_size, self.num_directions)
+        concat_size = self._calculate_concat_size(config.embedding_size, config.encoder_rnn_size, self.num_directions)
         self.embedding_dropout = nn.Dropout(config.encoder_dropout)
         self.linear = nn.Linear(concat_size, config.decoder_size, bias=False)
         self.norm = nn.LayerNorm(config.decoder_size)

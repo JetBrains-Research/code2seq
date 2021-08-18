@@ -27,8 +27,7 @@ model:
   # Encoder
   embedding_size: 10
   encoder_dropout: 0.25
-  encoder_size: 10
-  rnn_size: 10
+  encoder_rnn_size: 10
   use_bi_rnn: true
   rnn_num_layers: 1
 

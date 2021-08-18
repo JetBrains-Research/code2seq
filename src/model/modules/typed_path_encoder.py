@@ -2,7 +2,7 @@ import torch
 from omegaconf import DictConfig
 from torch import nn
 
-from code2seq.model.modules import PathEncoder
+from src.model.modules import PathEncoder
 
 
 class TypedPathEncoder(PathEncoder):

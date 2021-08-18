@@ -5,11 +5,11 @@ import torch
 from commode_utils.common import print_config
 from omegaconf import DictConfig, OmegaConf
 
-from code2seq.data import PathContextDataModule
-from code2seq.model import Code2Class
-from code2seq.utils.common import filter_warnings
-from code2seq.utils.test import test
-from code2seq.utils.train import train
+from src.data.path_context_data_module import PathContextDataModule
+from src.model import Code2Seq
+from src.utils.common import filter_warnings
+from src.utils.test import test
+from src.utils.train import train
 
 
 def configure_arg_parser() -> ArgumentParser:
@@ -19,24 +19,24 @@ def configure_arg_parser() -> ArgumentParser:
     return arg_parser
 
 
-def train_code2class(config: DictConfig):
+def train_code2seq(config: DictConfig):
     filter_warnings()
 
     if config.print_config:
         print_config(config, fields=["model", "data", "train", "optimizer"])
 
     # Load data module
-    data_module = PathContextDataModule(config.data, config.data_folder)
+    data_module = PathContextDataModule(config.data_folder, config.data)
     data_module.prepare_data()
     data_module.setup()
 
     # Load model
-    code2class = Code2Class(config.model, config.optimizer, data_module.vocabulary)
+    code2seq = Code2Seq(config.model, config.optimizer, data_module.vocabulary, config.train.teacher_forcing)
 
-    train(code2class, data_module, config)
+    train(code2seq, data_module, config)
 
 
-def test_code2class(config: DictConfig):
+def test_code2seq(config: DictConfig):
     filter_warnings()
 
     # Load data module
@@ -45,9 +45,9 @@ def test_code2class(config: DictConfig):
     data_module.setup()
 
     # Load model
-    code2class = Code2Class.load_from_checkpoint(config.checkpoint, map_location=torch.device("cpu"))
+    code2seq = Code2Seq.load_from_checkpoint(config.checkpoint, map_location=torch.device("cpu"))
 
-    test(code2class, data_module, config.seed)
+    test(code2seq, data_module, config.seed)
 
 
 if __name__ == "__main__":
@@ -56,6 +56,6 @@ if __name__ == "__main__":
 
     __config = cast(DictConfig, OmegaConf.load(__args.config))
     if __args.mode == "train":
-        train_code2class(__config)
+        train_code2seq(__config)
     else:
-        test_code2class(__config)
+        test_code2seq(__config)

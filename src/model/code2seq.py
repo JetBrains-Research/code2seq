@@ -12,10 +12,10 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torchmetrics import MetricCollection, Metric
 
-from code2seq.data.path_context import BatchedLabeledPathContext
-from code2seq.data.vocabulary import Vocabulary
-from code2seq.model.modules import PathEncoder
-from code2seq.utils.optimization import configure_optimizers_alon
+from src.data.path_context import BatchedLabeledPathContext
+from src.data.vocabulary import Vocabulary
+from src.model.modules import PathEncoder
+from src.utils.optimization import configure_optimizers_alon
 
 
 class Code2Seq(LightningModule):

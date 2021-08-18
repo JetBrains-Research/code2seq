@@ -5,7 +5,7 @@ hydra:
   job_logging: null
   hydra_logging: null
 
-name: typed-code2seq
+name: typed-src
 
 seed: 7
 num_workers: 0

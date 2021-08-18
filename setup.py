@@ -1,12 +1,18 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
-with open("requirements.txt") as requirements_file:
-    install_requires = [line.strip() for line in requirements_file]
+install_requires = [
+    "torch~=1.7.1",
+    "tqdm~=4.58.0",
+    "numpy~=1.20.1",
+    "pytorch-lightning==1.1.7",
+    "wandb~=0.10.20",
+    "hydra-core~=1.0.6",
+]
 
 setup_args = dict(
     name="code2seq",

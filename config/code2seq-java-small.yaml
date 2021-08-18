@@ -23,8 +23,8 @@ data:
   max_context: 200
   random_context: true
 
-  batch_size: 5
-  test_batch_size: 10
+  batch_size: 512
+  test_batch_size: 768
 
 model:
   # Encoder

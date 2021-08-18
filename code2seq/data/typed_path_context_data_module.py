@@ -2,13 +2,13 @@ from typing import List, Optional
 
 from omegaconf import DictConfig
 
-from src.data import (
+from code2seq.data import (
     PathContextDataModule,
     TypedPathContextDataset,
     BatchedLabeledTypedPathContext,
     LabeledTypedPathContext,
 )
-from src.data.vocabulary import TypedVocabulary
+from code2seq.data.vocabulary import TypedVocabulary
 
 
 class TypedPathContextDataModule(PathContextDataModule):

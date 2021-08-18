@@ -3,7 +3,7 @@ data_folder: ../data/code2seq/java-small
 checkpoint: null
 
 seed: 7
-log_offline: true
+log_offline: false
 # Training in notebooks (e.g. Google Colab) may crash with too small value
 progress_bar_refresh_rate: 1
 print_config: true

@@ -40,7 +40,7 @@ def test_code2seq(config: DictConfig):
     filter_warnings()
 
     # Load data module
-    data_module = PathContextDataModule(config.data, config.data_folder)
+    data_module = PathContextDataModule(config.data_folder, config.data)
     data_module.prepare_data()
     data_module.setup()
 

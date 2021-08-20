@@ -5,7 +5,7 @@ import torch
 from commode_utils.common import print_config
 from omegaconf import DictConfig, OmegaConf
 
-from code2seq.data import TypedPathContextDataModule
+from code2seq.data.typed_path_context_data_module import TypedPathContextDataModule
 from code2seq.model import TypedCode2Seq
 from code2seq.utils.common import filter_warnings
 from code2seq.utils.test import test
@@ -26,7 +26,7 @@ def train_typed_code2seq(config: DictConfig):
         print_config(config, fields=["model", "data", "train", "optimizer"])
 
     # Load data module
-    data_module = TypedPathContextDataModule(config.data, config.data_folder)
+    data_module = TypedPathContextDataModule(config.data_folder, config.data)
     data_module.prepare_data()
     data_module.setup()
 
@@ -40,7 +40,7 @@ def test_typed_code2seq(config: DictConfig):
     filter_warnings()
 
     # Load data module
-    data_module = TypedPathContextDataModule(config.data, config.data_folder)
+    data_module = TypedPathContextDataModule(config.data_folder, config.data)
     data_module.prepare_data()
     data_module.setup()
 

@@ -2,28 +2,31 @@ from argparse import ArgumentParser
 from collections import Counter
 from os.path import dirname, join
 from pickle import load, dump
-from typing import Dict, Counter as CounterType, Optional
+from typing import Dict, Counter as CounterType, Optional, List
 
 from commode_utils.vocabulary import BaseVocabulary, build_from_scratch
 
 
 class Vocabulary(BaseVocabulary):
-    _path_context_seq = [BaseVocabulary.TOKEN, BaseVocabulary.NODE, BaseVocabulary.TOKEN]
-
     @staticmethod
-    def process_raw_sample(raw_sample: str, counters: Dict[str, CounterType[str]]):
+    def _process_raw_sample(raw_sample: str, counters: Dict[str, CounterType[str]], context_seq: List[str]):
         label, *path_contexts = raw_sample.split(" ")
         counters[Vocabulary.LABEL].update(label.split(Vocabulary._separator))
         for path_context in path_contexts:
-            for token, desc in zip(path_context.split(","), Vocabulary._path_context_seq):
+            for token, desc in zip(path_context.split(","), context_seq):
                 counters[desc].update(token.split(Vocabulary._separator))
+
+    @staticmethod
+    def process_raw_sample(raw_sample: str, counters: Dict[str, CounterType[str]]):
+        Vocabulary._process_raw_sample(
+            raw_sample, counters, [BaseVocabulary.TOKEN, BaseVocabulary.NODE, BaseVocabulary.TOKEN]
+        )
 
 
 class TypedVocabulary(Vocabulary):
-    NODE = "nodeType"
     TYPE = "tokenType"
 
-    _path_context_seq = [TYPE, BaseVocabulary.TOKEN, NODE, BaseVocabulary.TOKEN, TYPE]
+    _path_context_seq = [TYPE, Vocabulary.TOKEN, Vocabulary.NODE, Vocabulary.TOKEN, TYPE]
 
     def __init__(
         self,
@@ -47,7 +50,14 @@ class TypedVocabulary(Vocabulary):
     def process_raw_sample(raw_sample: str, counters: Dict[str, CounterType[str]]):
         if TypedVocabulary.TYPE not in counters:
             counters[TypedVocabulary.TYPE] = Counter()
-        super().process_raw_sample(raw_sample, counters)
+        context_seq = [
+            TypedVocabulary.TYPE,
+            BaseVocabulary.TOKEN,
+            BaseVocabulary.NODE,
+            BaseVocabulary.TOKEN,
+            TypedVocabulary.TYPE,
+        ]
+        TypedVocabulary._process_raw_sample(raw_sample, counters, context_seq)
 
 
 def convert_from_vanilla(vocabulary_path: str):

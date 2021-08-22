@@ -53,6 +53,8 @@ class PathContextDataModule(LightningDataModule):
         return BatchedLabeledPathContext(batch)
 
     def _create_dataset(self, holdout_file: str, random_context: bool) -> PathContextDataset:
+        if self._vocabulary is None:
+            raise RuntimeError(f"Setup vocabulary before creating data loaders")
         return PathContextDataset(holdout_file, self._config, self._vocabulary, random_context)
 
     def _shared_dataloader(self, holdout: str) -> DataLoader:

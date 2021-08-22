@@ -4,6 +4,7 @@ import torch
 from commode_utils.modules import Classifier
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
+from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torchmetrics import Metric, Accuracy, MetricCollection
@@ -77,18 +78,19 @@ class Code2Class(LightningModule):
 
     # ========== ON EPOCH END ==========
 
-    def _shared_epoch_end(self, outputs: List[Dict], step: str):
+    def _shared_epoch_end(self, outputs: EPOCH_OUTPUT, step: str):
+        assert isinstance(outputs, dict)
         with torch.no_grad():
             mean_loss = torch.stack([out[f"{step}/loss"] for out in outputs]).mean()
             accuracy = self.__metrics[f"{step}_acc"].compute()
             log = {f"{step}/loss": mean_loss, f"{step}/accuracy": accuracy}
         self.log_dict(log, on_step=False, on_epoch=True)
 
-    def training_epoch_end(self, outputs: List[Dict]):
+    def training_epoch_end(self, outputs: EPOCH_OUTPUT):
         self._shared_epoch_end(outputs, "train")
 
-    def validation_epoch_end(self, outputs: List[Dict]):
+    def validation_epoch_end(self, outputs: EPOCH_OUTPUT):
         self._shared_epoch_end(outputs, "val")
 
-    def test_epoch_end(self, outputs: List[Dict]):
+    def test_epoch_end(self, outputs: EPOCH_OUTPUT):
         self._shared_epoch_end(outputs, "test")

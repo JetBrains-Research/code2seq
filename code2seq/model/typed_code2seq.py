@@ -18,7 +18,7 @@ class TypedCode2Seq(Code2Seq):
         teacher_forcing: float = 0.0,
     ):
         super().__init__(model_config, optimizer_config, vocabulary, teacher_forcing)
-        self._vocabulary = vocabulary
+        self._vocabulary: TypedVocabulary = vocabulary
 
     def _get_encoder(self, config: DictConfig) -> PathEncoder:
         return TypedPathEncoder(
@@ -46,7 +46,7 @@ class TypedCode2Seq(Code2Seq):
         output_logits = self._decoder(encoded_paths, contexts_per_label, output_length, target_sequence)
         return output_logits
 
-    def logits_from_batch(
+    def logits_from_batch(  # type: ignore[override]
         self, batch: BatchedLabeledTypedPathContext, target_sequence: Optional[torch.Tensor]
     ) -> torch.Tensor:
         return self(

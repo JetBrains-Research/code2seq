@@ -10,7 +10,7 @@ from code2seq.data.vocabulary import TypedVocabulary
 class TypedPathContextDataset(PathContextDataset):
     def __init__(self, data_file: str, config: DictConfig, vocabulary: TypedVocabulary, random_context: bool):
         super().__init__(data_file, config, vocabulary, random_context)
-        self._vocab = vocabulary
+        self._vocab: TypedVocabulary = vocabulary
 
     def _get_path(self, raw_path: List[str]) -> TypedPath:
         return TypedPath(

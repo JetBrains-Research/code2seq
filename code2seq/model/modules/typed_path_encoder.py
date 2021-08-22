@@ -27,7 +27,7 @@ class TypedPathEncoder(PathEncoder):
     def _type_embedding(self, types: torch.Tensor) -> torch.Tensor:
         return self.type_embedding(types).sum(0)
 
-    def forward(
+    def forward(  # type: ignore
         self,
         from_type: torch.Tensor,
         from_token: torch.Tensor,

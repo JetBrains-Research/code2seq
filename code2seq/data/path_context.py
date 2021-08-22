@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Iterable, Tuple, Optional
+from typing import Iterable, Tuple, Optional, Sequence
 
 import torch
 
@@ -14,12 +14,12 @@ class Path:
 @dataclass
 class LabeledPathContext:
     label: torch.Tensor  # [max label parts]
-    path_contexts: List[Path]
+    path_contexts: Sequence[Path]
 
 
 class BatchedLabeledPathContext:
-    def __init__(self, samples: List[Optional[LabeledPathContext]]):
-        samples = [s for s in samples if s is not None]
+    def __init__(self, all_samples: Sequence[Optional[LabeledPathContext]]):
+        samples = [s for s in all_samples if s is not None]
 
         # [max label parts; batch size]
         self.labels = torch.cat([s.label.unsqueeze(1) for s in samples], dim=1)
@@ -59,12 +59,13 @@ class TypedPath(Path):
 
 @dataclass
 class LabeledTypedPathContext(LabeledPathContext):
-    path_contexts: List[TypedPath]
+    path_contexts: Sequence[TypedPath]
 
 
 class BatchedLabeledTypedPathContext(BatchedLabeledPathContext):
-    def __init__(self, samples: List[Optional[LabeledTypedPathContext]]):
-        super().__init__(samples)
+    def __init__(self, all_samples: Sequence[Optional[LabeledTypedPathContext]]):
+        super().__init__(all_samples)
+        samples = [s for s in all_samples if s is not None]
         # [max type parts; n contexts]
         self.from_type = torch.cat([path.from_type.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
         # [max type parts; n contexts]

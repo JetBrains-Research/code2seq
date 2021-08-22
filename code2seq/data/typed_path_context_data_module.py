@@ -17,10 +17,14 @@ class TypedPathContextDataModule(PathContextDataModule):
         super().__init__(data_dir, config)
 
     @staticmethod
-    def collate_wrapper(batch: List[Optional[LabeledTypedPathContext]]) -> BatchedLabeledTypedPathContext:
+    def collate_wrapper(  # type: ignore[override]
+        batch: List[Optional[LabeledTypedPathContext]],
+    ) -> BatchedLabeledTypedPathContext:
         return BatchedLabeledTypedPathContext(batch)
 
     def _create_dataset(self, holdout_file: str, random_context: bool) -> TypedPathContextDataset:
+        if self._vocabulary is None:
+            raise RuntimeError(f"Setup vocabulary before creating data loaders")
         return TypedPathContextDataset(holdout_file, self._config, self._vocabulary, random_context)
 
     def setup(self, stage: Optional[str] = None):

@@ -1,0 +1,58 @@
+data_folder: ../data/code2seq/java-small
+
+checkpoint: null
+
+seed: 7
+log_offline: false
+# Training in notebooks (e.g. Google Colab) may crash with too small value
+progress_bar_refresh_rate: 1
+print_config: true
+
+data:
+  url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/java-paths-methods/java-small.tar.gz
+  num_workers: 4
+
+  # Each token appears at least 5 times
+  max_labels: 5332
+  max_label_parts: 7
+  # Each token appears at least 5 times
+  max_tokens: 18240
+  max_token_parts: 5
+  max_typed: null
+  max_type_parts: 5
+  path_length: 9
+
+  max_context: 200
+  random_context: true
+
+  batch_size: 512
+  test_batch_size: 768
+
+model:
+  # Encoder
+  embedding_size: 128
+  encoder_dropout: 0.25
+  encoder_rnn_size: 128
+  use_bi_rnn: true
+  rnn_num_layers: 1
+
+  # Decoder
+  decoder_size: 320
+  decoder_num_layers: 1
+  rnn_dropout: 0.5
+
+optimizer:
+  optimizer: "Momentum"
+  nesterov: true
+  lr: 0.01
+  weight_decay: 0
+  decay_gamma: 0.95
+
+train:
+  n_epochs: 10
+  patience: 10
+  clip_norm: 5
+  teacher_forcing: 1.0
+  val_every_epoch: 1
+  save_every_epoch: 1
+  log_every_n_steps: 10

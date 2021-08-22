@@ -1,89 +1,96 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 import torch
-import torch.nn.functional as F
+from commode_utils.modules import Classifier
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
-from pytorch_lightning.metrics.functional import confusion_matrix
+from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
+from torchmetrics import Metric, Accuracy, MetricCollection
 
-from code2seq.dataset import PathContextBatch
-from code2seq.model.modules import PathEncoder, PathClassifier
-from code2seq.utils.training import configure_optimizers_alon
-from code2seq.utils.vocabulary import Vocabulary, PAD
+from code2seq.data.path_context import BatchedLabeledPathContext
+from code2seq.data.vocabulary import Vocabulary
+from code2seq.model.modules import PathEncoder
+from code2seq.utils.optimization import configure_optimizers_alon
 
 
 class Code2Class(LightningModule):
-    def __init__(self, config: DictConfig, vocabulary: Vocabulary):
+    def __init__(self, model_config: DictConfig, optimizer_config: DictConfig, vocabulary: Vocabulary):
         super().__init__()
-        self._config = config
         self.save_hyperparameters()
-        self.encoder = PathEncoder(
-            self._config.encoder,
-            self._config.classifier.classifier_input_size,
+        self._optim_config = optimizer_config
+
+        self._encoder = PathEncoder(
+            model_config,
             len(vocabulary.token_to_id),
-            vocabulary.token_to_id[PAD],
+            vocabulary.token_to_id[Vocabulary.PAD],
             len(vocabulary.node_to_id),
-            vocabulary.node_to_id[PAD],
+            vocabulary.node_to_id[Vocabulary.PAD],
         )
-        self.num_classes = len(vocabulary.label_to_id)
-        self.classifier = PathClassifier(self._config.classifier, self.num_classes)
+
+        self._classifier = Classifier(model_config, len(vocabulary.label_to_id))
+
+        metrics: Dict[str, Metric] = {
+            f"{holdout}_acc": Accuracy(num_classes=len(vocabulary.label_to_id)) for holdout in ["train", "val", "test"]
+        }
+        self.__metrics = MetricCollection(metrics)
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
-        return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())
+        return configure_optimizers_alon(self._optim_config, self.parameters())
 
-    def forward(self, samples: Dict[str, torch.Tensor], paths_for_label: List[int]) -> torch.Tensor:  # type: ignore
-        return self.classifier(self.encoder(samples), paths_for_label)
+    def forward(  # type: ignore
+        self,
+        from_token: torch.Tensor,
+        path_nodes: torch.Tensor,
+        to_token: torch.Tensor,
+        contexts_per_label: torch.Tensor,
+    ) -> torch.Tensor:
+        encoded_paths = self._encoder(from_token, path_nodes, to_token)
+        output_logits = self._classifier(encoded_paths, contexts_per_label)
+        return output_logits
 
     # ========== MODEL STEP ==========
 
-    def training_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
+    def _shared_step(self, batch: BatchedLabeledPathContext, step: str) -> Dict:
         # [batch size; num_classes]
-        logits = self(batch.contexts, batch.contexts_per_label)
-        loss = F.cross_entropy(logits, batch.labels.squeeze(0))
-        log = {"train/loss": loss}
+        logits = self(batch.from_token, batch.path_nodes, batch.to_token, batch.contexts_per_label)
+        labels = batch.labels.squeeze(0)
+        loss = torch.nn.functional.cross_entropy(logits, labels)
+
         with torch.no_grad():
-            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0), self.num_classes)
-            log["train/accuracy"] = conf_matrix.trace() / conf_matrix.sum()
-        self.log_dict(log)
+            predictions = logits.argmax(-1)
+            accuracy = self.__metrics[f"{step}_acc"](predictions, labels)
 
-        return {"loss": loss, "confusion_matrix": conf_matrix}
+        return {f"{step}/loss": loss, f"{step}/accuracy": accuracy}
 
-    def validation_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
-        # [batch size; num_classes]
-        logits = self(batch.contexts, batch.contexts_per_label)
-        loss = F.cross_entropy(logits, batch.labels.squeeze(0))
-        with torch.no_grad():
-            conf_matrix = confusion_matrix(logits.argmax(-1), batch.labels.squeeze(0), self.num_classes)
+    def training_step(self, batch: BatchedLabeledPathContext, batch_idx: int) -> Dict:  # type: ignore
+        result = self._shared_step(batch, "train")
+        self.log_dict(result, on_step=True, on_epoch=False)
+        self.log("acc", result["train/accuracy"], prog_bar=True, logger=False)
+        return result["train/loss"]
 
-        return {"loss": loss, "confusion_matrix": conf_matrix}
+    def validation_step(self, batch: BatchedLabeledPathContext, batch_idx: int) -> Dict:  # type: ignore
+        return self._shared_step(batch, "val")
 
-    def test_step(self, batch: PathContextBatch, batch_idx: int) -> Dict:  # type: ignore
-        return self.validation_step(batch, batch_idx)
+    def test_step(self, batch: BatchedLabeledPathContext, batch_idx: int) -> Dict:  # type: ignore
+        return self._shared_step(batch, "test")
 
     # ========== ON EPOCH END ==========
 
-    def _general_epoch_end(self, outputs: List[Dict], group: str):
+    def _shared_epoch_end(self, outputs: EPOCH_OUTPUT, step: str):
+        assert isinstance(outputs, dict)
         with torch.no_grad():
-            mean_loss = torch.stack([out["loss"] for out in outputs]).mean().item()
-            log: Dict[str, Union[float, torch.Tensor]] = {f"{group}/loss": mean_loss}
-            accumulated_conf_matrix = torch.zeros(
-                self.num_classes, self.num_classes, requires_grad=False, device=self.device
-            )
-            for out in outputs:
-                _conf_matrix = out["confusion_matrix"]
-                max_class_index, _ = _conf_matrix.shape
-                accumulated_conf_matrix[:max_class_index, :max_class_index] += _conf_matrix
-            log[f"{group}/accuracy"] = (accumulated_conf_matrix.trace() / accumulated_conf_matrix.sum()).item()
-            self.log_dict(log)
-            self.log(f"{group}_loss", mean_loss)
+            mean_loss = torch.stack([out[f"{step}/loss"] for out in outputs]).mean()
+            accuracy = self.__metrics[f"{step}_acc"].compute()
+            log = {f"{step}/loss": mean_loss, f"{step}/accuracy": accuracy}
+        self.log_dict(log, on_step=False, on_epoch=True)
 
-    def training_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "train")
+    def training_epoch_end(self, outputs: EPOCH_OUTPUT):
+        self._shared_epoch_end(outputs, "train")
 
-    def validation_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "val")
+    def validation_epoch_end(self, outputs: EPOCH_OUTPUT):
+        self._shared_epoch_end(outputs, "val")
 
-    def test_epoch_end(self, outputs: List[Dict]):
-        self._general_epoch_end(outputs, "test")
+    def test_epoch_end(self, outputs: EPOCH_OUTPUT):
+        self._shared_epoch_end(outputs, "test")

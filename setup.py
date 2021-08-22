@@ -1,17 +1,18 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.4"
+VERSION = "1.0.0"
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
 install_requires = [
-    "torch~=1.7.1",
-    "tqdm~=4.58.0",
-    "numpy~=1.20.1",
-    "pytorch-lightning==1.1.7",
-    "wandb~=0.10.20",
-    "hydra-core~=1.0.6",
+    "torch>=1.9.0",
+    "pytorch-lightning~=1.4.2",
+    "torchmetrics~=0.5.0",
+    "tqdm~=4.62.1",
+    "wandb~=0.12.0",
+    "omegaconf~=2.1.1",
+    "commode-utils>=0.3.8",
 ]
 
 setup_args = dict(

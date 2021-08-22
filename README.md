@@ -17,31 +17,43 @@ pip install code2seq
 ## Usage
 
 Minimal code example to run the model:
-```python
-from os.path import join
 
-import hydra
-from code2seq.dataset import PathContextDataModule
-from code2seq.model import Code2Seq
-from code2seq.utils.vocabulary import Vocabulary
-from omegaconf import DictConfig
+```python
+from argparse import ArgumentParser
+
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 
+from code2seq.data.path_context_data_module import PathContextDataModule
+from code2seq.model import Code2Seq
 
-@hydra.main(config_path="configs")
+
 def train(config: DictConfig):
-    vocabulary_path = join(config.data_folder, config.dataset.name, config.vocabulary_name)
-    vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
-    model = Code2Seq(config, vocabulary)
-    data_module = PathContextDataModule(config, vocabulary)
+    # Load data module
+    data_module = PathContextDataModule(config.data_folder, config.data)
+    data_module.prepare_data()
+    data_module.setup()
+
+    # Load model
+    model = Code2Seq(
+        config.model,
+        config.optimizer,
+        data_module.vocabulary,
+        config.train.teacher_forcing
+    )
 
     trainer = Trainer(max_epochs=config.hyper_parameters.n_epochs)
     trainer.fit(model, datamodule=data_module)
 
 
 if __name__ == "__main__":
-    train()
+    __arg_parser = ArgumentParser()
+    __arg_parser.add_argument("config", help="Path to YAML configuration file", type=str)
+    __args = __arg_parser.parse_args()
+
+    __config = OmegaConf.load(__args.config)
+    train(__config)
 ```
 
-Navigate to [code2seq/configs](code2seq/configs) to see examples of configs.
-If you had any questions then feel free to open the issue.
+Navigate to [config](config) directory to see examples of configs.
+If you have any questions, then feel free to open the issue.

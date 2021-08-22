@@ -1,17 +1,14 @@
-from typing import Dict, List
+from typing import List
 
 import torch
 from omegaconf import DictConfig
 from torch import nn
-
-from code2seq.dataset.data_classes import FROM_TOKEN, TO_TOKEN, PATH_NODES
 
 
 class PathEncoder(nn.Module):
     def __init__(
         self,
         config: DictConfig,
-        out_size: int,
         n_tokens: int,
         token_pad_id: int,
         n_nodes: int,
@@ -24,17 +21,23 @@ class PathEncoder(nn.Module):
         self.token_embedding = nn.Embedding(n_tokens, config.embedding_size, padding_idx=token_pad_id)
         self.node_embedding = nn.Embedding(n_nodes, config.embedding_size, padding_idx=node_pad_id)
 
-        self.dropout_rnn = nn.Dropout(config.rnn_dropout)
+        self.dropout_rnn = nn.Dropout(config.encoder_dropout)
         self.path_lstm = nn.LSTM(
             config.embedding_size,
-            config.rnn_size,
+            config.encoder_rnn_size,
             num_layers=config.rnn_num_layers,
             bidirectional=config.use_bi_rnn,
-            dropout=config.rnn_dropout if config.rnn_num_layers > 1 else 0,
+            dropout=config.encoder_dropout if config.rnn_num_layers > 1 else 0,
         )
 
-        concat_size = self._calculate_concat_size(config.embedding_size, config.rnn_size, self.num_directions)
-        self.embedding_dropout = nn.Dropout(config.embedding_dropout)
+        concat_size = self._calculate_concat_size(config.embedding_size, config.encoder_rnn_size, self.num_directions)
+        self.embedding_dropout = nn.Dropout(config.encoder_dropout)
+        if "decoder_size" in config:
+            out_size = config["decoder_size"]
+        elif "classifier_size" in config:
+            out_size = config["classifier_size"]
+        else:
+            raise ValueError("Specify out size of encoder")
         self.linear = nn.Linear(concat_size, out_size, bias=False)
         self.norm = nn.LayerNorm(out_size)
 
@@ -46,7 +49,7 @@ class PathEncoder(nn.Module):
         return self.token_embedding(tokens).sum(0)
 
     def _path_nodes_embedding(self, path_nodes: torch.Tensor) -> torch.Tensor:
-        # [max path length; total paths; embedding size]
+        # [max path length; n contexts; embedding size]
         path_nodes_embeddings = self.node_embedding(path_nodes)
 
         with torch.no_grad():
@@ -69,21 +72,28 @@ class PathEncoder(nn.Module):
         return encoded_paths
 
     def _concat_with_linear(self, encoded_contexts: List[torch.Tensor]) -> torch.Tensor:
-        # [total_paths; sum across all embeddings]
+        # [n contexts; sum across all embeddings]
         concat = torch.cat(encoded_contexts, dim=-1)
 
-        # [total_paths; output size]
+        # [n contexts; output size]
         concat = self.embedding_dropout(concat)
         return torch.tanh(self.norm(self.linear(concat)))
 
-    def forward(self, contexts: Dict[str, torch.Tensor]) -> torch.Tensor:
-        # [total paths; embedding size]
-        encoded_from_tokens = self._token_embedding(contexts[FROM_TOKEN])
-        encoded_to_tokens = self._token_embedding(contexts[TO_TOKEN])
+    def forward(self, from_token: torch.Tensor, path_nodes: torch.Tensor, to_token: torch.Tensor) -> torch.Tensor:
+        """Encode each path context into the vector
 
-        # [total_paths; rnn size * num directions]
-        encoded_paths = self._path_nodes_embedding(contexts[PATH_NODES])
+        :param from_token: [max token parts; n contexts] start tokens
+        :param path_nodes: [path length; n contexts] path nodes
+        :param to_token: [max tokens parts; n contexts] end tokens
+        :return: [n contexts; encoder size]
+        """
+        # [n contexts; embedding size]
+        encoded_from_tokens = self._token_embedding(from_token)
+        encoded_to_tokens = self._token_embedding(to_token)
 
-        # [total_paths; output size]
+        # [n contexts; rnn size * num directions]
+        encoded_paths = self._path_nodes_embedding(path_nodes)
+
+        # [n contexts; output size]
         output = self._concat_with_linear([encoded_from_tokens, encoded_paths, encoded_to_tokens])
         return output

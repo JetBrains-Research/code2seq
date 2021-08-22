@@ -1,12 +1,20 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.3"
+VERSION = "1.0.0"
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
 with open("requirements.txt") as requirements_file:
-    install_requires = [line.strip() for line in requirements_file]
+    install_requires = [
+        "torch>=1.9.0",
+        "pytorch-lightning~=1.4.2",
+        "torchmetrics~=0.5.0",
+        "tqdm~=4.62.1",
+        "wandb~=0.12.0",
+        "omegaconf~=2.1.1",
+        "commode-utils>=0.3.8",
+    ]
 
 setup_args = dict(
     name="code2seq",

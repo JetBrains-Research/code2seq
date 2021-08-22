@@ -26,7 +26,7 @@ def train_code2class(config: DictConfig):
         print_config(config, fields=["model", "data", "train", "optimizer"])
 
     # Load data module
-    data_module = PathContextDataModule(config.data_folder, config.data)
+    data_module = PathContextDataModule(config.data_folder, config.data, is_class=True)
     data_module.prepare_data()
     data_module.setup()
 

@@ -7,5 +7,5 @@ torchmetrics==0.5.0
 
 tqdm==4.62.1
 wandb==0.12.0
-omegaconf==2.1.0
-commode-utils==0.3.7
+omegaconf==2.1.1
+commode-utils==0.3.8

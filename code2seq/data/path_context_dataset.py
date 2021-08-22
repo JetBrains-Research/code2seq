@@ -23,8 +23,6 @@ class PathContextDataset(Dataset):
         self._vocab = vocabulary
         self._random_context = random_context
 
-        self._label_unk = vocabulary.label_to_id[vocabulary.UNK]
-
         self._line_offsets = get_lines_offsets(data_file)
         self._n_samples = len(self._line_offsets)
 
@@ -49,7 +47,10 @@ class PathContextDataset(Dataset):
         raw_path_contexts = raw_path_contexts[:n_contexts]
 
         # Tokenize label
-        label = self._tokenize_label(raw_label)
+        if self._config.max_label_parts == 1:
+            label = self.tokenize_class(raw_label, self._vocab.label_to_id)
+        else:
+            label = self.tokenize_label(raw_label, self._vocab.label_to_id, self._config.max_label_parts)
 
         # Tokenize paths
         try:
@@ -61,30 +62,40 @@ class PathContextDataset(Dataset):
 
         return LabeledPathContext(label, paths)
 
-    def _tokenize_label(self, raw_label: str) -> torch.Tensor:
-        label = torch.full((self._config.max_label_parts + 1,), self._vocab.label_to_id[self._vocab.PAD])
-        label[0] = self._vocab.label_to_id[self._vocab.SOS]
-        sublabels = raw_label.split(self._separator)[: self._config.max_label_parts]
-        label[1 : len(sublabels) + 1] = torch.tensor(
-            [self._vocab.label_to_id.get(sl, self._label_unk) for sl in sublabels]
-        )
-        if len(sublabels) < self._config.max_label_parts:
-            label[len(sublabels) + 1] = self._vocab.label_to_id[self._vocab.EOS]
+    @staticmethod
+    def tokenize_class(raw_class: str, vocab: Dict[str, int]) -> torch.Tensor:
+        return torch.tensor([vocab[raw_class]], dtype=torch.long)
+
+    @staticmethod
+    def tokenize_label(raw_label: str, vocab: Dict[str, int], max_parts: Optional[int]) -> torch.Tensor:
+        sublabels = raw_label.split(PathContextDataset._separator)
+        max_parts = max_parts or len(sublabels)
+        label_unk = vocab[Vocabulary.UNK]
+
+        label = torch.full((max_parts + 1,), vocab[Vocabulary.PAD], dtype=torch.long)
+        label[0] = vocab[Vocabulary.SOS]
+        sub_tokens_ids = [vocab.get(st, label_unk) for st in sublabels[:max_parts]]
+        label[1 : len(sub_tokens_ids) + 1] = torch.tensor(sub_tokens_ids)
+
+        if len(sublabels) < max_parts:
+            label[len(sublabels) + 1] = vocab[Vocabulary.EOS]
+
         return label
 
-    def _tokenize_token(self, token: str, vocab: Dict[str, int], max_parts: Optional[int]) -> torch.Tensor:
-        sub_tokens = token.split(self._separator)
+    @staticmethod
+    def tokenize_token(token: str, vocab: Dict[str, int], max_parts: Optional[int]) -> torch.Tensor:
+        sub_tokens = token.split(PathContextDataset._separator)
         max_parts = max_parts or len(sub_tokens)
-        token_unk = vocab[self._vocab.UNK]
+        token_unk = vocab[Vocabulary.UNK]
 
-        result = torch.full((max_parts,), vocab[self._vocab.PAD], dtype=torch.long)
+        result = torch.full((max_parts,), vocab[Vocabulary.PAD], dtype=torch.long)
         sub_tokens_ids = [vocab.get(st, token_unk) for st in sub_tokens[:max_parts]]
         result[: len(sub_tokens_ids)] = torch.tensor(sub_tokens_ids)
         return result
 
     def _get_path(self, raw_path: List[str]) -> Path:
         return Path(
-            from_token=self._tokenize_token(raw_path[0], self._vocab.token_to_id, self._config.max_token_parts),
-            path_node=self._tokenize_token(raw_path[1], self._vocab.node_to_id, self._config.path_length),
-            to_token=self._tokenize_token(raw_path[2], self._vocab.token_to_id, self._config.max_token_parts),
+            from_token=self.tokenize_token(raw_path[0], self._vocab.token_to_id, self._config.max_token_parts),
+            path_node=self.tokenize_token(raw_path[1], self._vocab.node_to_id, self._config.path_length),
+            to_token=self.tokenize_token(raw_path[2], self._vocab.token_to_id, self._config.max_token_parts),
         )

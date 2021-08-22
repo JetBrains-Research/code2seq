@@ -1,72 +1,54 @@
-hydra:
-  run:
-    dir: .
-  output_subdir: null
-  job_logging: null
-  hydra_logging: null
+data_folder: ../data/poj-104/poj-104-code2seq
 
-name: code2class
+checkpoint: null
 
 seed: 7
-num_workers: 2
-log_offline: false
-
-# data keys
-data_folder: /permanent-data
-vocabulary_name: vocabulary.pkl
-train_holdout: train
-val_holdout: val
-test_holdout: test
-
-save_every_epoch: 1
-val_every_epoch: 1
-log_every_epoch: 10
+log_offline: true
+# Training in notebooks (e.g. Google Colab) may crash with too small value
 progress_bar_refresh_rate: 1
+print_config: true
 
-hyper_parameters:
-  n_epochs: 3000
-  patience: 10
-  batch_size: 512
-  test_batch_size: 512
-  clip_norm: 5
+data:
+  url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/poj-104/poj-104-code2seq.tar.gz
+  num_workers: 0
+
+  max_labels: null
+  max_label_parts: 1
+  max_tokens: 190000
+  max_token_parts: 5
+  path_length: 9
+
   max_context: 200
   random_context: true
-  shuffle_data: true
 
+  batch_size: 512
+  test_batch_size: 768
+
+model:
+  # Encoder
+  embedding_size: 128
+  encoder_dropout: 0.25
+  encoder_rnn_size: 128
+  use_bi_rnn: true
+  rnn_num_layers: 1
+
+  # Classifier
+  classifier_layers: 2
+  classifier_size: 128
+  activation: relu
+
+optimizer:
   optimizer: "Momentum"
   nesterov: true
-  learning_rate: 0.01
+  lr: 0.01
   weight_decay: 0
   decay_gamma: 0.95
 
-dataset:
-  name: poj_104
-  target:
-    max_parts: 1
-    is_wrapped: false
-    is_splitted: false
-    vocabulary_size: 27000
-  token:
-    max_parts: 5
-    is_wrapped: false
-    is_splitted: true
-    vocabulary_size: 190000
-  path:
-    max_parts: 9
-    is_wrapped: false
-    is_splitted: true
-    vocabulary_size: null
-
-encoder:
-  embedding_size: 128
-  rnn_size: 128
-  use_bi_rnn: true
-  embedding_dropout: 0.25
-  rnn_num_layers: 1
-  rnn_dropout: 0.5
-
-classifier:
-  n_hidden_layers: 2
-  hidden_size: 128
-  classifier_input_size: 256
-  activation: relu
+train:
+  n_epochs: 10
+  patience: 10
+  clip_norm: 5
+  teacher_forcing: 1.0
+  val_every_epoch: 1
+  save_every_epoch: 1
+  log_every_n_steps: 10

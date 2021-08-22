@@ -28,7 +28,7 @@ class Code2Class(LightningModule):
             vocabulary.node_to_id[Vocabulary.PAD],
         )
 
-        self._classifier = Classifier(model_config, self._num_classes)
+        self._classifier = Classifier(model_config, len(vocabulary.label_to_id))
 
         metrics: Dict[str, Metric] = {
             f"{holdout}_acc": Accuracy(num_classes=len(vocabulary.label_to_id)) for holdout in ["train", "val", "test"]
@@ -36,7 +36,7 @@ class Code2Class(LightningModule):
         self.__metrics = MetricCollection(metrics)
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
-        return configure_optimizers_alon(self._config.hyper_parameters, self.parameters())
+        return configure_optimizers_alon(self._optim_config, self.parameters())
 
     def forward(  # type: ignore
         self,
@@ -45,7 +45,7 @@ class Code2Class(LightningModule):
         to_token: torch.Tensor,
         contexts_per_label: torch.Tensor,
     ) -> torch.Tensor:
-        encoded_paths = self.__encoder(from_token, path_nodes, to_token)
+        encoded_paths = self._encoder(from_token, path_nodes, to_token)
         output_logits = self._classifier(encoded_paths, contexts_per_label)
         return output_logits
 
@@ -54,11 +54,12 @@ class Code2Class(LightningModule):
     def _shared_step(self, batch: BatchedLabeledPathContext, step: str) -> Dict:
         # [batch size; num_classes]
         logits = self(batch.from_token, batch.path_nodes, batch.to_token, batch.contexts_per_label)
-        loss = torch.nn.functional.cross_entropy(logits, batch.labels.squeeze(0))
+        labels = batch.labels.squeeze(0)
+        loss = torch.nn.functional.cross_entropy(logits, labels)
 
         with torch.no_grad():
             predictions = logits.argmax(-1)
-            accuracy = self.__metrics[f"{step}_acc"](predictions, batch.labels)
+            accuracy = self.__metrics[f"{step}_acc"](predictions, labels)
 
         return {f"{step}/loss": loss, f"{step}/accuracy": accuracy}
 
@@ -78,7 +79,7 @@ class Code2Class(LightningModule):
 
     def _shared_epoch_end(self, outputs: List[Dict], step: str):
         with torch.no_grad():
-            mean_loss = torch.stack([out["loss"] for out in outputs]).mean()
+            mean_loss = torch.stack([out[f"{step}/loss"] for out in outputs]).mean()
             accuracy = self.__metrics[f"{step}_acc"].compute()
             log = {f"{step}/loss": mean_loss, f"{step}/accuracy": accuracy}
         self.log_dict(log, on_step=False, on_epoch=True)

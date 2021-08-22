@@ -14,9 +14,9 @@ class TypedPathContextDataset(PathContextDataset):
 
     def _get_path(self, raw_path: List[str]) -> TypedPath:
         return TypedPath(
-            from_type=self._tokenize_token(raw_path[0], self._vocab.type_to_id, self._config.max_type_parts),
-            from_token=self._tokenize_token(raw_path[1], self._vocab.token_to_id, self._config.max_token_parts),
-            path_node=self._tokenize_token(raw_path[2], self._vocab.node_to_id, self._config.path_length),
-            to_token=self._tokenize_token(raw_path[3], self._vocab.token_to_id, self._config.max_token_parts),
-            to_type=self._tokenize_token(raw_path[4], self._vocab.type_to_id, self._config.max_type_parts),
+            from_type=self.tokenize_token(raw_path[0], self._vocab.type_to_id, self._config.max_type_parts),
+            from_token=self.tokenize_token(raw_path[1], self._vocab.token_to_id, self._config.max_token_parts),
+            path_node=self.tokenize_token(raw_path[2], self._vocab.node_to_id, self._config.path_length),
+            to_token=self.tokenize_token(raw_path[3], self._vocab.token_to_id, self._config.max_token_parts),
+            to_type=self.tokenize_token(raw_path[4], self._vocab.type_to_id, self._config.max_type_parts),
         )

@@ -32,8 +32,14 @@ class PathEncoder(nn.Module):
 
         concat_size = self._calculate_concat_size(config.embedding_size, config.encoder_rnn_size, self.num_directions)
         self.embedding_dropout = nn.Dropout(config.encoder_dropout)
-        self.linear = nn.Linear(concat_size, config.decoder_size, bias=False)
-        self.norm = nn.LayerNorm(config.decoder_size)
+        if "decoder_size" in config:
+            out_size = config["decoder_size"]
+        elif "classifier_size" in config:
+            out_size = config["classifier_size"]
+        else:
+            raise ValueError("Specify out size of encoder")
+        self.linear = nn.Linear(concat_size, out_size, bias=False)
+        self.norm = nn.LayerNorm(out_size)
 
     @staticmethod
     def _calculate_concat_size(embedding_size: int, rnn_size: int, num_directions: int) -> int:

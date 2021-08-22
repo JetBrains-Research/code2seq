@@ -20,11 +20,12 @@ class PathContextDataModule(LightningDataModule):
 
     _vocabulary: Optional[Vocabulary] = None
 
-    def __init__(self, data_dir: str, config: DictConfig):
+    def __init__(self, data_dir: str, config: DictConfig, is_class: bool = False):
         super().__init__()
         self._config = config
         self._data_dir = data_dir
         self._name = basename(data_dir)
+        self._is_class = is_class
 
     @property
     def vocabulary(self) -> Vocabulary:
@@ -45,7 +46,7 @@ class PathContextDataModule(LightningDataModule):
             print("Can't find vocabulary, collect it from train holdout")
             build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), Vocabulary)
         vocabulary_path = join(self._data_dir, Vocabulary.vocab_filename)
-        self._vocabulary = Vocabulary(vocabulary_path, self._config.max_labels, self._config.max_tokens)
+        self._vocabulary = Vocabulary(vocabulary_path, self._config.max_labels, self._config.max_tokens, self._is_class)
 
     @staticmethod
     def collate_wrapper(batch: List[Optional[LabeledPathContext]]) -> BatchedLabeledPathContext:

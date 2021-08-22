@@ -8,6 +8,19 @@ from commode_utils.vocabulary import BaseVocabulary, build_from_scratch
 
 
 class Vocabulary(BaseVocabulary):
+    def __init__(
+        self,
+        vocabulary_file: str,
+        max_labels: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        is_class: bool = False,
+    ):
+        super().__init__(vocabulary_file, max_labels, max_tokens)
+        if is_class:
+            self._label_to_id = {
+                token[0]: i for i, token in enumerate(self._counters[self.LABEL].most_common(max_labels))
+            }
+
     @staticmethod
     def _process_raw_sample(raw_sample: str, counters: Dict[str, CounterType[str]], context_seq: List[str]):
         label, *path_contexts = raw_sample.split(" ")

@@ -1,81 +1,55 @@
-hydra:
-  run:
-    dir: .
-  output_subdir: null
-  job_logging: null
-  hydra_logging: null
+data_folder: ../data/code2seq/java-test-typed
 
-name: typed-code2seq
+checkpoint: null
 
 seed: 7
-num_workers: 0
 log_offline: true
-
-resume_from_checkpoint: null
-
-# data keys
-data_folder: /permanent-data
-vocabulary_name: vocabulary.pkl
-train_holdout: train
-val_holdout: val
-test_holdout: test
-
-save_every_epoch: 1
-val_every_epoch: 1
-log_every_epoch: 10
+# Training in notebooks (e.g. Google Colab) may crash with too small value
 progress_bar_refresh_rate: 1
+print_config: true
 
-hyper_parameters:
-  n_epochs: 5
-  patience: 10
-  batch_size: 5
-  test_batch_size: 5
-  clip_norm: 5
+data:
+  num_workers: 0
+
+  max_labels: null
+  max_label_parts: 7
+  max_tokens: null
+  max_token_parts: 5
+  max_types: null
+  max_type_parts: 5
+  path_length: 9
+
   max_context: 200
   random_context: true
-  shuffle_data: true
 
+  batch_size: 5
+  test_batch_size: 10
+
+model:
+  # Encoder
+  embedding_size: 10
+  encoder_dropout: 0.25
+  encoder_rnn_size: 10
+  use_bi_rnn: true
+  rnn_num_layers: 1
+
+  # Decoder
+  decoder_size: 20
+  decoder_num_layers: 1
+  rnn_dropout: 0.5
+
+optimizer:
   optimizer: "Momentum"
   nesterov: true
-  learning_rate: 0.01
+  lr: 0.01
   weight_decay: 0
   decay_gamma: 0.95
 
-dataset:
-  name: java-test-psi
-  target:
-    max_parts: 7
-    is_wrapped: true
-    is_splitted: true
-    vocabulary_size: 11316
-  token:
-    max_parts: 5
-    is_wrapped: false
-    is_splitted: true
-    vocabulary_size: 73904
-  path:
-    max_parts: 9
-    is_wrapped: false
-    is_splitted: true
-    vocabulary_size: null
-  type:
-    max_parts: 5
-    is_wrapped: false
-    is_splitted: true
-    vocabulary_size: null
-
-encoder:
-  embedding_size: 10
-  rnn_size: 10
-  use_bi_rnn: true
-  embedding_dropout: 0.25
-  rnn_num_layers: 1
-  rnn_dropout: 0.5
-
-decoder:
-  decoder_size: 20
-  embedding_size: 10
-  num_decoder_layers: 1
-  rnn_dropout: 0.5
-  teacher_forcing: 1
-  beam_width: 0
+train:
+  n_epochs: 5
+  patience: 10
+  clip_norm: 10
+  teacher_forcing: 1.0
+  val_every_epoch: 1
+  save_every_epoch: 1
+  log_every_n_steps: 10

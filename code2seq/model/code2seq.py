@@ -1,4 +1,4 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 import torch
 from commode_utils.losses import SequenceCrossEntropyLoss
@@ -43,9 +43,9 @@ class Code2Seq(LightningModule):
         }
         self.__metrics = MetricCollection(metrics)
 
-        self.__encoder = self._get_encoder(model_config)
+        self._encoder = self._get_encoder(model_config)
         decoder_step = LSTMDecoderStep(model_config, len(vocabulary.label_to_id), self.__pad_idx)
-        self.__decoder = Decoder(
+        self._decoder = Decoder(
             decoder_step, len(vocabulary.label_to_id), vocabulary.label_to_id[vocabulary.SOS], teacher_forcing
         )
 
@@ -78,16 +78,16 @@ class Code2Seq(LightningModule):
         output_length: int,
         target_sequence: torch.Tensor = None,
     ) -> torch.Tensor:
-        encoded_paths = self.__encoder(from_token, path_nodes, to_token)
-        output_logits = self.__decoder(encoded_paths, contexts_per_label, output_length, target_sequence)
+        encoded_paths = self._encoder(from_token, path_nodes, to_token)
+        output_logits = self._decoder(encoded_paths, contexts_per_label, output_length, target_sequence)
         return output_logits
 
     # ========== Model step ==========
 
-    def _shared_step(self, batch: BatchedLabeledPathContext, step: str) -> Dict:
-        target_sequence = batch.labels if step == "train" else None
-        # [seq length; batch size; vocab size]
-        logits = self(
+    def logits_from_batch(
+        self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor]
+    ) -> torch.Tensor:
+        return self(
             batch.from_token,
             batch.path_nodes,
             batch.to_token,
@@ -95,6 +95,11 @@ class Code2Seq(LightningModule):
             batch.labels.shape[0],
             target_sequence,
         )
+
+    def _shared_step(self, batch: BatchedLabeledPathContext, step: str) -> Dict:
+        target_sequence = batch.labels if step == "train" else None
+        # [seq length; batch size; vocab size]
+        logits = self.logits_from_batch(batch, target_sequence)
         loss = self.__loss(logits[1:], batch.labels[1:])
 
         with torch.no_grad():

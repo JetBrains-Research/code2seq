@@ -13,23 +13,23 @@ class TestDatasetTokenization(unittest.TestCase):
         raw_label = "my|super|label"
         tokenized = PathContextDataset.tokenize_label(raw_label, self.vocab, 5)
         # <SOS> my super <UNK> <EOS> <PAD>
-        correct = torch.tensor([2, 4, 5, 1, 3, 0], dtype=torch.long)
+        correct = [2, 4, 5, 1, 3, 0]
 
-        torch.testing.assert_equal(tokenized, correct)
+        self.assertListEqual(tokenized, correct)
 
     def test_tokenize_class(self):
         raw_class = "super"
         tokenized = PathContextDataset.tokenize_class(raw_class, self.vocab)
-        correct = torch.tensor([5], dtype=torch.long)
+        correct = [5]
 
-        torch.testing.assert_equal(tokenized, correct)
+        self.assertListEqual(tokenized, correct)
 
     def test_tokenize_token(self):
         raw_token = "my|super|token"
         tokenized = PathContextDataset.tokenize_token(raw_token, self.vocab, 5)
-        correct = torch.tensor([4, 5, 1, 0, 0], dtype=torch.long)
+        correct = [4, 5, 1, 0, 0]
 
-        torch.testing.assert_equal(tokenized, correct)
+        self.assertListEqual(tokenized, correct)
 
 
 if __name__ == "__main__":

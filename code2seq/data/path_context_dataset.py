@@ -2,7 +2,6 @@ from os.path import exists
 from random import shuffle
 from typing import Dict, List, Optional
 
-import torch
 from commode_utils.filesystem import get_lines_offsets, get_line_by_offset
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
@@ -63,34 +62,29 @@ class PathContextDataset(Dataset):
         return LabeledPathContext(label, paths)
 
     @staticmethod
-    def tokenize_class(raw_class: str, vocab: Dict[str, int]) -> torch.Tensor:
-        return torch.tensor([vocab[raw_class]], dtype=torch.long)
+    def tokenize_class(raw_class: str, vocab: Dict[str, int]) -> List[int]:
+        return [vocab[raw_class]]
 
     @staticmethod
-    def tokenize_label(raw_label: str, vocab: Dict[str, int], max_parts: Optional[int]) -> torch.Tensor:
+    def tokenize_label(raw_label: str, vocab: Dict[str, int], max_parts: Optional[int]) -> List[int]:
         sublabels = raw_label.split(PathContextDataset._separator)
         max_parts = max_parts or len(sublabels)
         label_unk = vocab[Vocabulary.UNK]
 
-        label = torch.full((max_parts + 1,), vocab[Vocabulary.PAD], dtype=torch.long)
-        label[0] = vocab[Vocabulary.SOS]
-        sub_tokens_ids = [vocab.get(st, label_unk) for st in sublabels[:max_parts]]
-        label[1 : len(sub_tokens_ids) + 1] = torch.tensor(sub_tokens_ids)
-
+        label = [vocab[Vocabulary.SOS]] + [vocab.get(st, label_unk) for st in sublabels[:max_parts]]
         if len(sublabels) < max_parts:
-            label[len(sublabels) + 1] = vocab[Vocabulary.EOS]
-
+            label.append(vocab[Vocabulary.EOS])
+            label += [vocab[Vocabulary.PAD]] * (max_parts + 1 - len(label))
         return label
 
     @staticmethod
-    def tokenize_token(token: str, vocab: Dict[str, int], max_parts: Optional[int]) -> torch.Tensor:
+    def tokenize_token(token: str, vocab: Dict[str, int], max_parts: Optional[int]) -> List[int]:
         sub_tokens = token.split(PathContextDataset._separator)
         max_parts = max_parts or len(sub_tokens)
         token_unk = vocab[Vocabulary.UNK]
 
-        result = torch.full((max_parts,), vocab[Vocabulary.PAD], dtype=torch.long)
-        sub_tokens_ids = [vocab.get(st, token_unk) for st in sub_tokens[:max_parts]]
-        result[: len(sub_tokens_ids)] = torch.tensor(sub_tokens_ids)
+        result = [vocab.get(st, token_unk) for st in sub_tokens[:max_parts]]
+        result += [vocab[Vocabulary.PAD]] * (max_parts - len(result))
         return result
 
     def _get_path(self, raw_path: List[str]) -> Path:

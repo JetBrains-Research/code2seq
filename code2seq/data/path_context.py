@@ -1,20 +1,24 @@
 from dataclasses import dataclass
-from typing import Iterable, Tuple, Optional, Sequence
+from typing import Iterable, Tuple, Optional, Sequence, List, cast
 
 import torch
 
 
 @dataclass
 class Path:
-    from_token: torch.Tensor  # [max token parts]
-    path_node: torch.Tensor  # [path length]
-    to_token: torch.Tensor  # [max token parts]
+    from_token: List[int]  # [max token parts]
+    path_node: List[int]  # [path length]
+    to_token: List[int]  # [max token parts]
 
 
 @dataclass
 class LabeledPathContext:
-    label: torch.Tensor  # [max label parts]
+    label: List[int]  # [max label parts]
     path_contexts: Sequence[Path]
+
+
+def transpose(list_of_lists: List[List[int]]) -> List[List[int]]:
+    return [cast(List[int], it) for it in zip(*list_of_lists)]
 
 
 class BatchedLabeledPathContext:
@@ -22,16 +26,22 @@ class BatchedLabeledPathContext:
         samples = [s for s in all_samples if s is not None]
 
         # [max label parts; batch size]
-        self.labels = torch.cat([s.label.unsqueeze(1) for s in samples], dim=1)
+        self.labels = torch.tensor(transpose([s.label for s in samples]), dtype=torch.long)
         # [batch size]
         self.contexts_per_label = torch.tensor([len(s.path_contexts) for s in samples])
 
         # [max token parts; n contexts]
-        self.from_token = torch.cat([path.from_token.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        self.from_token = torch.tensor(
+            transpose([path.from_token for s in samples for path in s.path_contexts]), dtype=torch.long
+        )
         # [path length; n contexts]
-        self.path_nodes = torch.cat([path.path_node.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        self.path_nodes = torch.tensor(
+            transpose([path.path_node for s in samples for path in s.path_contexts]), dtype=torch.long
+        )
         # [max token parts; n contexts]
-        self.to_token = torch.cat([path.to_token.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        self.to_token = torch.tensor(
+            transpose([path.to_token for s in samples for path in s.path_contexts]), dtype=torch.long
+        )
 
     def __len__(self) -> int:
         return len(self.contexts_per_label)
@@ -53,8 +63,8 @@ class BatchedLabeledPathContext:
 
 @dataclass
 class TypedPath(Path):
-    from_type: torch.Tensor  # [max type parts]
-    to_type: torch.Tensor  # [max type parts]
+    from_type: List[int]  # [max type parts]
+    to_type: List[int]  # [max type parts]
 
 
 @dataclass
@@ -67,6 +77,10 @@ class BatchedLabeledTypedPathContext(BatchedLabeledPathContext):
         super().__init__(all_samples)
         samples = [s for s in all_samples if s is not None]
         # [max type parts; n contexts]
-        self.from_type = torch.cat([path.from_type.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        self.from_type = torch.tensor(
+            transpose([path.from_type for s in samples for path in s.path_contexts]), dtype=torch.long
+        )
         # [max type parts; n contexts]
-        self.to_type = torch.cat([path.to_type.unsqueeze(1) for s in samples for path in s.path_contexts], dim=1)
+        self.to_type = torch.tensor(
+            transpose([path.to_type for s in samples for path in s.path_contexts]), dtype=torch.long
+        )

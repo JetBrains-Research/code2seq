@@ -84,6 +84,7 @@ class Code2Class(LightningModule):
             mean_loss = torch.stack([out[f"{step}/loss"] for out in outputs]).mean()
             accuracy = self.__metrics[f"{step}_acc"].compute()
             log = {f"{step}/loss": mean_loss, f"{step}/accuracy": accuracy}
+            self.__metrics[f"{step}_acc"].reset()
         self.log_dict(log, on_step=False, on_epoch=True)
 
     def training_epoch_end(self, outputs: EPOCH_OUTPUT):

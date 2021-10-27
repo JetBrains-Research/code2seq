@@ -33,7 +33,7 @@ class TypedPathContextDataModule(PathContextDataModule):
             build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), TypedVocabulary)
         vocabulary_path = join(self._data_dir, TypedVocabulary.vocab_filename)
         self._vocabulary = TypedVocabulary(
-            vocabulary_path, self._config.max_labels, self._config.max_tokens, self._config.max_types
+            vocabulary_path, self._config.labels_count, self._config.tokens_count, self._config.types_count
         )
 
     @property

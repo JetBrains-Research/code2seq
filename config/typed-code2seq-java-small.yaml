@@ -12,14 +12,16 @@ data:
   url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/java-paths-methods/java-small.tar.gz
   num_workers: 4
 
-  # Each token appears at least 5 times
-  max_labels: 5332
+  # Each token appears at least 10 times (98.5% coverage)
+  labels_count: 10
   max_label_parts: 7
-  # Each token appears at least 5 times
-  max_tokens: 18240
+  # Each token appears at least 1000 times (99.2% coverage)
+  tokens_count: 1000
   max_token_parts: 5
-  max_typed: null
+
+  types_count: null
   max_type_parts: 5
+
   path_length: 9
 
   max_context: 200

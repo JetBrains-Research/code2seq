@@ -12,11 +12,11 @@ data:
   url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/java-paths-methods/java-med.tar.gz
   num_workers: 4
 
-  # Each token appears at least 5 times
-  max_labels: 13935
+  # Each token appears at least 10 times (99.2% coverage)
+  labels_count: 10
   max_label_parts: 7
-  # Each token appears at least 5 times
-  max_tokens: 62063
+  # Each token appears at least 1000 times (99.5% coverage)
+  tokens_count: 1000
   max_token_parts: 5
   path_length: 9
 

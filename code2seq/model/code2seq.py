@@ -36,7 +36,7 @@ class Code2Seq(LightningModule):
 
         self.__pad_idx = vocabulary.label_to_id[vocabulary.PAD]
         eos_idx = vocabulary.label_to_id[vocabulary.EOS]
-        ignore_idx = [vocabulary.label_to_id[vocabulary.SOS]]
+        ignore_idx = [vocabulary.label_to_id[vocabulary.SOS], vocabulary.label_to_id[vocabulary.UNK]]
         metrics: Dict[str, Metric] = {
             f"{holdout}_f1": SequentialF1Score(pad_idx=self.__pad_idx, eos_idx=eos_idx, ignore_idx=ignore_idx)
             for holdout in ["train", "val", "test"]

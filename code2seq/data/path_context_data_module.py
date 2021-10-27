@@ -46,7 +46,9 @@ class PathContextDataModule(LightningDataModule):
             print("Can't find vocabulary, collect it from train holdout")
             build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), Vocabulary)
         vocabulary_path = join(self._data_dir, Vocabulary.vocab_filename)
-        self._vocabulary = Vocabulary(vocabulary_path, self._config.max_labels, self._config.max_tokens, self._is_class)
+        self._vocabulary = Vocabulary(
+            vocabulary_path, self._config.labels_count, self._config.tokens_count, self._is_class
+        )
 
     @staticmethod
     def collate_wrapper(batch: List[Optional[LabeledPathContext]]) -> BatchedLabeledPathContext:

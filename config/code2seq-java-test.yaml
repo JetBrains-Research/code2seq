@@ -11,9 +11,9 @@ print_config: true
 data:
   num_workers: 0
 
-  max_labels: null
+  labels_count: 10
   max_label_parts: 7
-  max_tokens: null
+  tokens_count: 1000
   max_token_parts: 5
   path_length: 9
 

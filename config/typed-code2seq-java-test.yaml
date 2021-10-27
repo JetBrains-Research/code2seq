@@ -11,11 +11,14 @@ print_config: true
 data:
   num_workers: 0
 
-  max_labels: null
+  # Each token appears at least 10 times (99.2% coverage)
+  labels_count: 10
   max_label_parts: 7
-  max_tokens: null
+  # Each token appears at least 1000 times (99.5% coverage)
+  tokens_count: 1000
   max_token_parts: 5
-  max_types: null
+
+  types_count: null
   max_type_parts: 5
   path_length: 9
 

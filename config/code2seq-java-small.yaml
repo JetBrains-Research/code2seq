@@ -12,11 +12,11 @@ data:
   url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/java-paths-methods/java-small.tar.gz
   num_workers: 4
 
-  # Each token appears at least 5 times
-  max_labels: 5332
+  # Each token appears at least 10 times (98.5% coverage)
+  labels_count: 10
   max_label_parts: 7
-  # Each token appears at least 5 times
-  max_tokens: 18240
+  # Each token appears at least 1000 times (99.2% coverage)
+  tokens_count: 1000
   max_token_parts: 5
   path_length: 9
 
@@ -24,7 +24,7 @@ data:
   random_context: true
 
   batch_size: 512
-  test_batch_size: 768
+  test_batch_size: 512
 
 model:
   # Encoder
@@ -47,8 +47,8 @@ optimizer:
   decay_gamma: 0.95
 
 train:
-  n_epochs: 10
-  patience: 10
+  n_epochs: 15
+  patience: 15
   clip_norm: 5
   teacher_forcing: 1.0
   val_every_epoch: 1

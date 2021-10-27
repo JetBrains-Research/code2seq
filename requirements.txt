@@ -1,11 +1,7 @@
-black==21.7b0
-mypy==0.910
-
-torch==1.9.0
-pytorch-lightning==1.4.7
+torch==1.10.0
+pytorch-lightning==1.4.9
 torchmetrics==0.5.1
-
-tqdm==4.62.2
-wandb==0.12.2
+tqdm==4.62.3
+wandb==0.12.5
 omegaconf==2.1.1
-commode-utils==0.3.9
+commode-utils==0.3.11

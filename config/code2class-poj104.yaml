@@ -3,10 +3,14 @@ data_folder: ../data/poj-104/poj-104-code2seq
 checkpoint: null
 
 seed: 7
-log_offline: true
 # Training in notebooks (e.g. Google Colab) may crash with too small value
 progress_bar_refresh_rate: 1
 print_config: true
+
+wandb:
+  project: Code2Class -- poj-104
+  group: null
+  offline: full
 
 data:
   url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/poj-104/poj-104-code2seq.tar.gz

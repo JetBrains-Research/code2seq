@@ -1,5 +1,3 @@
-from os.path import basename
-
 import torch
 from commode_utils.callback import PrintEpochResultCallback, ModelCheckpointWithUpload
 from omegaconf import DictConfig
@@ -13,9 +11,13 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
     params = config.train
 
     # define logger
-    model_name = model.__class__.__name__
-    dataset_name = basename(config.data_folder)
-    wandb_logger = WandbLogger(project=f"{model_name} -- {dataset_name}", log_model=False, offline=config.log_offline)
+    wandb_logger = WandbLogger(
+        project=config.wandb.project,
+        group=config.wandb.group,
+        log_model=False,
+        offline=config.wandb.offline,
+        config=config,
+    )
 
     # define model checkpoint callback
     checkpoint_callback = ModelCheckpointWithUpload(

@@ -3,10 +3,14 @@ data_folder: ../data/code2seq/java-med
 checkpoint: null
 
 seed: 7
-log_offline: false
 # Training in notebooks (e.g. Google Colab) may crash with too small value
 progress_bar_refresh_rate: 1
 print_config: true
+
+wandb:
+  project: Code2Seq -- java-med
+  group: null
+  offline: false
 
 data:
   url: https://s3.eu-west-1.amazonaws.com/datasets.ml.labs.aws.intellij.net/java-paths-methods/java-med.tar.gz

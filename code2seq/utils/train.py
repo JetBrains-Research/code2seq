@@ -1,6 +1,6 @@
 import torch
 from commode_utils.callback import PrintEpochResultCallback, ModelCheckpointWithUpload
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
@@ -16,7 +16,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         group=config.wandb.group,
         log_model=False,
         offline=config.wandb.offline,
-        config=config,
+        config=OmegaConf.to_container(config),
     )
 
     # define model checkpoint callback

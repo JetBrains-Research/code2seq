@@ -77,16 +77,18 @@ class Code2Seq(LightningModule):
         contexts_per_label: torch.Tensor,
         output_length: int,
         target_sequence: torch.Tensor = None,
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         encoded_paths = self._encoder(from_token, path_nodes, to_token)
-        output_logits = self._decoder(encoded_paths, contexts_per_label, output_length, target_sequence)
-        return output_logits
+        output_logits, attention_weights = self._decoder(
+            encoded_paths, contexts_per_label, output_length, target_sequence
+        )
+        return output_logits, attention_weights
 
     # ========== Model step ==========
 
     def logits_from_batch(
-        self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor]
-    ) -> torch.Tensor:
+        self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self(
             batch.from_token,
             batch.path_nodes,
@@ -99,7 +101,7 @@ class Code2Seq(LightningModule):
     def _shared_step(self, batch: BatchedLabeledPathContext, step: str) -> Dict:
         target_sequence = batch.labels if step == "train" else None
         # [seq length; batch size; vocab size]
-        logits = self.logits_from_batch(batch, target_sequence)
+        logits, _ = self.logits_from_batch(batch, target_sequence)
         loss = self.__loss(logits[1:], batch.labels[1:])
 
         with torch.no_grad():

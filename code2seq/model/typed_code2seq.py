@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 from omegaconf import DictConfig
@@ -41,14 +41,16 @@ class TypedCode2Seq(Code2Seq):
         contexts_per_label: torch.Tensor,
         output_length: int,
         target_sequence: torch.Tensor = None,
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         encoded_paths = self._encoder(from_type, from_token, path_nodes, to_token, to_type)
-        output_logits = self._decoder(encoded_paths, contexts_per_label, output_length, target_sequence)
-        return output_logits
+        output_logits, attention_weights = self._decoder(
+            encoded_paths, contexts_per_label, output_length, target_sequence
+        )
+        return output_logits, attention_weights
 
     def logits_from_batch(  # type: ignore[override]
         self, batch: BatchedLabeledTypedPathContext, target_sequence: Optional[torch.Tensor]
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self(
             batch.from_type,
             batch.from_token,

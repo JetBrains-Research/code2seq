@@ -2,6 +2,6 @@ torch==1.10.0
 pytorch-lightning==1.4.9
 torchmetrics==0.5.1
 tqdm==4.62.3
-wandb==0.12.5
+wandb==0.12.6
 omegaconf==2.1.1
-commode-utils==0.3.11
+commode-utils==0.3.12

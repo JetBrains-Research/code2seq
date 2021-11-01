@@ -20,10 +20,12 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with Black
       run: |
+        pip install black
         black . --check -l 120
     - name: Test with unittest
       run: |
         python -m unittest discover tests -v
     - name: Check types with mypy
       run: |
+        pip install mypy
         mypy . --ignore-missing-imports

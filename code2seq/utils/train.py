@@ -1,8 +1,10 @@
+from os.path import join
+
 import torch
 from commode_utils.callback import PrintEpochResultCallback, ModelCheckpointWithUpload
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
-from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, RichProgressBar
 from pytorch_lightning.loggers import WandbLogger
 
 
@@ -21,7 +23,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
 
     # define model checkpoint callback
     checkpoint_callback = ModelCheckpointWithUpload(
-        dirpath=wandb_logger.experiment.dir,
+        dirpath=join(wandb_logger.experiment.dir, "checkpoints"),
         filename="{epoch:02d}-val_loss={val/loss:.4f}",
         monitor="val/loss",
         every_n_epochs=params.save_every_epoch,
@@ -36,6 +38,8 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
     gpu = 1 if torch.cuda.is_available() else None
     # define learning rate logger
     lr_logger = LearningRateMonitor("step")
+    # define progress bar callback
+    progress_bar = RichProgressBar(refresh_rate_per_second=config.progress_bar_refresh_rate)
     trainer = Trainer(
         max_epochs=params.n_epochs,
         gradient_clip_val=params.clip_norm,
@@ -44,15 +48,9 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         log_every_n_steps=params.log_every_n_steps,
         logger=wandb_logger,
         gpus=gpu,
-        progress_bar_refresh_rate=config.progress_bar_refresh_rate,
-        callbacks=[
-            lr_logger,
-            early_stopping_callback,
-            checkpoint_callback,
-            print_epoch_result_callback,
-        ],
+        callbacks=[lr_logger, early_stopping_callback, checkpoint_callback, print_epoch_result_callback, progress_bar],
         resume_from_checkpoint=config.get("checkpoint", None),
     )
 
     trainer.fit(model=model, datamodule=data_module)
-    trainer.test()
+    trainer.test(datamodule=data_module, ckpt_path="best")

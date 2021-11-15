@@ -18,14 +18,14 @@ class PathContextDataModule(LightningDataModule):
     _val = "val"
     _test = "test"
 
-    _vocabulary: Optional[Vocabulary] = None
-
     def __init__(self, data_dir: str, config: DictConfig, is_class: bool = False):
         super().__init__()
         self._config = config
         self._data_dir = data_dir
         self._name = basename(data_dir)
         self._is_class = is_class
+
+        self._vocabulary = self.setup_vocabulary()
 
     @property
     def vocabulary(self) -> Vocabulary:
@@ -41,14 +41,12 @@ class PathContextDataModule(LightningDataModule):
             raise ValueError(f"Config doesn't contain url for, can't download it automatically")
         download_dataset(self._config.url, self._data_dir, self._name)
 
-    def setup(self, stage: Optional[str] = None):
-        if not exists(join(self._data_dir, Vocabulary.vocab_filename)):
+    def setup_vocabulary(self) -> Vocabulary:
+        vocabulary_path = join(self._data_dir, Vocabulary.vocab_filename)
+        if not exists(vocabulary_path):
             print("Can't find vocabulary, collect it from train holdout")
             build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), Vocabulary)
-        vocabulary_path = join(self._data_dir, Vocabulary.vocab_filename)
-        self._vocabulary = Vocabulary(
-            vocabulary_path, self._config.labels_count, self._config.tokens_count, self._is_class
-        )
+        return Vocabulary(vocabulary_path, self._config.labels_count, self._config.tokens_count, self._is_class)
 
     @staticmethod
     def collate_wrapper(batch: List[Optional[LabeledPathContext]]) -> BatchedLabeledPathContext:
@@ -87,6 +85,9 @@ class PathContextDataModule(LightningDataModule):
 
     def test_dataloader(self, *args, **kwargs) -> DataLoader:
         return self._shared_dataloader(self._test)
+
+    def predict_dataloader(self, *args, **kwargs) -> DataLoader:
+        return self.test_dataloader(*args, **kwargs)
 
     def transfer_batch_to_device(
         self, batch: BatchedLabeledPathContext, device: torch.device, dataloader_idx: int

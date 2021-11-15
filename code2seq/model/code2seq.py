@@ -3,6 +3,7 @@ from typing import Tuple, List, Dict, Optional
 import torch
 from commode_utils.losses import SequenceCrossEntropyLoss
 from commode_utils.metrics import SequentialF1Score, ClassificationMetrics
+from commode_utils.metrics.chrF import ChrF
 from commode_utils.modules import LSTMDecoderStep, Decoder
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
@@ -41,6 +42,10 @@ class Code2Seq(LightningModule):
             f"{holdout}_f1": SequentialF1Score(pad_idx=self.__pad_idx, eos_idx=eos_idx, ignore_idx=ignore_idx)
             for holdout in ["train", "val", "test"]
         }
+        id2label = {v: k for k, v in vocabulary.label_to_id.items()}
+        metrics.update(
+            {f"{holdout}_chrf": ChrF(id2label, ignore_idx + [self.__pad_idx, eos_idx]) for holdout in ["val", "test"]}
+        )
         self.__metrics = MetricCollection(metrics)
 
         self._encoder = self._get_encoder(model_config)
@@ -102,18 +107,18 @@ class Code2Seq(LightningModule):
         target_sequence = batch.labels if step == "train" else None
         # [seq length; batch size; vocab size]
         logits, _ = self.logits_from_batch(batch, target_sequence)
-        loss = self.__loss(logits[1:], batch.labels[1:])
+        result = {f"{step}/loss": self.__loss(logits[1:], batch.labels[1:])}
 
         with torch.no_grad():
             prediction = logits.argmax(-1)
             metric: ClassificationMetrics = self.__metrics[f"{step}_f1"](prediction, batch.labels)
+            result.update(
+                {f"{step}/f1": metric.f1_score, f"{step}/precision": metric.precision, f"{step}/recall": metric.recall}
+            )
+            if step != "train":
+                result[f"{step}/chrf"] = self.__metrics[f"{step}_chrf"](prediction, batch.labels)
 
-        return {
-            f"{step}/loss": loss,
-            f"{step}/f1": metric.f1_score,
-            f"{step}/precision": metric.precision,
-            f"{step}/recall": metric.recall,
-        }
+        return result
 
     def training_step(self, batch: BatchedLabeledPathContext, batch_idx: int) -> Dict:  # type: ignore
         result = self._shared_step(batch, "train")
@@ -143,6 +148,9 @@ class Code2Seq(LightningModule):
                 f"{step}/recall": metric.recall,
             }
             self.__metrics[f"{step}_f1"].reset()
+            if step != "train":
+                log[f"{step}/chrf"] = self.__metrics[f"{step}_chrf"].compute()
+                self.__metrics[f"{step}_chrf"].reset()
         self.log_dict(log, on_step=False, on_epoch=True)
 
     def training_epoch_end(self, step_outputs: EPOCH_OUTPUT):

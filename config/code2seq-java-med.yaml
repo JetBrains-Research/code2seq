@@ -28,7 +28,7 @@ data:
   random_context: true
 
   batch_size: 512
-  test_batch_size: 768
+  test_batch_size: 512
 
 model:
   # Encoder

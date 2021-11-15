@@ -6,13 +6,11 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 install_requires = [
-    "torch>=1.9.0",
-    "pytorch-lightning~=1.4.2",
-    "torchmetrics~=0.5.0",
-    "tqdm~=4.62.1",
+    "torch>=1.10.0",
+    "pytorch-lightning~=1.5.0",
     "wandb~=0.12.0",
     "omegaconf~=2.1.1",
-    "commode-utils>=0.3.8",
+    "commode-utils>=0.4.0",
 ]
 
 setup_args = dict(

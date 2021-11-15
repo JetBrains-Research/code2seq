@@ -11,7 +11,7 @@ from code2seq.data.vocabulary import TypedVocabulary
 
 
 class TypedPathContextDataModule(PathContextDataModule):
-    _vocabulary: Optional[TypedVocabulary] = None
+    _vocabulary: TypedVocabulary
 
     def __init__(self, data_dir: str, config: DictConfig):
         super().__init__(data_dir, config)
@@ -27,12 +27,12 @@ class TypedPathContextDataModule(PathContextDataModule):
             raise RuntimeError(f"Setup vocabulary before creating data loaders")
         return TypedPathContextDataset(holdout_file, self._config, self._vocabulary, random_context)
 
-    def setup(self, stage: Optional[str] = None):
+    def setup_vocabulary(self) -> TypedVocabulary:
         if not exists(join(self._data_dir, TypedVocabulary.vocab_filename)):
             print("Can't find vocabulary, collect it from train holdout")
             build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), TypedVocabulary)
         vocabulary_path = join(self._data_dir, TypedVocabulary.vocab_filename)
-        self._vocabulary = TypedVocabulary(
+        return TypedVocabulary(
             vocabulary_path, self._config.labels_count, self._config.tokens_count, self._config.types_count
         )
 

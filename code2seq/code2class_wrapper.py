@@ -27,8 +27,6 @@ def train_code2class(config: DictConfig):
 
     # Load data module
     data_module = PathContextDataModule(config.data_folder, config.data, is_class=True)
-    data_module.prepare_data()
-    data_module.setup()
 
     # Load model
     code2class = Code2Class(config.model, config.optimizer, data_module.vocabulary)

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -11,6 +11,7 @@ install_requires = [
     "wandb~=0.12.0",
     "omegaconf~=2.1.1",
     "commode-utils>=0.4.0",
+    "rich>=10.0.0",
 ]
 
 setup_args = dict(

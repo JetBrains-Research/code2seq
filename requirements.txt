@@ -5,3 +5,4 @@ tqdm==4.62.3
 wandb==0.12.6
 omegaconf==2.1.1
 commode-utils==0.4.0
+rich==10.13.0

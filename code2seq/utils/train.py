@@ -1,10 +1,10 @@
 from os.path import join
 
 import torch
-from commode_utils.callback import PrintEpochResultCallback, ModelCheckpointWithUpload
+from commode_utils.callbacks import ModelCheckpointWithUploadCallback, PrintEpochResultCallback
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
-from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, RichProgressBar
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, TQDMProgressBar
 from pytorch_lightning.loggers import WandbLogger
 
 
@@ -22,7 +22,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
     )
 
     # define model checkpoint callback
-    checkpoint_callback = ModelCheckpointWithUpload(
+    checkpoint_callback = ModelCheckpointWithUploadCallback(
         dirpath=join(wandb_logger.experiment.dir, "checkpoints"),
         filename="{epoch:02d}-val_loss={val/loss:.4f}",
         monitor="val/loss",
@@ -39,7 +39,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
     # define learning rate logger
     lr_logger = LearningRateMonitor("step")
     # define progress bar callback
-    progress_bar = RichProgressBar(refresh_rate_per_second=config.progress_bar_refresh_rate)
+    progress_bar = TQDMProgressBar(refresh_rate=config.progress_bar_refresh_rate)
     trainer = Trainer(
         max_epochs=params.n_epochs,
         gradient_clip_val=params.clip_norm,

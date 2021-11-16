@@ -10,8 +10,7 @@ install_requires = [
     "pytorch-lightning~=1.5.0",
     "wandb~=0.12.0",
     "omegaconf~=2.1.1",
-    "commode-utils>=0.4.0",
-    "rich>=10.0.0",
+    "commode-utils>=0.4.1",
 ]
 
 setup_args = dict(

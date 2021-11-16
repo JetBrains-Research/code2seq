@@ -1,5 +1,3 @@
-from os.path import join
-
 import torch
 from commode_utils.callbacks import ModelCheckpointWithUploadCallback, PrintEpochResultCallback
 from omegaconf import DictConfig, OmegaConf
@@ -23,7 +21,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
 
     # define model checkpoint callback
     checkpoint_callback = ModelCheckpointWithUploadCallback(
-        dirpath=join(wandb_logger.experiment.dir, "checkpoints"),
+        dirpath=wandb_logger.experiment.dir,
         filename="{epoch:02d}-val_loss={val/loss:.4f}",
         monitor="val/loss",
         every_n_epochs=params.save_every_epoch,

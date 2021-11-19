@@ -39,8 +39,6 @@ def test_code2seq(config: DictConfig):
 
     # Load data module
     data_module = PathContextDataModule(config.data_folder, config.data)
-    data_module.prepare_data()
-    data_module.setup()
 
     # Load model
     code2seq = Code2Seq.load_from_checkpoint(config.checkpoint, map_location=torch.device("cpu"))

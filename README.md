@@ -14,6 +14,14 @@ You can easily install model through the PIP:
 pip install code2seq
 ```
 
+## Dataset mining
+
+To prepare your own dataset with a storage format supported by this implementation, use on the following:
+1. Original dataset preprocessing from vanilla repository
+2. [`astminer`](https://github.com/JetBrains-Research/astminer):
+the tool for mining path-based representation and more with multiple language support.
+3. [`PSIMiner`](https://github.com/JetBrains-Research/psiminer):
+the tool for extracting PSI trees from IntelliJ Platform and creating datasets from them.
 ## Available checkpoints
 
 ### Method name prediction

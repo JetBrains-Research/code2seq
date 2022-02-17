@@ -32,8 +32,6 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
     early_stopping_callback = EarlyStopping(patience=params.patience, monitor="val/loss", verbose=True, mode="min")
     # define callback for printing intermediate result
     print_epoch_result_callback = PrintEpochResultCallback(after_test=False)
-    # use gpu if it exists
-    gpu = 1 if torch.cuda.is_available() else None
     # define learning rate logger
     lr_logger = LearningRateMonitor("step")
     # define progress bar callback
@@ -45,10 +43,10 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         check_val_every_n_epoch=params.val_every_epoch,
         log_every_n_steps=params.log_every_n_steps,
         logger=wandb_logger,
-        gpus=gpu,
+        gpus=params.gpu,
         callbacks=[lr_logger, early_stopping_callback, checkpoint_callback, print_epoch_result_callback, progress_bar],
         resume_from_checkpoint=config.get("checkpoint", None),
     )
 
     trainer.fit(model=model, datamodule=data_module)
-    trainer.test(datamodule=data_module, ckpt_path="best")
+    trainer.test(model=model, datamodule=data_module)

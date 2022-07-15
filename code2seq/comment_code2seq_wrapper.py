@@ -7,7 +7,7 @@ from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 
 from code2seq.data.comment_path_context_data_module import CommentPathContextDataModule
-from code2seq.model import Code2Seq
+from code2seq.model.comment_code2seq import CommentCode2Seq
 from code2seq.utils.common import filter_warnings
 from code2seq.utils.test import test
 from code2seq.utils.train import train
@@ -30,7 +30,7 @@ def train_code2seq(config: DictConfig):
     data_module = CommentPathContextDataModule(config.data_folder, config.data)
 
     # Load model
-    code2seq = Code2Seq(config.model, config.optimizer, data_module.vocabulary, config.train.teacher_forcing)
+    code2seq = CommentCode2Seq(config.model, config.optimizer, data_module.vocabulary, config.train.teacher_forcing)
 
     train(code2seq, data_module, config)
 
@@ -42,7 +42,7 @@ def test_code2seq(config: DictConfig):
     data_module = CommentPathContextDataModule(config.data_folder, config.data)
 
     # Load model
-    code2seq = Code2Seq.load_from_checkpoint(config.checkpoint, map_location=torch.device("cpu"))
+    code2seq = CommentCode2Seq.load_from_checkpoint(config.checkpoint, map_location=torch.device("cpu"))
 
     test(code2seq, data_module, config.seed)
 

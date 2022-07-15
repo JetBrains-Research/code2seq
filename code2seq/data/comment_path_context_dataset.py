@@ -1,15 +1,11 @@
 from typing import Dict, List, Optional
 
-from omegaconf import DictConfig
 from transformers import RobertaTokenizerFast
 
 from code2seq.data.path_context_dataset import PathContextDataset
-from code2seq.data.vocabulary import Vocabulary
 
 
 class CommentPathContextDataset(PathContextDataset):
-    def __init__(self, data_file: str, config: DictConfig, vocabulary: Vocabulary, random_context: bool):
-        super().__init__(data_file, config, vocabulary, random_context)
 
     @staticmethod
     def tokenize_label(raw_label: str, vocab: Dict[str, int], max_parts: Optional[int]) -> List[int]:

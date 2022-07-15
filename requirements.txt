@@ -8,3 +8,4 @@ commode-utils==0.4.2
 typing==3.7.4.3
 transformers==4.20.1
 setuptools==63.2.0
+sacrebleu>=2.0.0

@@ -17,6 +17,8 @@ def configure_arg_parser() -> ArgumentParser:
     arg_parser = ArgumentParser()
     arg_parser.add_argument("mode", help="Mode to run script", choices=["train", "test"])
     arg_parser.add_argument("-c", "--config", help="Path to YAML configuration file", type=str)
+    arg_parser.add_argument("-p", "--pretrained", help="Path to pretrained model", type=str, required=False,
+                            default=None)
     return arg_parser
 
 
@@ -35,19 +37,16 @@ def train_code2seq(config: DictConfig):
     train(code2seq, data_module, config)
 
 
-def test_code2seq(config: DictConfig):
+def test_code2seq(model_path: str, config: DictConfig):
     filter_warnings()
 
     # Load data module
     data_module = CommentPathContextDataModule(config.data_folder, config.data)
 
     # Load model
-    code2seq = CommentCode2Seq.load_from_checkpoint(config.checkpoint, map_location=torch.device("cpu"))
+    code2seq = CommentCode2Seq.load_from_checkpoint(model_path, map_location=torch.device("cpu"))
 
     test(code2seq, data_module, config.seed)
-
-    trainer = Trainer()
-    print(trainer.predict(model=code2seq, datamodule=data_module, return_predictions=True))
 
 
 if __name__ == "__main__":
@@ -58,4 +57,5 @@ if __name__ == "__main__":
     if __args.mode == "train":
         train_code2seq(__config)
     else:
-        test_code2seq(__config)
+        assert __args.pretrained is not None
+        test_code2seq(__args.pretrained, __config)

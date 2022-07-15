@@ -21,11 +21,11 @@ from code2seq.utils.optimization import configure_optimizers_alon
 
 class Code2Seq(LightningModule):
     def __init__(
-        self,
-        model_config: DictConfig,
-        optimizer_config: DictConfig,
-        vocabulary: Vocabulary,
-        teacher_forcing: float = 0.0,
+            self,
+            model_config: DictConfig,
+            optimizer_config: DictConfig,
+            vocabulary: Vocabulary,
+            teacher_forcing: float = 0.0,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -46,7 +46,7 @@ class Code2Seq(LightningModule):
         metrics.update(
             {f"{holdout}_chrf": ChrF(id2label, ignore_idx + [self.__pad_idx, eos_idx]) for holdout in ["val", "test"]}
         )
-        self.__metrics = MetricCollection(metrics)
+        self._metrics = MetricCollection(metrics)
 
         self._encoder = self._get_encoder(model_config)
         decoder_step = LSTMDecoderStep(model_config, len(vocabulary.label_to_id), self.__pad_idx)
@@ -75,13 +75,13 @@ class Code2Seq(LightningModule):
         return configure_optimizers_alon(self._optim_config, self.parameters())
 
     def forward(  # type: ignore
-        self,
-        from_token: torch.Tensor,
-        path_nodes: torch.Tensor,
-        to_token: torch.Tensor,
-        contexts_per_label: torch.Tensor,
-        output_length: int,
-        target_sequence: torch.Tensor = None,
+            self,
+            from_token: torch.Tensor,
+            path_nodes: torch.Tensor,
+            to_token: torch.Tensor,
+            contexts_per_label: torch.Tensor,
+            output_length: int,
+            target_sequence: torch.Tensor = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         encoded_paths = self._encoder(from_token, path_nodes, to_token)
         output_logits, attention_weights = self._decoder(
@@ -92,7 +92,7 @@ class Code2Seq(LightningModule):
     # ========== Model step ==========
 
     def logits_from_batch(
-        self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor] = None
+            self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self(
             batch.from_token,
@@ -111,12 +111,12 @@ class Code2Seq(LightningModule):
 
         with torch.no_grad():
             prediction = logits.argmax(-1)
-            metric: ClassificationMetrics = self.__metrics[f"{step}_f1"](prediction, batch.labels)
+            metric: ClassificationMetrics = self._metrics[f"{step}_f1"](prediction, batch.labels)
             result.update(
                 {f"{step}/f1": metric.f1_score, f"{step}/precision": metric.precision, f"{step}/recall": metric.recall}
             )
             if step != "train":
-                result[f"{step}/chrf"] = self.__metrics[f"{step}_chrf"](prediction, batch.labels)
+                result[f"{step}/chrf"] = self._metrics[f"{step}_chrf"](prediction, batch.labels)
 
         return result
 
@@ -140,17 +140,17 @@ class Code2Seq(LightningModule):
         with torch.no_grad():
             losses = [so if isinstance(so, torch.Tensor) else so["loss"] for so in step_outputs]
             mean_loss = torch.stack(losses).mean()
-            metric = self.__metrics[f"{step}_f1"].compute()
+            metric = self._metrics[f"{step}_f1"].compute()
             log = {
                 f"{step}/loss": mean_loss,
                 f"{step}/f1": metric.f1_score,
                 f"{step}/precision": metric.precision,
                 f"{step}/recall": metric.recall,
             }
-            self.__metrics[f"{step}_f1"].reset()
+            self._metrics[f"{step}_f1"].reset()
             if step != "train":
-                log[f"{step}/chrf"] = self.__metrics[f"{step}_chrf"].compute()
-                self.__metrics[f"{step}_chrf"].reset()
+                log[f"{step}/chrf"] = self._metrics[f"{step}_chrf"].compute()
+                self._metrics[f"{step}_chrf"].reset()
         self.log_dict(log, on_step=False, on_epoch=True)
 
     def training_epoch_end(self, step_outputs: EPOCH_OUTPUT):

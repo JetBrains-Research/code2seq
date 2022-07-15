@@ -26,8 +26,8 @@ data:
   max_context: 200
   random_context: true
 
-  batch_size: 512
-  test_batch_size: 512
+  batch_size: 16
+  test_batch_size: 8
 
 model:
   # Encoder
@@ -50,6 +50,7 @@ optimizer:
   decay_gamma: 0.95
 
 train:
+  gpu: 1
   n_epochs: 10
   patience: 10
   clip_norm: 5

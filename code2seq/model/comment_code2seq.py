@@ -15,11 +15,11 @@ from code2seq.model import Code2Seq
 
 class CommentCode2Seq(Code2Seq):
     def __init__(
-            self,
-            model_config: DictConfig,
-            optimizer_config: DictConfig,
-            vocabulary: Vocabulary,
-            teacher_forcing: float = 0.0,
+        self,
+        model_config: DictConfig,
+        optimizer_config: DictConfig,
+        vocabulary: Vocabulary,
+        teacher_forcing: float = 0.0,
     ):
         super().__init__(model_config, optimizer_config, vocabulary, teacher_forcing)
 
@@ -34,9 +34,7 @@ class CommentCode2Seq(Code2Seq):
         }
 
         # TODO add concatenation and rouge-L metric
-        metrics.update(
-            {f"{holdout}_chrf": CommentChrF(tokenizer) for holdout in ["val", "test"]}
-        )
+        metrics.update({f"{holdout}_chrf": CommentChrF(tokenizer) for holdout in ["val", "test"]})
         self._metrics = MetricCollection(metrics)
 
         self._encoder = self._get_encoder(model_config)

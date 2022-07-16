@@ -4,7 +4,7 @@ from typing import cast
 import torch
 from commode_utils.common import print_config
 from omegaconf import DictConfig, OmegaConf
-from pytorch_lightning import Trainer
+from pytorch_lightning import seed_everything
 
 from code2seq.data.comment_path_context_data_module import CommentPathContextDataModule
 from code2seq.model.comment_code2seq import CommentCode2Seq
@@ -17,8 +17,9 @@ def configure_arg_parser() -> ArgumentParser:
     arg_parser = ArgumentParser()
     arg_parser.add_argument("mode", help="Mode to run script", choices=["train", "test"])
     arg_parser.add_argument("-c", "--config", help="Path to YAML configuration file", type=str)
-    arg_parser.add_argument("-p", "--pretrained", help="Path to pretrained model", type=str, required=False,
-                            default=None)
+    arg_parser.add_argument(
+        "-p", "--pretrained", help="Path to pretrained model", type=str, required=False, default=None
+    )
     return arg_parser
 
 
@@ -54,6 +55,7 @@ if __name__ == "__main__":
     __args = __arg_parser.parse_args()
 
     __config = cast(DictConfig, OmegaConf.load(__args.config))
+    seed_everything(__config.seed)
     if __args.mode == "train":
         train_code2seq(__config)
     else:

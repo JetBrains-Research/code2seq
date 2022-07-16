@@ -21,11 +21,11 @@ from code2seq.utils.optimization import configure_optimizers_alon
 
 class Code2Seq(LightningModule):
     def __init__(
-            self,
-            model_config: DictConfig,
-            optimizer_config: DictConfig,
-            vocabulary: Vocabulary,
-            teacher_forcing: float = 0.0,
+        self,
+        model_config: DictConfig,
+        optimizer_config: DictConfig,
+        vocabulary: Vocabulary,
+        teacher_forcing: float = 0.0,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -75,13 +75,13 @@ class Code2Seq(LightningModule):
         return configure_optimizers_alon(self._optim_config, self.parameters())
 
     def forward(  # type: ignore
-            self,
-            from_token: torch.Tensor,
-            path_nodes: torch.Tensor,
-            to_token: torch.Tensor,
-            contexts_per_label: torch.Tensor,
-            output_length: int,
-            target_sequence: torch.Tensor = None,
+        self,
+        from_token: torch.Tensor,
+        path_nodes: torch.Tensor,
+        to_token: torch.Tensor,
+        contexts_per_label: torch.Tensor,
+        output_length: int,
+        target_sequence: torch.Tensor = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         encoded_paths = self._encoder(from_token, path_nodes, to_token)
         output_logits, attention_weights = self._decoder(
@@ -92,7 +92,7 @@ class Code2Seq(LightningModule):
     # ========== Model step ==========
 
     def logits_from_batch(
-            self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor] = None
+        self, batch: BatchedLabeledPathContext, target_sequence: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self(
             batch.from_token,

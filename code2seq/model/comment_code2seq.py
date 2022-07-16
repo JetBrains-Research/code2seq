@@ -74,7 +74,6 @@ class CommentChrF(Metric):
 
             target_str = " ".join(self.__tokenizer.convert_ids_to_tokens(target_seq, skip_special_tokens=True))
             predicted_str = " ".join(self.__tokenizer.convert_ids_to_tokens(predicted_seq, skip_special_tokens=True))
-            print(target_str, "||", predicted_str)
 
             if target_str == "":
                 # Empty target string mean that the original string encoded only with <UNK> token

@@ -19,14 +19,14 @@ data:
   labels_count: 10
   max_label_parts: 256
   # Each token appears at least 1000 times (99.5% coverage)
-  tokens_count: 1000
+  tokens_count: 1
   max_token_parts: 5
   path_length: 9
 
   max_context: 200
   random_context: true
 
-  batch_size: 16
+  batch_size: 8
   test_batch_size: 8
 
 model:
@@ -51,7 +51,7 @@ optimizer:
 
 train:
   gpu: 1
-  n_epochs: 10
+  n_epochs: 100
   patience: 10
   clip_norm: 5
   teacher_forcing: 1.0

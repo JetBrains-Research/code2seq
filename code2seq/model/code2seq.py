@@ -35,26 +35,26 @@ class Code2Seq(LightningModule):
         if vocabulary.SOS not in vocabulary.label_to_id:
             raise ValueError(f"Can't find SOS token in label to id vocabulary")
 
-        self.__pad_idx = vocabulary.label_to_id[vocabulary.PAD]
+        self._pad_idx = vocabulary.label_to_id[vocabulary.PAD]
         eos_idx = vocabulary.label_to_id[vocabulary.EOS]
         ignore_idx = [vocabulary.label_to_id[vocabulary.SOS], vocabulary.label_to_id[vocabulary.UNK]]
         metrics: Dict[str, Metric] = {
-            f"{holdout}_f1": SequentialF1Score(pad_idx=self.__pad_idx, eos_idx=eos_idx, ignore_idx=ignore_idx)
+            f"{holdout}_f1": SequentialF1Score(pad_idx=self._pad_idx, eos_idx=eos_idx, ignore_idx=ignore_idx)
             for holdout in ["train", "val", "test"]
         }
         id2label = {v: k for k, v in vocabulary.label_to_id.items()}
         metrics.update(
-            {f"{holdout}_chrf": ChrF(id2label, ignore_idx + [self.__pad_idx, eos_idx]) for holdout in ["val", "test"]}
+            {f"{holdout}_chrf": ChrF(id2label, ignore_idx + [self._pad_idx, eos_idx]) for holdout in ["val", "test"]}
         )
         self._metrics = MetricCollection(metrics)
 
         self._encoder = self._get_encoder(model_config)
-        decoder_step = LSTMDecoderStep(model_config, len(vocabulary.label_to_id), self.__pad_idx)
+        decoder_step = LSTMDecoderStep(model_config, len(vocabulary.label_to_id), self._pad_idx)
         self._decoder = Decoder(
             decoder_step, len(vocabulary.label_to_id), vocabulary.label_to_id[vocabulary.SOS], teacher_forcing
         )
 
-        self.__loss = SequenceCrossEntropyLoss(self.__pad_idx, reduction="batch-mean")
+        self._loss = SequenceCrossEntropyLoss(self._pad_idx, reduction="batch-mean")
 
     @property
     def vocabulary(self) -> Vocabulary:
@@ -107,7 +107,9 @@ class Code2Seq(LightningModule):
         target_sequence = batch.labels if step == "train" else None
         # [seq length; batch size; vocab size]
         logits, _ = self.logits_from_batch(batch, target_sequence)
-        result = {f"{step}/loss": self.__loss(logits[1:], batch.labels[1:])}
+        logits = logits[1:]
+        batch.labels = batch.labels[1:]
+        result = {f"{step}/loss": self._loss(logits, batch.labels)}
 
         with torch.no_grad():
             prediction = logits.argmax(-1)

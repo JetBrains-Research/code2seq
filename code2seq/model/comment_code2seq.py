@@ -9,7 +9,7 @@ from sacrebleu import CHRF
 from torchmetrics import MetricCollection, Metric
 from transformers import RobertaTokenizerFast
 
-from code2seq.data.vocabulary import Vocabulary, CommentVocabulary
+from code2seq.data.vocabulary import CommentVocabulary
 from code2seq.model import Code2Seq
 
 
@@ -37,7 +37,7 @@ class CommentCode2Seq(Code2Seq):
         self._metrics = MetricCollection(metrics)
 
         self._encoder = self._get_encoder(model_config)
-        output_size = len(tokenizer.get_vocab())
+        output_size = tokenizer.vocab_size
         decoder_step = LSTMDecoderStep(model_config, output_size, self._pad_idx)
         self._decoder = Decoder(decoder_step, output_size, tokenizer.eos_token_id, teacher_forcing)
 

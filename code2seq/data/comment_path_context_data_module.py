@@ -31,7 +31,7 @@ def _build_from_scratch(train_data: str, labels_count: int, vocabulary_cls: Type
             training_corpus.extend([string] * amount)
             good_labels_count += 1
     old_tokenizer = RobertaTokenizerFast.from_pretrained("microsoft/codebert-base")
-    tokenizer = old_tokenizer.train_new_from_iterator(training_corpus, 4 * good_labels_count)
+    tokenizer = old_tokenizer.train_new_from_iterator(training_corpus, 128 * good_labels_count)
 
     for feature, counter in counters.items():
         print(f"Count {len(counter)} {feature}, top-5: {counter.most_common(5)}")

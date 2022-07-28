@@ -19,5 +19,4 @@ class CommentPathContextDataset(PathContextDataset):
             max_parts = len(label_tokens)
         label_tokens = [tokenizer.bos_token] + label_tokens[: max_parts - 2] + [tokenizer.eos_token]
         label_tokens += [tokenizer.pad_token] * (max_parts - len(label_tokens))
-        print(label_tokens)
         return tokenizer.convert_tokens_to_ids(label_tokens)

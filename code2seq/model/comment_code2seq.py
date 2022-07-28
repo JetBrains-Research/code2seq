@@ -9,7 +9,7 @@ from sacrebleu import CHRF
 from torchmetrics import MetricCollection, Metric
 from transformers import RobertaTokenizerFast
 
-from code2seq.data.vocabulary import Vocabulary
+from code2seq.data.vocabulary import Vocabulary, CommentVocabulary
 from code2seq.model import Code2Seq
 
 
@@ -18,13 +18,12 @@ class CommentCode2Seq(Code2Seq):
         self,
         model_config: DictConfig,
         optimizer_config: DictConfig,
-        vocabulary: Vocabulary,
+        vocabulary: CommentVocabulary,
         teacher_forcing: float = 0.0,
     ):
         super().__init__(model_config, optimizer_config, vocabulary, teacher_forcing)
 
-        tokenizer = RobertaTokenizerFast.from_pretrained("microsoft/codebert-base")
-
+        tokenizer = vocabulary.tokenizer
         self._pad_idx = tokenizer.pad_token_id
         eos_idx = tokenizer.eos_token_id
         ignore_idx = [tokenizer.bos_token_id, tokenizer.unk_token_id]

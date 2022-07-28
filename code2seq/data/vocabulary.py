@@ -84,7 +84,6 @@ class CommentVocabulary(Vocabulary):
         with open(vocabulary_file, "rb") as f_in:
             pickle.load(f_in)
             self.tokenizer: PreTrainedTokenizerFast = pickle.load(f_in)
-        print(len(self.tokenizer.vocab))
 
 
 def convert_from_vanilla(vocabulary_path: str):

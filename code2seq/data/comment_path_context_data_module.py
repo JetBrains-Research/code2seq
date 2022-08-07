@@ -15,7 +15,7 @@ from code2seq.data.path_context_data_module import PathContextDataModule
 from code2seq.data.vocabulary import CommentVocabulary
 
 
-def _build_from_scratch(train_data: str, vocabulary_cls: Type[BaseVocabulary]):
+def _build_from_scratch(config: DictConfig, train_data: str, vocabulary_cls: Type[BaseVocabulary]):
     total_samples = count_lines_in_file(train_data)
     counters: Dict[str, TCounter[str]] = {
         key: Counter() for key in [vocabulary_cls.LABEL, vocabulary_cls.TOKEN, vocabulary_cls.NODE]
@@ -27,8 +27,11 @@ def _build_from_scratch(train_data: str, vocabulary_cls: Type[BaseVocabulary]):
     training_corpus = []
     for string, amount in counters[vocabulary_cls.LABEL].items():
         training_corpus.extend([string] * amount)
-    old_tokenizer = RobertaTokenizerFast.from_pretrained("microsoft/codebert-base")
-    tokenizer = old_tokenizer.train_new_from_iterator(training_corpus, 20000)
+    old_tokenizer = RobertaTokenizerFast.from_pretrained(config.base_tokenizer)
+    if config.train_new_tokenizer:
+        tokenizer = old_tokenizer.train_new_from_iterator(training_corpus, 20000)
+    else:
+        tokenizer = old_tokenizer
 
     for feature, counter in counters.items():
         print(f"Count {len(counter)} {feature}, top-5: {counter.most_common(5)}")
@@ -54,7 +57,7 @@ class CommentPathContextDataModule(PathContextDataModule):
     def setup_vocabulary(self) -> CommentVocabulary:
         if not exists(join(self._data_dir, CommentVocabulary.vocab_filename)):
             print("Can't find vocabulary, collect it from train holdout")
-            _build_from_scratch(join(self._data_dir, f"{self._train}.c2s"), CommentVocabulary)
+            _build_from_scratch(self._config, join(self._data_dir, f"{self._train}.c2s"), CommentVocabulary)
         vocabulary_path = join(self._data_dir, CommentVocabulary.vocab_filename)
         return CommentVocabulary(vocabulary_path, self._config.labels_count, self._config.tokens_count)
 

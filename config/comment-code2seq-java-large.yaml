@@ -8,12 +8,15 @@ progress_bar_refresh_rate: 1
 print_config: true
 
 wandb:
-  project: Code2Seq -- java-med
+  project: comment-code2seq
   group: null
   offline: false
 
 data:
   num_workers: 4
+
+  base_tokenizer: "microsoft/codebert-base"
+  train_new_tokenizer: true
 
   # Each token appears at least 10 times (99.2% coverage)
   labels_count: 1

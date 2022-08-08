@@ -17,6 +17,7 @@ data:
 
   base_tokenizer: "microsoft/codebert-base"
   train_new_tokenizer: true
+  max_tokenizer_vocab: 20000
 
   # Each token appears at least 10 times (99.2% coverage)
   labels_count: 1

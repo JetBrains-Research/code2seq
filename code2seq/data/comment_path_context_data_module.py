@@ -29,7 +29,7 @@ def _build_from_scratch(config: DictConfig, train_data: str, vocabulary_cls: Typ
         training_corpus.extend([string] * amount)
     old_tokenizer = RobertaTokenizerFast.from_pretrained(config.base_tokenizer)
     if config.train_new_tokenizer:
-        tokenizer = old_tokenizer.train_new_from_iterator(training_corpus, 20000)
+        tokenizer = old_tokenizer.train_new_from_iterator(training_corpus, config.max_tokenizer_vocab)
     else:
         tokenizer = old_tokenizer
 

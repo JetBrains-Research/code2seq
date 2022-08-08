@@ -12,11 +12,11 @@ class CommentPathContextDataset(PathContextDataset):
         self._vocab: CommentVocabulary = vocabulary
 
     def tokenize_label(self, raw_label: str, vocab: Dict[str, int], max_parts: Optional[int]) -> List[int]:
-        label_with_spaces = " ".join(raw_label.split(PathContextDataset._separator))
         tokenizer = self._vocab.tokenizer
-        label_tokens = tokenizer.tokenize(label_with_spaces)
-        if max_parts is None:
-            max_parts = len(label_tokens)
-        label_tokens = [tokenizer.bos_token] + label_tokens[: max_parts - 2] + [tokenizer.eos_token]
-        label_tokens += [tokenizer.pad_token] * (max_parts - len(label_tokens))
-        return tokenizer.convert_tokens_to_ids(label_tokens)
+        tokenized_snippet = tokenizer(
+            raw_label.replace(PathContextDataset._separator, " "),
+            add_special_tokens=True,
+            padding="max_length" if max_parts else "do_not_pad",
+            max_length=max_parts,
+        )
+        return tokenized_snippet["input_ids"]

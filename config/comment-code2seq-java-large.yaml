@@ -10,7 +10,7 @@ print_config: true
 wandb:
   project: comment-code2seq
   group: null
-  offline: false
+  offline: true
 
 data:
   num_workers: 4
@@ -42,9 +42,11 @@ model:
   rnn_num_layers: 1
 
   # Decoder
-  decoder_size: 320
-  decoder_num_layers: 1
-  rnn_dropout: 0.5
+  decoder_size: 512
+  decoder_num_layers: 6
+  decoder_dim_feedforward: 2048
+  decoder_num_heads: 8
+  decoder_dropout: 0.1
 
 optimizer:
   optimizer: "Momentum"

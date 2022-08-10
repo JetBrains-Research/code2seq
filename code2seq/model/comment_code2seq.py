@@ -29,7 +29,7 @@ class CommentCode2Seq(Code2Seq):
         self._pad_idx = tokenizer.pad_token_id
         self._eos_idx = tokenizer.eos_token_id
         self._sos_idx = tokenizer.bos_token_id
-        ignore_idx = [tokenizer.bos_token_id, tokenizer.unk_token_id]
+        ignore_idx = [self._sos_idx, tokenizer.unk_token_id]
         metrics: Dict[str, Metric] = {
             f"{holdout}_f1": SequentialF1Score(pad_idx=self._pad_idx, eos_idx=self._eos_idx, ignore_idx=ignore_idx)
             for holdout in ["train", "val", "test"]
@@ -48,4 +48,4 @@ class CommentCode2Seq(Code2Seq):
             teacher_forcing=teacher_forcing,
         )
 
-        self._loss = SequenceCrossEntropyLoss(self._pad_idx, reduction="batch-mean")
+        self._loss = SequenceCrossEntropyLoss(self._pad_idx, reduction="seq-mean")

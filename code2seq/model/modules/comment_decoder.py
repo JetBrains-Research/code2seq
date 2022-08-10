@@ -113,6 +113,4 @@ class CommentDecoder(nn.Module):
                     target_sequence[:, i] = prediction[:, i]
                     output[:, i, :] = logits[:, i, :]
 
-            print(target_sequence)
-
         return output.permute(1, 0, 2), attentions

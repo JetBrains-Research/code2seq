@@ -1,10 +1,12 @@
 from typing import Dict
 
+import torch
 from commode_utils.losses import SequenceCrossEntropyLoss
-from commode_utils.metrics import SequentialF1Score
+from commode_utils.metrics import SequentialF1Score, ClassificationMetrics
 from omegaconf import DictConfig
 from torchmetrics import MetricCollection, Metric
 
+from code2seq.data.path_context import BatchedLabeledPathContext
 from code2seq.data.vocabulary import CommentVocabulary
 from code2seq.model import Code2Seq
 from code2seq.model.modules.comment_decoder import CommentDecoder
@@ -26,6 +28,8 @@ class CommentCode2Seq(Code2Seq):
         self._vocabulary = vocabulary
 
         tokenizer = vocabulary.tokenizer
+
+        print(tokenizer.convert_ids_to_tokens([225]))
         self._pad_idx = tokenizer.pad_token_id
         self._eos_idx = tokenizer.eos_token_id
         self._sos_idx = tokenizer.bos_token_id
@@ -49,3 +53,25 @@ class CommentCode2Seq(Code2Seq):
         )
 
         self._loss = SequenceCrossEntropyLoss(self._pad_idx, reduction="seq-mean")
+
+    def _shared_step(self, batch: BatchedLabeledPathContext, step: str) -> Dict:
+        target_sequence = batch.labels if step != "test" else None
+        # [seq length; batch size; vocab size]
+        logits, _ = self.logits_from_batch(batch, target_sequence)
+        # if step == "test":
+        logits = logits[1:]
+        # else:
+        #     logits = logits[:-1]
+        batch.labels = batch.labels[1:]
+        result = {f"{step}/loss": self._loss(logits, batch.labels)}
+
+        with torch.no_grad():
+            prediction = logits.argmax(-1)
+            metric: ClassificationMetrics = self._metrics[f"{step}_f1"](prediction, batch.labels)
+            result.update(
+                {f"{step}/f1": metric.f1_score, f"{step}/precision": metric.precision, f"{step}/recall": metric.recall}
+            )
+            if step != "train":
+                result[f"{step}/chrf"] = self._metrics[f"{step}_chrf"](prediction, batch.labels)
+
+        return result

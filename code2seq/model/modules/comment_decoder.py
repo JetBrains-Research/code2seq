@@ -93,22 +93,23 @@ class CommentDecoder(nn.Module):
 
         tgt_mask = (Transformer.generate_square_subsequent_mask(output_size)).to(device)
 
-        if self.training:
+        if target_sequence is not None:
             target_sequence = target_sequence.permute(1, 0)
 
             output = self.decode(target_sequence, batched_encoder_output, tgt_mask, attention_mask)
         else:
-            output = torch.zeros((batch_size, output_size, self._vocab_size)).to(device)
-            output[:, 0, self._sos_token] = 1
 
-            target_sequence = torch.zeros((batch_size, output_size)).to(device)
-            target_sequence[:, 1:] = self._pad_token
-            target_sequence[:, 0] = self._sos_token
+            with torch.no_grad():
+                output = torch.zeros((batch_size, output_size, self._vocab_size)).to(device)
+                output[:, 0, self._sos_token] = 1
 
-            for i in range(1, output_size):
-                logits = self.decode(target_sequence, batched_encoder_output, tgt_mask, attention_mask)
+                target_sequence = torch.zeros((batch_size, output_size)).to(device)
+                target_sequence[:, 1:] = self._pad_token
+                target_sequence[:, 0] = self._sos_token
 
-                with torch.no_grad():
+                for i in range(1, output_size):
+                    logits = self.decode(target_sequence, batched_encoder_output, tgt_mask, attention_mask)
+
                     prediction = logits.argmax(-1)
                     target_sequence[:, i] = prediction[:, i]
                     output[:, i, :] = logits[:, i, :]

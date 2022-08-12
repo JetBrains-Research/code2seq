@@ -1,4 +1,3 @@
-import torch
 from commode_utils.callbacks import ModelCheckpointWithUploadCallback, PrintEpochResultCallback
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
@@ -24,7 +23,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         dirpath=wandb_logger.experiment.dir,
         filename="{epoch:02d}-val_loss={val/loss:.4f}",
         monitor="val/loss",
-        every_n_epochs=params.save_every_epoch,
+        every_n_train_steps=100,
         save_top_k=-1,
         auto_insert_metric_name=False,
     )
@@ -40,7 +39,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         max_epochs=params.n_epochs,
         gradient_clip_val=params.clip_norm,
         deterministic=True,
-        check_val_every_n_epoch=params.val_every_epoch,
+        val_check_interval=100,
         log_every_n_steps=params.log_every_n_steps,
         logger=wandb_logger,
         gpus=params.gpu,

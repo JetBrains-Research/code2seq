@@ -20,18 +20,18 @@ data:
   max_tokenizer_vocab: 20000
 
   # Each token appears at least 10 times (99.2% coverage)
-  labels_count: 1
+  labels_count: 10
   max_label_parts: 256
   # Each token appears at least 1000 times (99.5% coverage)
-  tokens_count: 1
+  tokens_count: 1000
   max_token_parts: 5
   path_length: 9
 
   max_context: 200
   random_context: true
 
-  batch_size: 16
-  test_batch_size: 16
+  batch_size: 128
+  test_batch_size: 128
 
 model:
   # Encoder

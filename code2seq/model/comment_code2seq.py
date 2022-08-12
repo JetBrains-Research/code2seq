@@ -58,10 +58,10 @@ class CommentCode2Seq(Code2Seq):
         target_sequence = batch.labels if step != "test" else None
         # [seq length; batch size; vocab size]
         logits, _ = self.logits_from_batch(batch, target_sequence)
-        # if step == "test":
-        logits = logits[1:]
-        # else:
-        #     logits = logits[:-1]
+        if step == "test":
+            logits = logits[1:]
+        else:
+            logits = logits[:-1]
         batch.labels = batch.labels[1:]
         result = {f"{step}/loss": self._loss(logits, batch.labels)}
 

@@ -30,8 +30,8 @@ data:
   max_context: 200
   random_context: true
 
-  batch_size: 128
-  test_batch_size: 128
+  batch_size: 64
+  test_batch_size: 64
 
 model:
   # Encoder
@@ -42,10 +42,10 @@ model:
   rnn_num_layers: 1
 
   # Decoder
-  decoder_size: 320
+  decoder_size: 512
   decoder_num_layers: 4
-  decoder_dim_feedforward: 1024
-  decoder_num_heads: 4
+  decoder_dim_feedforward: 2048
+  decoder_num_heads: 8
   decoder_dropout: 0.1
 
 optimizer:

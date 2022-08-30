@@ -29,5 +29,5 @@ def configure_optimizers_alon(
         optimizer = Adam(parameters, optim_config.lr, weight_decay=optim_config.weight_decay)
     else:
         raise ValueError(f"Unknown optimizer name: {optim_config.optimizer}, try one of: Adam, Momentum")
-    scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: optim_config.decay_gamma**epoch)
+    scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: optim_config.decay_gamma ** epoch)
     return [optimizer], [scheduler]

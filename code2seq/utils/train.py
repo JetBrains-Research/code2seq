@@ -39,7 +39,6 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         max_epochs=params.n_epochs,
         gradient_clip_val=params.clip_norm,
         deterministic=True,
-        val_check_interval=100,
         check_val_every_n_epoch=params.val_every_epoch,
         log_every_n_steps=params.log_every_n_steps,
         logger=wandb_logger,

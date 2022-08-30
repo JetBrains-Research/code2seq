@@ -42,6 +42,7 @@ model:
   rnn_num_layers: 1
 
   # Decoder
+  decoder_type: "Transformer"
   decoder_size: 512
   decoder_num_layers: 4
   decoder_dim_feedforward: 2048

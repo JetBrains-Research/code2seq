@@ -4,8 +4,8 @@ import torch
 from commode_utils.training import cut_into_segments
 from omegaconf import DictConfig
 from torch import nn, Tensor, LongTensor
-from torch.nn import TransformerDecoder, Embedding, Linear
-from torch.nn.modules.transformer import TransformerDecoderLayer, Transformer
+from torch.nn import Embedding, Linear
+from torch.nn.modules.transformer import TransformerDecoderLayer, Transformer, TransformerDecoder
 from typing import Tuple
 
 
@@ -39,7 +39,7 @@ class TokenEmbedding(nn.Module):
         return self.embedding(tokens.long()) * math.sqrt(self.emb_size)
 
 
-class CommentDecoder(nn.Module):
+class TransformerCommentDecoder(nn.Module):
     def __init__(
         self, config: DictConfig, vocab_size: int, pad_token: int, sos_token: int, teacher_forcing: float = 0.0
     ):
@@ -78,11 +78,7 @@ class CommentDecoder(nn.Module):
         return self._linear(decoded)
 
     def forward(
-        self,
-        encoder_output: Tensor,
-        segment_sizes: LongTensor,
-        output_size: int,
-        target_sequence: Tensor = None,
+        self, encoder_output: Tensor, segment_sizes: LongTensor, output_size: int, target_sequence: Tensor = None,
     ) -> Tuple[Tensor, Tensor]:
         device = encoder_output.get_device()
         batch_size = segment_sizes.shape[0]

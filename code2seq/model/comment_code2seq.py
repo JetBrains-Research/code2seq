@@ -58,7 +58,8 @@ class CommentCode2Seq(Code2Seq):
                 vocab_size=vocab_size,
                 pad_token=self._pad_idx,
                 sos_token=self._sos_idx,
-                teacher_forcing=teacher_forcing
+                eos_token=self._eos_idx,
+                teacher_forcing=teacher_forcing,
             )
         else:
             raise ValueError

@@ -41,12 +41,19 @@ class TokenEmbedding(nn.Module):
 
 class TransformerCommentDecoder(nn.Module):
     def __init__(
-        self, config: DictConfig, vocab_size: int, pad_token: int, sos_token: int, teacher_forcing: float = 0.0
+        self,
+        config: DictConfig,
+        vocab_size: int,
+        pad_token: int,
+        sos_token: int,
+        eos_token: int,
+        teacher_forcing: float = 0.0,
     ):
         super().__init__()
         self._vocab_size = vocab_size
         self._pad_token = pad_token
         self._sos_token = sos_token
+        self._eos_token = eos_token
         self._teacher_forcing = teacher_forcing
 
         self._embedding = TokenEmbedding(vocab_size, config.decoder_size)
@@ -99,13 +106,18 @@ class TransformerCommentDecoder(nn.Module):
 
                 target_sequence = torch.zeros((batch_size, 1)).to(device)
                 target_sequence[:, 0] = self._sos_token
+                is_ended = torch.zeros(batch_size, dtype=torch.bool)
 
                 for i in range(output_size):
                     tgt_mask = (Transformer.generate_square_subsequent_mask(i + 1)).to(device)
                     logits = self.decode(target_sequence, batched_encoder_output, tgt_mask, attention_mask)
 
-                    prediction = logits.argmax(-1)
-                    target_sequence = torch.cat((target_sequence, prediction[:, i].unsqueeze(1)), dim=1)
+                    prediction = logits.argmax(-1)[:, i]
+                    target_sequence = torch.cat((target_sequence, prediction.unsqueeze(1)), dim=1)
                     output[:, i, :] = logits[:, i, :]
+
+                    is_ended = torch.logical_or(is_ended, (prediction == self._eos_token))
+                    if torch.count_nonzero(is_ended)[0] == batch_size:
+                        break
 
         return output.permute(1, 0, 2), attentions

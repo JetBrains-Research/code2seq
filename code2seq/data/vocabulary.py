@@ -75,7 +75,10 @@ class TypedVocabulary(Vocabulary):
 
 class CommentVocabulary(Vocabulary):
     def __init__(
-        self, vocabulary_file: str, labels_count: Optional[int] = None, tokens_count: Optional[int] = None,
+        self,
+        vocabulary_file: str,
+        labels_count: Optional[int] = None,
+        tokens_count: Optional[int] = None,
     ):
         super().__init__(vocabulary_file, labels_count, tokens_count)
         with open(vocabulary_file, "rb") as f_in:

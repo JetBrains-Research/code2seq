@@ -10,7 +10,7 @@ print_config: true
 wandb:
   project: comment-code2seq
   group: null
-  offline: true
+  offline: false
 
 data:
   num_workers: 4

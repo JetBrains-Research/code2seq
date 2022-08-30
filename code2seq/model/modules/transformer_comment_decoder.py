@@ -85,7 +85,11 @@ class TransformerCommentDecoder(nn.Module):
         return self._linear(decoded)
 
     def forward(
-        self, encoder_output: Tensor, segment_sizes: LongTensor, output_size: int, target_sequence: Tensor = None,
+        self,
+        encoder_output: Tensor,
+        segment_sizes: LongTensor,
+        output_size: int,
+        target_sequence: Tensor = None,
     ) -> Tuple[Tensor, Tensor]:
         device = encoder_output.get_device()
         batch_size = segment_sizes.shape[0]
@@ -106,7 +110,7 @@ class TransformerCommentDecoder(nn.Module):
 
                 target_sequence = torch.zeros((batch_size, 1)).to(device)
                 target_sequence[:, 0] = self._sos_token
-                is_ended = torch.zeros(batch_size, dtype=torch.bool)
+                is_ended = torch.zeros(batch_size, dtype=torch.bool).to(device)
 
                 for i in range(output_size):
                     tgt_mask = (Transformer.generate_square_subsequent_mask(i + 1)).to(device)
@@ -117,7 +121,7 @@ class TransformerCommentDecoder(nn.Module):
                     output[:, i, :] = logits[:, i, :]
 
                     is_ended = torch.logical_or(is_ended, (prediction == self._eos_token))
-                    if torch.count_nonzero(is_ended)[0] == batch_size:
+                    if torch.count_nonzero(is_ended).item() == batch_size:
                         break
 
         return output.permute(1, 0, 2), attentions

@@ -7,7 +7,12 @@ from torch import nn
 
 class PathEncoder(nn.Module):
     def __init__(
-        self, config: DictConfig, n_tokens: int, token_pad_id: int, n_nodes: int, node_pad_id: int,
+        self,
+        config: DictConfig,
+        n_tokens: int,
+        token_pad_id: int,
+        n_nodes: int,
+        node_pad_id: int,
     ):
         super().__init__()
         self.node_pad_id = node_pad_id

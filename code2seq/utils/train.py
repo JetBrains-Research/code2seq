@@ -1,4 +1,3 @@
-import torch
 from commode_utils.callbacks import ModelCheckpointWithUploadCallback, PrintEpochResultCallback
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything, Trainer, LightningModule, LightningDataModule
@@ -44,6 +43,7 @@ def train(model: LightningModule, data_module: LightningDataModule, config: Dict
         log_every_n_steps=params.log_every_n_steps,
         logger=wandb_logger,
         gpus=params.gpu,
+        auto_select_gpus=True,
         callbacks=[lr_logger, early_stopping_callback, checkpoint_callback, print_epoch_result_callback, progress_bar],
         resume_from_checkpoint=config.get("checkpoint", None),
     )

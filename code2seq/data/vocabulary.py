@@ -1,3 +1,4 @@
+import pickle
 from argparse import ArgumentParser
 from collections import Counter
 from os.path import dirname, join
@@ -5,6 +6,7 @@ from pickle import load, dump
 from typing import Dict, Counter as CounterType, Optional, List
 
 from commode_utils.vocabulary import BaseVocabulary, build_from_scratch
+from transformers import PreTrainedTokenizerFast
 
 
 class Vocabulary(BaseVocabulary):
@@ -69,6 +71,19 @@ class TypedVocabulary(Vocabulary):
             TypedVocabulary.TYPE,
         ]
         TypedVocabulary._process_raw_sample(raw_sample, counters, context_seq)
+
+
+class CommentVocabulary(Vocabulary):
+    def __init__(
+        self,
+        vocabulary_file: str,
+        labels_count: Optional[int] = None,
+        tokens_count: Optional[int] = None,
+    ):
+        super().__init__(vocabulary_file, labels_count, tokens_count)
+        with open(vocabulary_file, "rb") as f_in:
+            pickle.load(f_in)
+            self.tokenizer: PreTrainedTokenizerFast = pickle.load(f_in)
 
 
 def convert_from_vanilla(vocabulary_path: str):
